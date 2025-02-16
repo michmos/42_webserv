@@ -1,7 +1,7 @@
 # Webserv
 
 
-## HTTP steps
+# HTTP
 - Understand HTTP request/response structure.
 - Implement GET, POST, DELETE methods.
 - Correctly parse headers and bodies.
@@ -9,7 +9,7 @@
 - Handle persistent connections (keep-alive).
 - Return proper status codes.
 
-**Understanding HTTP Headers**
+## Understanding HTTP Headers
 
 ### **1. Structure of HTTP Headers**
 
@@ -123,9 +123,7 @@ You can inspect headers using:
   ```
 
 
-
-
-## epoll in C++
+# epoll (Non-Blocking I/O)
 epoll is a scalable I/O event notification mechanism in Linux, designed to efficiently handle multiple file descriptors. It is commonly used in high-performance network applications, such as servers, where handling thousands of concurrent connections is required.
 
 ### Key Features of epoll:
@@ -188,10 +186,101 @@ In Webserv, the project requires using **only one ****************`epoll()`*****
 
 
 
+#  Configuration File for Webserv
+
+The configuration file is a crucial component of Webserv as it allows defining how the server behaves, including which ports it listens to, which files it serves, and how it handles requests. Inspired by NGINX’s configuration, this file provides flexibility and structure to the server’s operation.
+
+### **Key Features of the Configuration File**
+
+1. **Defining Server Blocks**
+
+   - Each server is identified by a host and a port number.
+   - Multiple servers can be defined within a single configuration file.
+
+2. **Setting Up Server Names**
+
+   - Allows defining `server_name` for different virtual hosts.
+   - The first defined server on a host\:port combination acts as the default.
+
+3. **Error Page Configuration**
+
+   - Custom error pages can be set for specific HTTP error codes.
+
+4. **Client Request Limitations**
+
+   - Restricting the maximum body size for client requests to prevent overload.
+
+5. **Defining Routes**
+
+   - Each route specifies how a request is handled.
+   - Supported route options:
+     - **Allowed HTTP Methods** (`GET`, `POST`, `DELETE`)
+     - **Redirections** (301, 302 status codes)
+     - **Static File Directory Mappings**
+     - **Directory Listing Settings**
+     - **CGI Execution Settings**
+     - **File Upload Configuration**
+
+### **Example Configuration File**
+
+#### Basic Example:
+
+```
+server {
+    listen 8080;
+    server_name example.com;
+
+    error_page 404 /errors/404.html;
+    client_max_body_size 10M;
+
+    location / {
+        root /var/www/html;
+        index index.html;
+    }
+
+    location /uploads/ {
+        root /var/www/uploads;
+        methods POST GET;
+    }
+
+    location /cgi-bin/ {
+        cgi_enable on;
+        cgi_extension .php;
+        root /var/www/cgi-bin;
+    }
+}
+```
+
+### **Breakdown of Example Configuration**
+
+- **Server Block**
+  - The server listens on port `8080` and responds to `example.com`.
+- **Error Page Setup**
+  - Defines a custom `404` error page stored at `/errors/404.html`.
+- **Client Limitations**
+  - Restricts the body size of incoming requests to `10MB`.
+- **Root Location (********`/`********)**
+  - Serves static files from `/var/www/html`, with `index.html` as the default page.
+- **Uploads Location (********`/uploads/`********)**
+  - Enables `POST` and `GET` methods, storing files in `/var/www/uploads/`.
+- **CGI Configuration (********`/cgi-bin/`********)**
+  - Enables CGI execution for `.php` files in `/var/www/cgi-bin/`.
+
+### **Advanced Features**
+
+1. **Multiple Server Blocks**
+   - Supports different domains on different ports.
+2. **IP-based Virtual Hosting**
+   - Specific IPs can be assigned per server block.
+3. **Multiple Methods per Route**
+   - Routes can allow `GET`, `POST`, and `DELETE` selectively.
+4. **Nested Routing**
+   - Subroutes can inherit properties from parent routes.
 
 
 
-## Links:
+
+# Links:
 
 #### epoll
 https://man7.org/linux/man-pages/man7/epoll.7.html
