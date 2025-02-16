@@ -282,13 +282,11 @@ server {
 
 # Links:
 
-#### epoll
-https://man7.org/linux/man-pages/man7/epoll.7.html
+[EPOLL (MAN)](https://man7.org/linux/man-pages/man7/epoll.7.html)
 
+[EPOLL (Learn about I/O polling)](https://github.com/pniewiejski/learn-io-polling)
 
-#### HTTP codes
-https://www.w3schools.com/tags/ref_httpmessages.asp
+[A Simple Web Server (Guide)](https://aosabook.org/en/500L/a-simple-web-server.html)
 
-https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+[HTTP Codes (W3school)](https://www.w3schools.com/tags/ref_httpmessages.asp)
 
-https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
