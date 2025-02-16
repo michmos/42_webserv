@@ -128,28 +128,63 @@ You can inspect headers using:
 ## epoll in C++
 epoll is a scalable I/O event notification mechanism in Linux, designed to efficiently handle multiple file descriptors. It is commonly used in high-performance network applications, such as servers, where handling thousands of concurrent connections is required.
 
-### Key Functions:
-
-1. **`epoll_create1(int flags)`** (or deprecated `epoll_create(int size)`)  
-   - Creates an epoll instance and returns a file descriptor referring to it.  
-   - **flags**: Can be `EPOLL_CLOEXEC` to set the close-on-exec flag.
-
-2. **`epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)`**  
-   - Controls the epoll instance by adding, modifying, or removing file descriptors.  
-   - **op**: Can be `EPOLL_CTL_ADD`, `EPOLL_CTL_MOD`, or `EPOLL_CTL_DEL`.
-
-3. **`epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)`**  
-   - Waits for events on the epoll instance.  
-   - **maxevents**: Maximum number of events to return.  
-   - **timeout**: Milliseconds to wait (`0` = non-blocking, `-1` = wait indefinitely).
-
 ### Key Features of epoll:
-
 1. **Efficient Event Notification**: Unlike `select()` and `poll()`, `epoll` avoids scanning file descriptors linearly, making it more scalable.
 2. **Edge-Triggered (ET) vs. Level-Triggered (LT) Modes:**  
    - **Level-Triggered (default)**: Events trigger as long as the condition persists.  
    - **Edge-Triggered (`EPOLLET`)**: Events trigger only when the state changes (e.g., new data arrives).
 3. **Handles Many Connections**: `epoll` is designed to efficiently handle thousands of connections.
+
+### **Using ****************`epoll()`**************** in Webserv**
+
+In Webserv, the project requires using **only one ****************`epoll()`**************** instance** to handle all I/O operations. This means that every socket operation—whether it is accepting new connections, reading from a client, or writing responses—must be coordinated using `epoll`.
+
+#### **How ****************`epoll()`**************** Works**
+
+1. **Create an ****************`epoll`**************** instance** using `epoll_create1()`.
+
+     **`epoll_create1(int flags)`** (or deprecated `epoll_create(int size)`)  
+     - Creates an epoll instance and returns a file descriptor referring to it.  
+     - **flags**: Can be `EPOLL_CLOEXEC` to set the close-on-exec flag.
+2. **Register file descriptors** (sockets) with `epoll_ctl()`.
+
+   **`epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)`**  
+   - Controls the epoll instance by adding, modifying, or removing file descriptors.  
+   - **op**: Can be `EPOLL_CTL_ADD`, `EPOLL_CTL_MOD`, or `EPOLL_CTL_DEL`.
+3. **Wait for events** using `epoll_wait()`.
+
+   **`epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)`**  
+   - Waits for events on the epoll instance.  
+   - **maxevents**: Maximum number of events to return.  
+   - **timeout**: Milliseconds to wait (`0` = non-blocking, `-1` = wait indefinitely).
+4. **Process the event** based on which file descriptors are ready.
+5. **Repeat the process** to handle subsequent I/O operations.
+
+#### **Example Workflow**
+
+1. **Server starts and listens on a socket**
+   - Calls `socket()` and `bind()` to set up a listening socket.
+   - Calls `listen()` to start accepting connections.
+   - Creates an `epoll` instance using `epoll_create1()`.
+   - Adds the listening socket to the `epoll` instance using `epoll_ctl()` with `EPOLLIN`.
+2. **Handling new connections**
+   - When `epoll_wait()` indicates a new connection, `accept()` is called.
+   - The new client socket is added to `epoll` with `EPOLLIN` to monitor read events.
+3. **Handling client requests**
+   - If a client socket has data ready to read (`EPOLLIN`), `recv()` is used to read it.
+   - The server processes the request and prepares a response.
+   - The client socket is modified in `epoll_ctl()` to monitor for writing (`EPOLLOUT`).
+4. **Sending responses**
+   - When `epoll_wait()` detects that the socket is ready for writing, `send()` is used to transmit data.
+   - Once done, the socket may be closed or kept open for persistent connections.
+
+### **Important Constraints for Webserv**
+
+- **Only one ****************`epoll`**************** instance** must be used to manage all I/O operations.
+- **Reading and writing must both be monitored** within the same `epoll` instance.
+- **No direct ****************`read()`**************** or ****************`write()`**************** calls** without first using `epoll_wait()` to check readiness.
+- **Using ****************`errno`**************** after a ****************`read()`**************** or ****************`write()`**************** call is forbidden.**
+- **Non-blocking file descriptors** must be used to avoid waiting indefinitely on slow or unresponsive clients.
 
 
 
