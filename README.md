@@ -42,7 +42,12 @@ epoll is a scalable I/O event notification mechanism in Linux, designed to effic
 
 
 
-HTTP codes
+
+
+
+### HTTP codes
 https://www.w3schools.com/tags/ref_httpmessages.asp
+
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+
 https://en.wikipedia.org/wiki/List_of_HTTP_status_codes
