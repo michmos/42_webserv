@@ -1,14 +1,7 @@
 # Webserv
 
 
-
-##Links:
-
-epoll
-https://man7.org/linux/man-pages/man7/epoll.7.html
-
 ## epoll in C++
-
 epoll is a scalable I/O event notification mechanism in Linux, designed to efficiently handle multiple file descriptors. It is commonly used in high-performance network applications, such as servers, where handling thousands of concurrent connections is required.
 
 ### Key Functions:
@@ -34,18 +27,18 @@ epoll is a scalable I/O event notification mechanism in Linux, designed to effic
    - **Edge-Triggered (`EPOLLET`)**: Events trigger only when the state changes (e.g., new data arrives).
 3. **Handles Many Connections**: `epoll` is designed to efficiently handle thousands of connections.
 
-### When to Use epoll?
-
-- When handling a large number of connections efficiently.
-- When performance is crucial, such as in high-performance web servers, game servers, or real-time systems.
-- When `select()` and `poll()` become bottlenecks due to their O(n) complexity.
 
 
 
 
 
+## Links:
 
-### HTTP codes
+#### epoll
+https://man7.org/linux/man-pages/man7/epoll.7.html
+
+
+#### HTTP codes
 https://www.w3schools.com/tags/ref_httpmessages.asp
 
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
