@@ -1,6 +1,5 @@
 # Webserv
 
-
 # HTTP
 - Understand HTTP request/response structure.
 - Implement GET, POST, DELETE methods.
@@ -278,6 +277,9 @@ server {
    - Subroutes can inherit properties from parent routes.
 
 
+# Process and Thread Management
+
+# Handling Client Requests
 
 
 # Links:
@@ -289,4 +291,8 @@ server {
 [A Simple Web Server (Guide)](https://aosabook.org/en/500L/a-simple-web-server.html)
 
 [HTTP Codes (W3school)](https://www.w3schools.com/tags/ref_httpmessages.asp)
+
+[HTTP RFCs (MAN)](https://www.rfc-editor.org/rfc/rfc2616)
+
+
 
