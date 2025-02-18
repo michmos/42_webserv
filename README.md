@@ -127,8 +127,8 @@ epoll is a scalable I/O event notification mechanism in Linux, designed to effic
 
 ### Key Features of epoll:
 1. **Efficient Event Notification**: Unlike `select()` and `poll()`, `epoll` avoids scanning file descriptors linearly, making it more scalable.
-2. **Edge-Triggered (ET) vs. Level-Triggered (LT) Modes:**  
-   - **Level-Triggered (default)**: Events trigger as long as the condition persists.  
+2. **Edge-Triggered (ET) vs. Level-Triggered (LT) Modes:**
+   - **Level-Triggered (default)**: Events trigger as long as the condition persists.
    - **Edge-Triggered (`EPOLLET`)**: Events trigger only when the state changes (e.g., new data arrives).
 3. **Handles Many Connections**: `epoll` is designed to efficiently handle thousands of connections.
 
@@ -140,19 +140,19 @@ In Webserv, the project requires using **only one ****************`epoll()`*****
 
 1. **Create an ****************`epoll`**************** instance** using `epoll_create1()`.
 
-     **`epoll_create1(int flags)`** (or deprecated `epoll_create(int size)`)  
-     - Creates an epoll instance and returns a file descriptor referring to it.  
+     **`epoll_create1(int flags)`** (or deprecated `epoll_create(int size)`)
+     - Creates an epoll instance and returns a file descriptor referring to it.
      - **flags**: Can be `EPOLL_CLOEXEC` to set the close-on-exec flag.
 2. **Register file descriptors** (sockets) with `epoll_ctl()`.
 
-   **`epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)`**  
-   - Controls the epoll instance by adding, modifying, or removing file descriptors.  
+   **`epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)`**
+   - Controls the epoll instance by adding, modifying, or removing file descriptors.
    - **op**: Can be `EPOLL_CTL_ADD`, `EPOLL_CTL_MOD`, or `EPOLL_CTL_DEL`.
 3. **Wait for events** using `epoll_wait()`.
 
-   **`epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)`**  
-   - Waits for events on the epoll instance.  
-   - **maxevents**: Maximum number of events to return.  
+   **`epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)`**
+   - Waits for events on the epoll instance.
+   - **maxevents**: Maximum number of events to return.
    - **timeout**: Milliseconds to wait (`0` = non-blocking, `-1` = wait indefinitely).
 4. **Process the event** based on which file descriptors are ready.
 5. **Repeat the process** to handle subsequent I/O operations.
@@ -293,6 +293,10 @@ server {
 [HTTP Codes (W3school)](https://www.w3schools.com/tags/ref_httpmessages.asp)
 
 [HTTP RFCs (MAN)](https://www.rfc-editor.org/rfc/rfc2616)
+
+[nginx conf (Beginner)](https://nginx.org/en/docs/beginners_guide.html#conf_structure)
+
+[Understanding nginx conf](https://www.digitalocean.com/community/tutorials/understanding-the-nginx-configuration-file-structure-and-configuration-contexts)
 
 
 
