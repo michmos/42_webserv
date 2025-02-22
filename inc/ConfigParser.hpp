@@ -2,21 +2,18 @@
 #define CONFIGPARSER_HPP
 
 #include "Webserv.hpp"
-#include "ServerConfig.hpp"
+#include "Config.hpp"
 
 class ConfigParser {
 	private:
 		std::string					_filepath;
 		std::vector<std::string>	_lines;
-		std::vector<ServerConfig>			_config;
+		Config						_config;
 
 		// readConfigToLines UTILS
-		std::ifstream openConfigFile(std::string& filepath);
+		// std::ifstream openConfigFile(std::string& filepath);
 		void readFile(std::ifstream& config_file);
-		void cleanWhitespace(std::string& line);
-		void cleanComments(std::string& line);
-		bool cleanEmptyLines(std::string& line);
-		void closeFile(std::ifstream& file);
+		// void closeFile(std::ifstream& file);
 	public:
 		ConfigParser();
 		explicit ConfigParser(const std::string& filepath);
@@ -26,18 +23,13 @@ class ConfigParser {
 
 		// PARSING
 		void readConfigToLines();
-		void parseConfig();
+		void parseConfigLines();
 
 		// GETTERS
-		std::vector<ServerConfig> getConfig() const;
-		// std::vector<std::string> getLines() const;
+		Config getConfig() const;
 
-		// SETTERS
-		void setServers(std::vector<ServerConfig> servers);
-		void setLines(std::vector<std::string> lines);
-
-		// PRINT
-		// void printConfig();
+		// UTILS
+		std::string cleanWhitespace(const std::string &line);
 		void printLines();
 
 		// EXCEPTIONS

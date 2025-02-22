@@ -10,8 +10,8 @@ int main(int argc, char **argv)
 			config = (argc == 1 ? "configs/default.conf" : argv[1]);
 			ConfigParser config_parser(config);
 			config_parser.readConfigToLines();
-			// config_parser.
 			config_parser.printLines();
+			config_parser.parseConfigLines();
 		}
 		catch (std::exception &e) {
 			std::cerr << e.what() << std::endl;

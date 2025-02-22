@@ -8,6 +8,7 @@
 # include <vector>
 # include <exception>
 # include <algorithm>
+# include <map>
 
 // C libs
 

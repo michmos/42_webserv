@@ -25,17 +25,7 @@ ConfigParser& ConfigParser::operator=(const ConfigParser &other) {
 	return *this;
 }
 
-void ConfigParser::readConfigToLines() {
-	try {
-		std::ifstream config_file = openConfigFile(this->_filepath);
-		this->readFile(config_file);
-		this->closeFile(config_file);
-	} catch (std::exception &e) {
-		throw ConfigParser::ConfigParserException(e.what());
-	}
-}
-
-std::ifstream ConfigParser::openConfigFile(std::string& filepath) {
+std::ifstream openConfigFile(std::string& filepath) {
 	if (filepath.empty() || filepath.length() == 0) {
 		throw ConfigParser::ConfigParserException("ERROR PARSING: config filepath is empty");
 	}
@@ -47,43 +37,23 @@ std::ifstream ConfigParser::openConfigFile(std::string& filepath) {
 	return (config_file);
 }
 
-void ConfigParser::readFile(std::ifstream& config_file) {
-	std::string line;
-	while (config_file.peek() != EOF) {
-		std::getline(config_file, line);
-		this->cleanComments(line);
-		this->cleanWhitespace(line);
-		if (this->cleanEmptyLines(line))
-			continue;
-		this->_lines.push_back(line);
-	}
-}
-
-// UTILS FUNCTION TO CLEAN CONFIG FILE
-void ConfigParser::cleanComments(std::string &line) {
+void cleanComments(std::string &line) {
 	size_t comment_pos = line.find("#");
 	if (comment_pos != std::string::npos) {
 		line.erase(comment_pos);
 	}
 }
 
-// UTILS FUNCTION TO CLEAN CONFIG FILE
-void ConfigParser::cleanWhitespace(std::string &line) {
-	// trim whitespace at beginning and end of line
-	line.erase(0, line.find_first_not_of(" \t"));
-	line.erase(line.find_last_not_of(" \t") + 1);
+void ConfigParser::readFile(std::ifstream& config_file) {
+	std::string line;
+	while (config_file.peek() != EOF) {
+		std::getline(config_file, line);
+		cleanComments(line);
+		this->_lines.push_back(line);
+	}
 }
 
-// UTILS FUNCTION TO CLEAN CONFIG FILE
-bool ConfigParser::cleanEmptyLines(std::string &line) {
-	if (line.empty() || line.length() == 0 || line == "\n") {
-		line.clear();
-		return (true);
-	} else
-		return (false);
-}
-
-void ConfigParser::closeFile(std::ifstream& file) {
+void closeFile(std::ifstream& file) {
 	file.close();
 	if (file.fail()) {
 		throw ConfigParser::ConfigParserException("ERROR PARSING: could not close config file.");
@@ -92,18 +62,81 @@ void ConfigParser::closeFile(std::ifstream& file) {
 	}
 }
 
+void ConfigParser::readConfigToLines() {
+	try {
+		std::ifstream config_file = openConfigFile(this->_filepath);
+		this->readFile(config_file);
+		closeFile(config_file);
+	} catch (std::exception &e) {
+		throw ConfigParser::ConfigParserException(e.what());
+	}
+}
+
+std::string ConfigParser::cleanWhitespace(const std::string &line) {
+	std::string cleanedLine = line;
+	cleanedLine.erase(0, cleanedLine.find_first_not_of(" \t"));
+	cleanedLine.erase(cleanedLine.find_last_not_of(" \t") + 1);
+	return cleanedLine;
+}
+
 void ConfigParser::printLines() {
 	for (std::vector<std::string>::iterator it = this->_lines.begin(); it != this->_lines.end(); it++) {
 		std::cout << *it << std::endl;
 	}
 }
 
-ConfigParser::ConfigParserException::ConfigParserException(const std::string &msg) : message(msg) {}
-
-const char* ConfigParser::ConfigParserException::what() const throw() {
-	return message.c_str();
+Config ConfigParser::getConfig() const {
+	return this->_config;
 }
 
-void setServers(std::vector<Server> servers) {
-	// this->_servers = servers;
+std::vector<std::string> extractServerBlock(std::vector<std::string>& lines) {
+	std::vector<std::string> extractedBlock;
+	bool capturing = false;
+	int braceCount = 0;
+	auto it = lines.begin();
+
+	while (it != lines.end()) {
+		if (!capturing) {
+			if (it->find("server") != std::string::npos && it->find("{") != std::string::npos) {
+				capturing = true;
+				braceCount = 1;
+				extractedBlock.push_back(*it);
+				it = lines.erase(it);
+				continue;
+			}
+		} else {
+			extractedBlock.push_back(*it);
+			if (it->find("{") != std::string::npos) {
+				braceCount++;
+			}
+			if (it->find("}") != std::string::npos) {
+				braceCount--;
+				if (braceCount == 0) {
+					it = lines.erase(it);
+					break;
+				}
+			}
+			it = lines.erase(it);
+			continue;
+		}
+		++it;
+	}
+
+	return extractedBlock;
+}
+
+
+void ConfigParser::parseConfigLines() {
+	std::vector<std::string> serverBlock;
+	serverBlock = extractServerBlock(this->_lines);
+	while (!serverBlock.empty())
+	{
+		for (std::vector<std::string>::iterator it = serverBlock.begin(); it != serverBlock.end(); it++) {
+			std::cout << GREEN << *it << RESET << std::endl;
+		}
+		std::cout << BOLD << CYAN << "Server block END \n\n" << RESET << std::endl;
+		serverBlock = extractServerBlock(this->_lines);
+	}
+
+
 }
