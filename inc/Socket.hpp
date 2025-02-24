@@ -13,13 +13,15 @@
 class Socket {
 public:
 	Socket();
+	Socket(int sockFd);
 	Socket(const Socket&) = delete;
 	Socket& operator=(const Socket&) = delete;
 	~Socket();
-	void	sBind(u_int32_t addr, u_int16_t port);
-	void	sListen(int backlog);
-	void	sAccept();
-	void	sConnect(u_int32_t addr2, u_int16_t port);
+	void	sBind(u_int32_t addr, u_int16_t port) const;
+	void	sListen(int backlog) const;
+	int		sAccept() const;
+	void	sConnect(u_int32_t addr2, u_int16_t port) const;
+	int		getFd() const;
 private:
 	int	_fd;
 };
