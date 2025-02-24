@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdexcept>
 #include <unistd.h>
+#include <vector>
 
 #define	TIMEOUT_DFLT 3
 #define	MAX_EVENTS 5
@@ -24,17 +25,16 @@ public:
 	void	add(int fd, u_int32_t events) const;
 	void	mod(int fd, u_int32_t events) const;
 	void	del(int fd) const;
-	int		wait();
+	const std::vector<struct epoll_event>&	wait();
 	void	setTimeout(int timeout) noexcept;
+	int		getEpFd() const;
 
-	int								getEpFd() const;
-	const struct epoll_event* const	getEvents() const;
 	// TODO: maybe add pwait() from epoll_pwait()
 
 private:
-	int	_epFd;
-	int	_timeout;
-	struct epoll_event	_events[MAX_EVENTS];
+	int								_epFd;
+	int								_timeout;
+	std::vector<struct epoll_event>	_events;
 };
 
 #endif
