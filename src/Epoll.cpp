@@ -1,8 +1,8 @@
 
 #include "../inc/Epoll.hpp"
 
-Epoll::Epoll(int size) : 
-	_epFd(epoll_create(size)),
+Epoll::Epoll() : 
+	_epFd(epoll_create(EPOLL_START_SIZE)),
 	_timeout(TIMEOUT_DFLT)
 {
 	if (_epFd == -1) {
@@ -36,14 +36,26 @@ void	Epoll::del(int fd) const {
 	}
 }
 
-void	Epoll::wait() {
-	if (epoll_wait(_epFd, _events, MAX_EVENTS, _timeout) == -1) {
+int	Epoll::wait() {
+	int	ready;
+
+	if ((ready = epoll_wait(_epFd, _events, MAX_EVENTS, _timeout)) == -1) {
 		throw std::runtime_error(std::string("epoll_wait()") + strerror(errno));
 	}
+	return (ready);
 }
 
 void	Epoll::setTimeout(int timeout) noexcept {
 	_timeout = timeout;
+}
+
+
+int		Epoll::getEpFd() const {
+	return (_epFd);
+}
+
+const struct epoll_event* const Epoll::getEvents() const {
+	return (_events);
 }
 
 Epoll::~Epoll() noexcept {
