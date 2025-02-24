@@ -8,6 +8,7 @@ Epoll::Epoll() :
 	if (_epFd == -1) {
 		throw std::runtime_error(std::string("epoll_create()") + strerror(errno));
 	}
+	_events.reserve(MAX_EVENTS);
 }
 
 void	Epoll::add(int fd, u_int32_t events) const {
@@ -36,13 +37,14 @@ void	Epoll::del(int fd) const {
 	}
 }
 
-int	Epoll::wait() {
+const std::vector<struct epoll_event>&	Epoll::wait() {
 	int	ready;
 
-	if ((ready = epoll_wait(_epFd, _events, MAX_EVENTS, _timeout)) == -1) {
+	if ((ready = epoll_wait(_epFd, _events.data(), MAX_EVENTS, _timeout)) == -1) {
 		throw std::runtime_error(std::string("epoll_wait()") + strerror(errno));
 	}
-	return (ready);
+	_events.erase(_events.begin() + ready, _events.end());
+	return (_events);
 }
 
 void	Epoll::setTimeout(int timeout) noexcept {
@@ -52,10 +54,6 @@ void	Epoll::setTimeout(int timeout) noexcept {
 
 int		Epoll::getEpFd() const {
 	return (_epFd);
-}
-
-const struct epoll_event* const Epoll::getEvents() const {
-	return (_events);
 }
 
 Epoll::~Epoll() noexcept {
