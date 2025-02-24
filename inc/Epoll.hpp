@@ -4,7 +4,6 @@
 
 #include <sys/types.h>
 #include <sys/epoll.h>
-#include <errno.h>
 #include <string.h>
 #include <stdexcept>
 #include <unistd.h>
@@ -24,12 +23,12 @@ public:
 	void	del(int fd) const;
 	void	wait();
 	void	setTimeout(int timeout) noexcept;
+	// TODO: maybe add pwait() from epoll_pwait()
 
 private:
-	int					_epFd;
-	int					_timeout;
-	static const int	_maxEvents = MAX_EVENTS;
-	struct epoll_event _events[_maxEvents];
+	int	_epFd;
+	int	_timeout;
+	struct epoll_event	_events[MAX_EVENTS];
 };
 
 #endif
