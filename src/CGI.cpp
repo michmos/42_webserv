@@ -1,17 +1,17 @@
 #include "CGI.hpp"
 
-void	throw_exception(const char *msg) {
+void	throwException(const char *msg) {
 	std::perror(msg);
 	throw std::exception();
 }
 
 
-void	throw_exception_exit(const char *msg) {
+void	throwExceptionExit(const char *msg) {
 	std::perror(msg);
 	exit(EXIT_FAILURE);
 }
 
-std::string CGI::get_response_CGI( void ) {
+std::string CGI::getResponseCGI( void ) {
 	return (m_response);
 }
 
@@ -24,18 +24,18 @@ CGI::CGI( const std::string &executable, std::vector<std::string> env_vector, co
 {
 	std::cout << std::flush;
 	if (pipe(m_pipe_to_child) < 0 || pipe(m_pipe_from_child) < 0)
-		throw_exception("Pipe failed");
+		throwException("Pipe failed");
 	m_pid = fork();
 	if (m_pid < 0)
-		throw_exception("Fork failed");
+		throwException("Fork failed");
 	if (m_pid == 0) 
 	{
 		close(m_pipe_to_child[WRITE]);
 		close(m_pipe_from_child[READ]);
 		if (dup2(m_pipe_to_child[READ], STDIN_FILENO) < 0)
-			throw_exception_exit("dub2 failed");
+			throwExceptionExit("dub2 failed");
 		if (dup2(m_pipe_from_child[1], STDOUT_FILENO) < 0)
-			throw_exception_exit("dub2 failed");
+			throwExceptionExit("dub2 failed");
 
 		std::vector<char*>	argv_vector;
 		argv_vector.push_back(const_cast<char *>(executable.c_str()));
@@ -55,9 +55,9 @@ CGI::CGI( const std::string &executable, std::vector<std::string> env_vector, co
 	}
 	close(m_pipe_to_child[READ]);
 	close(m_pipe_from_child[WRITE]);
-	send_body_to_stdin(post_data);
+	sendBodyToStdin(post_data);
 	wait(&m_status);
-	m_response = receive_buffer();
+	m_response = receiveBuffer();
 }
 
 CGI::~CGI(void) {}
@@ -66,7 +66,7 @@ CGI::~CGI(void) {}
  * @brief receives a response from child with a headerfile and body to return to the client
  * @return string buffer with response from child or error msg that something went wrong
  */
-std::string	CGI::receive_buffer(void) {
+std::string	CGI::receiveBuffer(void) {
 	char buffer[1024];
 	
 	ssize_t bytesRead = read(m_pipe_from_child[READ], buffer, sizeof(buffer) - 1);
@@ -81,7 +81,7 @@ std::string	CGI::receive_buffer(void) {
 	return (buffer);
 }
 
-void	CGI::send_body_to_stdin( const std::string &post_data) {
+void	CGI::sendBodyToStdin( const std::string &post_data) {
 	if (write(m_pipe_to_child[WRITE], post_data.c_str(), post_data.size()) != (ssize_t)post_data.size())
 		std::perror("write failed");
 	
@@ -93,9 +93,9 @@ void	CGI::send_body_to_stdin( const std::string &post_data) {
  * @param path string with path and filename
  * @return bool if cgi script is valid
  */
-bool CGI::is_cgi_script(const std::string &path)
+bool CGI::isCgiScript(const std::string &path)
 {
-	std::string executable = get_script_executable(path);
+	std::string executable = getScriptExecutable(path);
 	return !executable.empty();
 }
 
@@ -104,7 +104,7 @@ bool CGI::is_cgi_script(const std::string &path)
  * @param path string with path and filename
  * @return string with path to executable program or empty when not correct
  */
-std::string CGI::get_script_executable(const std::string &path)
+std::string CGI::getScriptExecutable(const std::string &path)
 {
 	if (path.size() >= 3 && path.substr(path.size() - 3) == ".py")
 		return "/usr/bin/python3";
@@ -115,7 +115,7 @@ std::string CGI::get_script_executable(const std::string &path)
 
 /**
  * @brief This info I need for the CGI, only QUERY_STRING I have to find out with the HTML script
- * also need to know where to store the files, specified in conf?
+ * also need to know where to store the files, specified in conf? $upload_dir/
  */
 // int main(void) {
 // 	std::vector<char*> env_vector = {
