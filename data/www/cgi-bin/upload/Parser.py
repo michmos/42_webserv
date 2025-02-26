@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 
 import os
 import urllib.parse
@@ -17,30 +18,27 @@ class Parser:
 	def get_body( self ) -> str:
 		return self.body
 
-	def is_in_env( self, name ) -> bool:
+	def is_in_env( self, name:str ) -> bool:
 		if name not in os.environ:
 			return False
 		return True
 
 	# Get the needed env from the environ and saves it in a dictonary
-	def extract_env( self ) -> dict:
+	def extract_env( self ) -> None:
 		if self.is_in_env("CONTENT_LENGTH"):
 			self.env["content_length"] = int(os.getenv('CONTENT_LENGTH'))
 		if self.is_in_env("REQUEST_TARGET"):
 			self.env["request_target"] = os.getenv('REQUEST_TARGET')
 		else:
-			print("extract env first", file=sys.stderr)
+			print("Error: Request target is missing", file=sys.stderr)
 			self.status_code = 400
 			return
 		if "CONTENT-TYPE" in os.environ:
-			print("ct:" , os.getenv('CONTENT-TYPE'), file=sys.stderr)
 			self.env["content_type"] = os.getenv('CONTENT-TYPE')
-		elif self.env["method"] == "POST":
-			self.status_code = 400
-			print("extract env post", file=sys.stderr)
-			return
 		else:
-			content_type = ""
+			self.status_code = 400
+			print("Error: Content-type is missing", file=sys.stderr)
+			return
 	
 	# True if filename has right extension (Have to check it with conf?)
 	def is_valid_extension( self ) -> bool:
@@ -48,50 +46,48 @@ class Parser:
 		if self.env["filename"]:
 			splitter = self.env["filename"].split(".")
 			if splitter[-1].lower() not in allowed_extensions:
+				print(f"Error: no valid extension {splitter[-1]}", file=sys.stderr)
 				self.status_code = 400
 				return False
 			else:
 				return True
+		print(f"Error: missing filename", file=sys.stderr)
 		return False
 
 	# Extract the information if a Query_string is given
-	def parse_query_string( self ):
-		if "QUERY_STRING" not in os.environ():
-			return
-		query_string = os.getenv('QUERY_STRING', None)
-		if query_string == None:
-			return
-		self.env.update(dict(urllib.parse.parse_qsl(query_string)))
+	def parse_query_string( self ) -> None:
+		if "QUERY_STRING" in os.environ:
+			query_string = os.getenv('QUERY_STRING')
+			self.env.update(dict(urllib.parse.parse_qsl(query_string)))
 
 	# Extract the filename from the header and saves it as a key-value pair in the env
-	def save_filename_in_env( self, header ):
+	def save_filename_in_env( self, header:bytes ) -> None:
 		first_index = header.find(b"filename=") + len(b"filename=") + 1
 		second_index = header.find(b"\"", first_index)
 		if (first_index == -1 or second_index == -1):
 			self.status_code = 400
-			print("save filename faalt", file=sys.stderr)
-		else:
-			print(header[first_index:second_index].decode(), file=sys.stderr)
+			print("Error: missing filename", file=sys.stderr)
+			return
 		self.env["filename"] = header[first_index:second_index].decode()
 
 	# Get the boundary from Content_type
-	def get_boundary( self, content_type ):
+	def get_boundary( self, content_type:str ) -> bytes | None :
 		start = content_type.find("boundary=") + 9
 		if start == -1:
-			print("boundary parse stdin data", file=sys.stderr)
+			print("Error: missing boundary in content-type", file=sys.stderr)
 			self.status_code = 400
-			return
+			return None
 		boundary = b"--" + content_type[start:].encode()
 		return boundary
 
 	# Extract the information between the boundary value
-	def extract_boundary_data( self, boundary, post_data ):
+	def extract_boundary_data( self, boundary:bytes, post_data:bytes ) -> str | None:
 		first_index = post_data.find(boundary) + len(boundary)
 		second_index = post_data.find(boundary, first_index + 5)
 		if first_index == -1:
 			self.status_code = 400
-			print("boundary parse stdin data", file=sys.stderr)
-			return
+			print("Error: missing boundary in body", file=sys.stderr)
+			return None
 		if (second_index == -1):
 			boundary_data = post_data[first_index:].strip()
 		else:
@@ -107,7 +103,7 @@ class Parser:
 		return False
 
 	# With POST request, reads the input from STDIN, extract header and body and checks filename
-	def parse_stdin_data( self ):
+	def parse_stdin_data( self ) -> None:
 		if self.no_content_length():
 			return
 		post_data = sys.stdin.buffer.read(self.env["content_length"])
@@ -116,39 +112,34 @@ class Parser:
 		boundary_data = self.extract_boundary_data(boundary, post_data)
 		if b"\r\n\r\n" not in boundary_data:
 			self.status_code = 400
-			print("boundary_data has no header/body", file=sys.stderr)
+			print("Error: boundary_data has no header/body", file=sys.stderr)
 			return
-		header, self.body = boundary_data.split(b"\r\n\r\n", 1)
-
-		self.save_filename_in_env(header)
-		print(self.env["filename"], file=sys.stderr)
-		if not self.is_valid_extension():
-			print("No valid Extension file", file=sys.stderr)
-			self.status_code = 400
-
-	def	get_file_for_delete( self ):
-		if self.is_in_env("REQUEST_TARGET"):
-			return os.getenv('REQUEST_TARGET')
-		return ""
-
-	# check method and handles or POST or DELETE request
-	# returns env from Server and Stdin
-	def parsing_cgi_input( self ):
-		if self.is_in_env("REQUEST_METHOD"):
-			self.env["method"] = os.getenv('REQUEST_METHOD')
 		else:
+			header_body = boundary_data.split(b"\r\n\r\n", 1)
+
+		if len(header_body) != 2:
 			self.status_code = 400
-			return self.env
+			print("Error: input contains more than one body", file=sys.stderr)
+			return
+
+		header, self.body = header_body
+		self.save_filename_in_env(header)
+		if not self.is_valid_extension():
+			print("Error: No (valid extension) file", file=sys.stderr)
+			self.status_code = 400
+
+	# check method and handles POST request
+	# returns env from Server and Stdin
+	def parsing_cgi_input( self ) -> dict | None:
+		if not (self.is_in_env("REQUEST_METHOD") and "POST" == os.getenv('REQUEST_METHOD')):
+			print("Error: missing request method", file=sys.stderr)
+			self.status_code = 400
+			return
 
 		# POST or DELETE REQUEST
-		if self.env["method"] == "POST":
-			self.extract_env()
-			if self.status_code != 200:
-				return self.env
-			self.parse_query_string()
-			self.parse_stdin_data()
-		elif self.env["method"] == "DELETE":
-			self.env["request_target"] = self.get_file_for_delete()
-		else:
-			self.status_code = 400
+		self.extract_env()
+		if self.status_code != 200:
+			return
+		self.parse_query_string()
+		self.parse_stdin_data()
 		return self.env

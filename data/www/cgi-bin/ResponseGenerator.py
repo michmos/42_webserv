@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import sys
 
 http_status_messages = {
@@ -15,24 +16,24 @@ http_status_messages = {
 }
 
 class ResponseGenerator:
-	def __init__(self, request_method, status_code):
+	def __init__( self, request_method, status_code ):
 		self.status_code = status_code
 		self.request_method = request_method
 
 	# choose right header
 	def create_response( self ) -> str:
-		print("code", self.status_code, "method", self.request_method, file=sys.stderr)
-		if self.status_code != 200 and self.status_code != 302:
-				return self.status_header()
+		good_status_codes = [100, 200, 201, 302]
+		if self.status_code not in good_status_codes:
+			return self.error_status_code_header()
 		if self.request_method == "POST":
-			return self.location_header("successupload.html")
+			return self.redirection_header("successupload.html")
 		elif self.request_method == "DELETE":
-			return self.location_header("successdelete.html")
+			return self.redirection_header("successdelete.html")
 		else:
-			return self.cgi_header()
+			return self.success_header()
 	
 	# header when everything went good
-	def cgi_header(self) -> str:
+	def success_header( self ) -> str:
 		body = "Success\n\n"
 		header = (
 			f"HTTP/1.1 {http_status_messages[self.status_code]}\r\n"
@@ -43,7 +44,7 @@ class ResponseGenerator:
 		return header + body
 
 	# header when something turned wrong
-	def status_header(self) -> str:
+	def error_status_code_header( self ) -> str:
 		body = (
 			f"<html><head><title>{http_status_messages[self.status_code]}</title></head>"
 			"<body></body></html>\n\n"
@@ -57,7 +58,7 @@ class ResponseGenerator:
 		return header + body
 	
 	# header with redirection
-	def location_header( self,  location ) -> str:
+	def redirection_header( self,  location:str ) -> str:
 		header = (
 			f"HTTP/1.1 302 Found\r\n"
 			f"Location: {location}\r\n"

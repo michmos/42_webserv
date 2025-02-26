@@ -44,10 +44,10 @@ class CGI {
 		CGI( const std::string &script_path, std::vector<std::string> env_vector, const std::string &post_data);
 		~CGI( void );
 
-		void			send_body_to_stdin( const std::string &buffer );
-		std::string		receive_buffer( void );
-		std::string		get_response_CGI( void );
+		void			sendBodyToStdin( const std::string &buffer );
+		std::string		receiveBuffer( void );
+		std::string		getResponseCGI( void );
 
-		static bool			is_cgi_script( const std::string &path );
-		static std::string	get_script_executable( const std::string &path );
+		static bool			isCgiScript( const std::string &path );
+		static std::string	getScriptExecutable( const std::string &path );
 };

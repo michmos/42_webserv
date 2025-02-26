@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,12 +13,14 @@
 			padding: 0;
 			text-align: center;
 		}
+
 		header {
 			background-color: white;
 			text-align: center;
 			padding: 30px;
 			height: 10%
 		}
+
 		main {
 			background-color: rgb(255, 255, 255);
 			padding: 100px;
@@ -27,6 +30,7 @@
 		h1 {
 			color: blue;
 		}
+
 		p {
 			color: red;
 		}
@@ -36,6 +40,7 @@
 			background-color: rgb(116, 80, 234);
 			height: 53px;
 		}
+
 		.button {
 			background-color: beige;
 			border: 2px solid black;
@@ -44,21 +49,26 @@
 			text-align: center;
 			text-decoration: none;
 			display: inline-block;
-			font-size: 16px;		
+			font-size: 16px;
 		}
+
 		.button:hover {
 			background-color: rgb(182, 123, 231);
 		}
+
 		form {
 			display: inline-block;
 			text-align: left;
 		}
-		form input, form textarea {
+
+		form input,
+		form textarea {
 			width: 100%;
 			margin-bottom: 10px;
 			padding: 10px;
 			font-size: 1em;
 		}
+
 		form button {
 			background-color: blue;
 			color: white;
@@ -66,9 +76,11 @@
 			border: none;
 			cursor: pointer;
 		}
+
 		form button:hover {
 			background-color: darkblue;
 		}
+
 		footer {
 			margin-top: 20px;
 			font-size: 0.9em;
@@ -76,6 +88,7 @@
 			padding: 50px;
 			height: 5%
 		}
+
 		img {
 			max-width: 100%;
 			height: auto;
@@ -83,6 +96,7 @@
 		}
 	</style>
 </head>
+
 <body>
 	<header>
 		<h1>Webserv: contact</h1>
@@ -96,7 +110,7 @@
 	</nav>
 	<main>
 		<h2>We'd love to hear from you!</h2>
-		<form action="/submit-contact" method="post">
+		<form action="submit_contact.py" method="post">
 			<input type="text" name="name" placeholder="Your Name" required>
 			<input type="email" name="email" placeholder="Your Email" required>
 			<textarea name="message" rows="5" placeholder="Your Message" required></textarea>
@@ -105,7 +119,8 @@
 
 	</main>
 	<footer>
-		<p>&copy; 2024 Webserv. All rights reserved.</p>
+		<p>&copy; 2025 Webserv. All rights reserved.</p>
 	</footer>
 </body>
+
 </html>
