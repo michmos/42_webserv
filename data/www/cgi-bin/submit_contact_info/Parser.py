@@ -34,7 +34,7 @@ class Parser:
 				return 400
 
 			if "CONTENT-TYPE" in os.environ:
-				if "application/x-www-form-urlencoded" != os.getenv('CONTENT-TYPE'):
+				if "application/x-www-form-urlencode" not in os.getenv('CONTENT-TYPE'):
 					print(f"Error, no valid content-type", file=sys.stderr)
 					return 400
 			return 200

@@ -1,18 +1,47 @@
 #include "CGI.hpp"
 
-void	throwException(const char *msg) {
+static void	throwException(const char *msg) {
 	std::perror(msg);
 	throw std::exception();
 }
 
 
-void	throwExceptionExit(const char *msg) {
+static void	throwExceptionExit(const char *msg) {
 	std::perror(msg);
 	exit(EXIT_FAILURE);
 }
 
-std::string CGI::getResponseCGI( void ) {
+std::string CGI::getResponseCGI(void) {
 	return (m_response);
+}
+
+void	CGI::createArgvVector(std::vector<char*> &argv_vector, const std::string &executable) {
+	argv_vector.push_back(const_cast<char *>(executable.c_str()));
+	argv_vector.push_back(NULL);
+}
+
+void	CGI::createEnvCharPtrVector(std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector) {
+	for (auto& str : env_vector)
+			env_c_vector.push_back(const_cast<char*>(str.c_str()));
+	env_c_vector.push_back(NULL);
+}
+
+int	CGI::getStatusCodeFromResponse(void) {
+	std::regex	status_code_regex(R"(HTTP/1.1 (\d+))");
+	std::smatch	match;
+	int			status_code = 0;
+
+	if (!m_response.empty() && std::regex_search(m_response, match, status_code_regex))
+	{
+		std::string to_string = match[1];
+		if (to_string.size() < 9)
+			status_code = std::stoi(match[1]);
+		else
+			status_code = 500;
+	}
+	else
+		std::cerr << "No response or statuscode is found in response" << std::endl;
+	return (status_code);
 }
 
 /**
@@ -20,7 +49,7 @@ std::string CGI::getResponseCGI( void ) {
  * @param executable const string CGI filename
  * @param env_vector char* vector with key-values as env argument to CGI
  */
-CGI::CGI( const std::string &executable, std::vector<std::string> env_vector, const std::string &post_data)
+CGI::CGI(const std::string &executable, std::vector<std::string> env_vector, const std::string &post_data)
 {
 	std::cout << std::flush;
 	if (pipe(m_pipe_to_child) < 0 || pipe(m_pipe_from_child) < 0)
@@ -38,14 +67,12 @@ CGI::CGI( const std::string &executable, std::vector<std::string> env_vector, co
 			throwExceptionExit("dub2 failed");
 
 		std::vector<char*>	argv_vector;
-		argv_vector.push_back(const_cast<char *>(executable.c_str()));
-		argv_vector.push_back(NULL);
+		createArgvVector(argv_vector, executable);
 
-		std::vector<char*> charPointerVector;
-	    for (auto& str : env_vector)
-	        charPointerVector.push_back(const_cast<char*>(str.c_str()));
-	    charPointerVector.push_back(NULL);
-		if (execve(executable.c_str(), argv_vector.data(), charPointerVector.data()) == -1)
+		std::vector<char*> env_c_vector;
+		createEnvCharPtrVector(env_c_vector, env_vector);
+		
+		if (execve(executable.c_str(), argv_vector.data(), env_c_vector.data()) == -1)
 		{	
 			std::perror("execve failed");
 			close(m_pipe_to_child[READ]);
@@ -56,8 +83,27 @@ CGI::CGI( const std::string &executable, std::vector<std::string> env_vector, co
 	close(m_pipe_to_child[READ]);
 	close(m_pipe_from_child[WRITE]);
 	sendBodyToStdin(post_data);
-	wait(&m_status);
-	m_response = receiveBuffer();
+	waitpid(m_pid, &m_status, 0);
+
+	// python gives only back numbers between 0 - 255 so catching this is only handy when it is not 0
+	// check for nph_ (Non-Parsed Headers)
+	if (WIFEXITED(m_status)) {
+		int return_value = WEXITSTATUS(m_status);
+		std::cerr << "return_value; " << return_value << std::endl;
+		m_response = receiveBuffer();
+		if (return_value != 0) {
+			int status_code = getStatusCodeFromResponse();
+			std::cerr << "status_code; " << status_code << std::endl;
+			// compare with configfile error pages.
+			std::cerr << "response" << m_response << std::endl;
+		}
+	}
+	else
+		std::cerr << "CGI did not exit ok" << std::endl;
+	if (executable.size() > 4 && executable.substr(0, 4) == "nph_")
+	{
+		// header and body in response!
+	}
 }
 
 CGI::~CGI(void) {}

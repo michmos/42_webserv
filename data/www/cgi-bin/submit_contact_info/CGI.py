@@ -13,7 +13,7 @@ class CGI:
 	def get_status_code( self ) -> int:
 		return self.status_code
 
-	def set_status_code( self, status_code: int ) -> None:
+	def set_status_code( self, status_code:int ) -> None:
 		self.status_code = status_code
 	
 	def parsing( self ) -> None:
@@ -25,7 +25,7 @@ class CGI:
 		form = SaveForm(self.fields)
 		form.store_form_information()
 		
-	def write_to_stdout( self, response: str ) -> None:
+	def write_to_stdout( self, response:str ) -> None:
 		sys.stdout.write(response)
 		sys.stdout.flush()
 

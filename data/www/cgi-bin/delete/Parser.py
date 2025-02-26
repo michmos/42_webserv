@@ -27,7 +27,7 @@ class Parser:
 				self.status_code = 400
 				return
 		else:
-			print("Error: no request method", file=sys.stderr)
+			print("Error: missing request method", file=sys.stderr)
 			self.status_code = 400
 			return
 
@@ -37,4 +37,6 @@ class Parser:
 				self.status_code = 403
 		else:
 			file = ""
+			self.status_code = 400
+			print("Error: missing request target", file=sys.stderr)
 		return file

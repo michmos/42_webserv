@@ -7,9 +7,11 @@ class UploadFile:
 	def __init__(self, filename:str ):
 		self.file = filename
 		self.path = ""
-		
+
+
 	def is_direction( self, path:str ) -> bool:
 		return (os.path.exists(path))
+
 
 	def create_directory( self, path:str ) -> int:
 		try:
@@ -23,6 +25,7 @@ class UploadFile:
 		return 500
 
 	def prepare_path( self ) -> int:
+		""" checks if path exists and makes it when not """
 		base_path = "data/uploads/"
 		status_code = 200
 		if not self.is_direction(base_path):
@@ -31,10 +34,17 @@ class UploadFile:
 		return status_code
 
 	def write_to_file( self, filename:str , output:str ):
+		""" 
+			checks what kind of output (text/bytes) and writes this to file
+			returns status_code
+		"""
+		text_extensions = (".txt", ".csv", ".json", ".xml", ".html", ".md")
+
 		try:
-			if (filename[-3:] == "txt"):
-				with open(filename, "w") as f:
+			if (filename.lower().endswith() in text_extensions):
+				if isinstance(output, bytes):
 					output = output.decode("utf-8")
+				with open(filename, "w", encoding="utf-8") as f:
 					f.write(output)
 			else:
 				with open(filename, "wb") as f:
@@ -43,6 +53,7 @@ class UploadFile:
 			sys.stderr.write(f"Error write_to_file: {e}")
 			return 500
 		return 200
+
 
 	def upload_file( self, post_data ) -> int:
 		status_code = self.prepare_path()

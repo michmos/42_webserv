@@ -8,7 +8,7 @@ import sys
 # Need with env: filename / requestmethod / contentlength / querystring in UPPERCASE?
 # rules:
 
-# POST request
+# POST request upload
 # Start reading CONTENT_LENGTH from env -> needs for POST request
 # Get all the other nessasery env -> needs CONTENT-TYPE as well
 # Read body of the POST REQUEST from stdin
@@ -19,23 +19,28 @@ import sys
 
 def main() -> int:
 	cgi_upload = CGI()
+
 	try:
 		cgi_upload.parsing()
+
 		if cgi_upload.get_status_code() == 200:
 			cgi_upload.process_request()
+
 		cgi_upload.generate_response()
+
+		return 0 if cgi_contact.get_status_code() == 200 else 1
+
 	except Exception as e:
 		print(f"Error CGI: {e}", file=sys.stderr)
-		try:
-			cgi_upload.set_status_code(400)
-			cgi_upload.generate_response()
-		except Exception as e:
-			print(f"Error with generate_response: {e}", file=sys.stderr)
-		return 400
+	
+	try:
+		cgi_upload.set_status_code(400)
+		cgi_upload.generate_response()
+	except Exception as e:
+		print(f"Error with generate_response: {e}", file=sys.stderr)
 
-	if cgi_upload.get_status_code() == 200:
-		return 0
-	return cgi_upload.get_status_code()
+	return 1
+
 
 if __name__ == '__main__':
 	sys.exit(main())
