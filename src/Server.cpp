@@ -25,7 +25,7 @@ void Server::addClient() {
 void	Server::handleClient(u_int32_t events, int fd) {
 	auto it = _clients.find(fd);
 	if (it == _clients.end()) {
-		throw std::runtime_error("handleClient() called with unadded client");
+		throw std::invalid_argument("handleClient() called with unadded client");
 	}
 
 	if (events & EPOLLIN) {
