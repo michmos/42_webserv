@@ -54,4 +54,6 @@ class Parser:
 				self.status_code = 400
 		else:
 			file = ""
+			self.status_code = 400
+			print("Error: missing request target", file=sys.stderr)
 		return file

@@ -9,6 +9,35 @@ CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post
 
 CGI::~CGI(void) {}
 
+void	CGI::createArgvVector(std::vector<char*> &argv_vector, const std::string &executable) {
+	argv_vector.push_back(const_cast<char *>(executable.c_str()));
+	argv_vector.push_back(NULL);
+}
+
+void	CGI::createEnvCharPtrVector(std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector) {
+	for (auto& str : env_vector)
+			env_c_vector.push_back(const_cast<char*>(str.c_str()));
+	env_c_vector.push_back(NULL);
+}
+
+int	CGI::getStatusCodeFromResponse(void) {
+	std::regex	status_code_regex(R"(HTTP/1.1 (\d+))");
+	std::smatch	match;
+	int			status_code = 0;
+
+	if (!m_response.empty() && std::regex_search(m_response, match, status_code_regex))
+	{
+		std::string to_string = match[1];
+		if (to_string.size() < 9)
+			status_code = std::stoi(match[1]);
+		else
+			status_code = 500;
+	}
+	else
+		std::cerr << "No response or statuscode is found in response" << std::endl;
+	return (status_code);
+}
+
 /**
  * @brief forks the process to execve the CGI, with POST sends buffer to child
  * @param executable const string CGI filename
