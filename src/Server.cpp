@@ -1,5 +1,6 @@
 
 #include "../inc/Server.hpp"
+#include <stdexcept>
 
 Server::Server(u_int32_t addr, u_int16_t port) {
 	_listen.sBind(addr, htons(port));
@@ -14,7 +15,7 @@ Server::~Server() {
 void Server::addClient() {
 	int clientFd = _listen.sAccept(); // throws exception if no pending connection request
 	_ep.add(clientFd, EPOLLIN | EPOLLOUT);
-	_clients[clientFd] = Client(clientFd);
+	_clients.emplace(clientFd, Client(clientFd));
 
 	#ifdef DEBUG
 	std::cout << "|SERVER| New client registered: " << clientFd << std::endl;
@@ -22,10 +23,15 @@ void Server::addClient() {
 }
 
 void	Server::handleClient(u_int32_t events, int fd) {
+	auto it = _clients.find(fd);
+	if (it == _clients.end()) {
+		throw std::runtime_error("handleClient() called with unadded client");
+	}
+
 	if (events & EPOLLIN) {
-		_clients[fd].readFrom();
+		it->second.readFrom();
 	} else if (events & EPOLLOUT) {
-		_clients[fd].writeTo();
+		it->second.writeTo();
 	} else if (events & (EPOLLHUP | EPOLLERR)) {
 		this->delClient(fd);
 	}
