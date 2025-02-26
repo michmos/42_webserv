@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include <fcntl.h>
 
 // use only for for IPv4 stream sockets
 class Socket {
@@ -22,6 +23,8 @@ public:
 	int		sAccept() const;
 	void	sConnect(u_int32_t addr2, u_int16_t port) const;
 	int		getFd() const;
+	void	setNonBlock() const;
+
 private:
 	int	_fd;
 };

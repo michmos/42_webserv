@@ -64,3 +64,9 @@ int	Socket::getFd() const {
 	return (_fd);
 }
 
+void	Socket::setNonBlock() const {
+	int flags = fcntl(_fd, F_GETFL);
+	if (fcntl(_fd, F_SETFL, flags | O_NONBLOCK) == -1)
+		throw std::runtime_error(std::string("fcntl()") + strerror(errno));
+}
+
