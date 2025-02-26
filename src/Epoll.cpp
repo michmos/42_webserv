@@ -6,7 +6,7 @@ Epoll::Epoll() :
 	_timeout(TIMEOUT_DFLT)
 {
 	if (_epFd == -1) {
-		throw std::runtime_error(std::string("epoll_create()") + strerror(errno));
+		throw std::runtime_error(std::string("epoll_create(): ") + strerror(errno));
 	}
 	_events.reserve(MAX_EVENTS);
 }
@@ -17,7 +17,7 @@ void	Epoll::add(int fd, u_int32_t events) const {
 	ev.events = events;
 	ev.data.fd = fd;
 	if (epoll_ctl(_epFd, EPOLL_CTL_ADD, fd, &ev) == -1) {
-		throw std::runtime_error(std::string("epoll_ctl(add)") + strerror(errno));
+		throw std::runtime_error(std::string("epoll_ctl(add): ") + strerror(errno));
 	}
 }
 
@@ -27,13 +27,13 @@ void	Epoll::mod(int fd, u_int32_t events) const {
 	ev.events = events;
 	ev.data.fd = fd;
 	if (epoll_ctl(_epFd, EPOLL_CTL_MOD, fd, &ev) == -1) {
-		throw std::runtime_error(std::string("epoll_ctl(mod)") + strerror(errno));
+		throw std::runtime_error(std::string("epoll_ctl(mod): ") + strerror(errno));
 	}
 }
 
 void	Epoll::del(int fd) const {
 	if (epoll_ctl(_epFd, EPOLL_CTL_DEL, fd, nullptr) == -1) {
-		throw std::runtime_error(std::string("epoll_ctl(del)") + strerror(errno));
+		throw std::runtime_error(std::string("epoll_ctl(del): ") + strerror(errno));
 	}
 }
 
@@ -41,7 +41,7 @@ const std::vector<struct epoll_event>&	Epoll::wait() {
 	int	ready;
 
 	if ((ready = epoll_wait(_epFd, _events.data(), MAX_EVENTS, _timeout)) == -1) {
-		throw std::runtime_error(std::string("epoll_wait()") + strerror(errno));
+		throw std::runtime_error(std::string("epoll_wait(): ") + strerror(errno));
 	}
 	_events.erase(_events.begin() + ready, _events.end());
 	return (_events);

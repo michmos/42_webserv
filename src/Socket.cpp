@@ -7,7 +7,7 @@ Socket::Socket() :
 	_fd(socket(AF_INET, SOCK_STREAM, 0))
 {
 	if (_fd == -1) {
-		throw std::runtime_error(std::string("socket()") + strerror(errno));
+		throw std::runtime_error(std::string("socket(): ") + strerror(errno));
 	}
 }
 
@@ -15,7 +15,7 @@ Socket::Socket(int sockFd) :
 	_fd(sockFd)
 {
 	if (_fd < 0) {
-		throw std::invalid_argument(std::string("Socket(int) constructor called with") + std::to_string(sockFd));
+		throw std::invalid_argument(std::string("Socket(int) constructor called with ") + std::to_string(sockFd));
 	}
 }
 
@@ -30,13 +30,13 @@ void	Socket::sBind(u_int32_t ipv4Addr, u_int16_t port) const {
 	addr.sin_port = htons(port);
 
 	if (bind(_fd, (const struct sockaddr*)&addr, sizeof(addr)) == -1) {
-		throw std::runtime_error(std::string("bind()") + strerror(errno));
-	} 
+		throw std::runtime_error(std::string("bind(): ") + strerror(errno));
+	}
 }
 
 void	Socket::sListen(int backlog) const {
 	if (listen(_fd, backlog) == -1) {
-		throw std::runtime_error(std::string("listen()") + strerror(errno));
+		throw std::runtime_error(std::string("listen(): ") + strerror(errno));
 	}
 }
 
@@ -44,7 +44,7 @@ int	Socket::sAccept() const {
 	int	newClient;
 
 	if ((newClient = accept(_fd, nullptr, nullptr)) == -1) {
-		throw std::runtime_error(std::string("accept()") + strerror(errno));
+		throw std::runtime_error(std::string("accept(): ") + strerror(errno));
 	}
 	return (newClient);
 }
@@ -56,7 +56,7 @@ void	Socket::sConnect(u_int32_t ipv4Addr, u_int16_t port) const {
 	addr.sin_port = htons(port);
 
 	if (connect(_fd, (const struct sockaddr*)&addr, sizeof(addr)) == -1) {
-		throw std::runtime_error(std::string("connect()") + strerror(errno));
+		throw std::runtime_error(std::string("connect(): ") + strerror(errno));
 	}
 }
 
