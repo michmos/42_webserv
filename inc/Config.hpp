@@ -4,6 +4,10 @@
 #include "Webserv.hpp"
 // #include "Location.hpp"
 
+
+
+// LOOK INTO: location in a location
+// map can be unordered_map
 struct Location {
     std::map<std::string, std::string> directives;
 };
