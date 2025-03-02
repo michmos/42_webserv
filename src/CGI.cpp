@@ -16,7 +16,10 @@ void	CGI::createArgvVector(std::vector<char*> &argv_vector, const std::string &e
 
 void	CGI::createEnvCharPtrVector(std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector) {
 	for (auto& str : env_vector)
-			env_c_vector.push_back(const_cast<char*>(str.c_str()));
+	{
+		std::cerr << str << std::endl;
+		env_c_vector.push_back(const_cast<char*>(str.c_str()));
+	}
 	env_c_vector.push_back(NULL);
 }
 

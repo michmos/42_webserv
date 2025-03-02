@@ -19,7 +19,9 @@ class Parser:
 		return self.body
 
 	def is_in_env( self, name:str ) -> bool:
-		return name in os.environ
+		if name not in os.environ:
+			return False
+		return True
 
 	# Get the needed env from the environ and saves it in a dictonary
 	def extract_env( self ) -> None:
@@ -36,7 +38,7 @@ class Parser:
 		else:
 			self.status_code = 400
 			print("Error: Content-type is missing", file=sys.stderr)
-
+			return
 	
 	# True if filename has right extension (Have to check it with conf?)
 	def is_valid_extension( self ) -> bool:
