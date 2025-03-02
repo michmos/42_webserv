@@ -11,7 +11,7 @@ static void	throwExceptionExit(const char *msg) {
 	exit(EXIT_FAILURE);
 }
 
-std::string CGI::getResponseCGI(void) {
+std::string CGI::getResponse(void) {
 	return (m_response);
 }
 
@@ -22,7 +22,10 @@ void	CGI::createArgvVector(std::vector<char*> &argv_vector, const std::string &e
 
 void	CGI::createEnvCharPtrVector(std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector) {
 	for (auto& str : env_vector)
-			env_c_vector.push_back(const_cast<char*>(str.c_str()));
+	{
+		std::cerr << str << std::endl;
+		env_c_vector.push_back(const_cast<char*>(str.c_str()));
+	}
 	env_c_vector.push_back(NULL);
 }
 
@@ -44,47 +47,20 @@ int	CGI::getStatusCodeFromResponse(void) {
 	return (status_code);
 }
 
-/**
- * @brief forks the process to execve the CGI, with POST sends buffer to child
- * @param executable const string CGI filename
- * @param env_vector char* vector with key-values as env argument to CGI
- */
-CGI::CGI(const std::string &executable, std::vector<std::string> env_vector, const std::string &post_data)
-{
-	std::cout << std::flush;
-	if (pipe(m_pipe_to_child) < 0 || pipe(m_pipe_from_child) < 0)
-		throwException("Pipe failed");
-	m_pid = fork();
-	if (m_pid < 0)
-		throwException("Fork failed");
-	if (m_pid == 0) 
+void	CGI::waitForChild(void) {
+	time_t	start_time = std::time(nullptr);
+
+	while (std::time(nullptr) - start_time < 5)
 	{
-		close(m_pipe_to_child[WRITE]);
-		close(m_pipe_from_child[READ]);
-		if (dup2(m_pipe_to_child[READ], STDIN_FILENO) < 0)
-			throwExceptionExit("dub2 failed");
-		if (dup2(m_pipe_from_child[1], STDOUT_FILENO) < 0)
-			throwExceptionExit("dub2 failed");
-
-		std::vector<char*>	argv_vector;
-		createArgvVector(argv_vector, executable);
-
-		std::vector<char*> env_c_vector;
-		createEnvCharPtrVector(env_c_vector, env_vector);
-		
-		if (execve(executable.c_str(), argv_vector.data(), env_c_vector.data()) == -1)
-		{	
-			std::perror("execve failed");
-			close(m_pipe_to_child[READ]);
-			close(m_pipe_from_child[WRITE]);
-		}
-		exit(1);
+		if (waitpid(m_pid, &m_status, WNOHANG) > 0)
+			return ;
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
-	close(m_pipe_to_child[READ]);
-	close(m_pipe_from_child[WRITE]);
-	sendBodyToStdin(post_data);
-	waitpid(m_pid, &m_status, 0);
+	std::cerr << "Timeout in CGI" << std::endl;
+	kill(m_pid, SIGKILL);
+}
 
+void	CGI::responseFromCGI(void) {
 	// python gives only back numbers between 0 - 255 so catching this is only handy when it is not 0
 	// check for nph_ (Non-Parsed Headers)
 	if (WIFEXITED(m_status)) {
@@ -99,7 +75,50 @@ CGI::CGI(const std::string &executable, std::vector<std::string> env_vector, con
 		}
 	}
 	else
-		std::cerr << "CGI did not exit ok" << std::endl;
+		m_response = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+}
+
+/**
+ * @brief forks the process to execve the CGI, with POST sends buffer to child
+ * @param executable const string CGI filename
+ * @param env_vector char* vector with key-values as env argument to CGI
+ */
+CGI::CGI(const std::string &executable, std::vector<std::string> env_vector, const std::string &post_data)
+{
+	std::cerr << "execve: " << executable << std::endl;
+	std::cout << std::flush;
+	if (pipe(m_pipe_to_child) < 0 || pipe(m_pipe_from_child) < 0)
+		throwException("Pipe failed");
+	m_pid = fork();
+	if (m_pid < 0)
+		throwException("Fork failed");
+	else if (m_pid == 0) 
+	{
+		close(m_pipe_to_child[WRITE]);
+		close(m_pipe_from_child[READ]);
+		if (dup2(m_pipe_to_child[READ], STDIN_FILENO) < 0)
+			throwExceptionExit("dub2 failed");
+		if (dup2(m_pipe_from_child[1], STDOUT_FILENO) < 0)
+			throwExceptionExit("dub2 failed");
+
+		std::vector<char*>	argv_vector;
+		std::vector<char*> env_c_vector;
+		createArgvVector(argv_vector, executable);
+		createEnvCharPtrVector(env_c_vector, env_vector);
+
+		if (execve(executable.c_str(), argv_vector.data(), env_c_vector.data()) == -1)
+		{	
+			std::perror("execve failed");
+			close(m_pipe_to_child[READ]);
+			close(m_pipe_from_child[WRITE]);
+		}
+		exit(1);
+	}
+	close(m_pipe_to_child[READ]);
+	close(m_pipe_from_child[WRITE]);
+	sendBodyToStdin(post_data);
+	waitForChild();
+	responseFromCGI();
 	if (executable.size() > 4 && executable.substr(0, 4) == "nph_")
 	{
 		// header and body in response!
@@ -158,24 +177,3 @@ std::string CGI::getScriptExecutable(const std::string &path)
 		return "/usr/bin/php";
 	return "";
 }
-
-/**
- * @brief This info I need for the CGI, only QUERY_STRING I have to find out with the HTML script
- * also need to know where to store the files, specified in conf? $upload_dir/
- */
-// int main(void) {
-// 	std::vector<char*> env_vector = {
-// 			const_cast<char*>("CONTENT_LENGTH=163"),
-// 			const_cast<char*>("REQUEST_TARGET=pictures.jpeg"),
-// 			const_cast<char*>("CONTENT_TYPE=text"),
-// 			const_cast<char*>("REQUEST_METHOD=POST"),
-// 			const_cast<char*>("QUERY_STRING=filename=picture.jpeg"),
-// 			const_cast<char*>("PATH_INFO=/upload"),
-// 			nullptr // Zorg ervoor dat het eindigt met een null-pointer voor execve
-// 	};
-// 	std::string post_data = "----MyBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"example.jpg\"\r\n \
-// 						Content-Type: image/jpeg\r\n\r\n<JPEG_IMAGE_DATA>\r\n----MyBoundary--\r\nlalal\n\n";
-	
-// 	CGI("upload_delete.py", env_vector, post_data);
-// 	return (0);
-// }

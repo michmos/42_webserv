@@ -19,7 +19,9 @@ class Parser:
 		return self.body
 
 	def is_in_env( self, name:str ) -> bool:
-		return name in os.environ
+		if name not in os.environ:
+			return False
+		return True
 
 	# Get the needed env from the environ and saves it in a dictonary
 	def extract_env( self ) -> None:
@@ -36,7 +38,7 @@ class Parser:
 		else:
 			self.status_code = 400
 			print("Error: Content-type is missing", file=sys.stderr)
-
+			return
 	
 	# True if filename has right extension (Have to check it with conf?)
 	def is_valid_extension( self ) -> bool:
@@ -44,8 +46,6 @@ class Parser:
 		if self.env["filename"]:
 			splitter = self.env["filename"].split(".")
 			if splitter[-1].lower() not in allowed_extensions:
-				print(f"Error: no valid extension {splitter[-1]}", file=sys.stderr)
-				self.status_code = 400
 				return False
 			else:
 				return True
@@ -95,7 +95,7 @@ class Parser:
 	# Returns True when Content Length is not set or <= 0
 	def	no_content_length( self ) -> bool:
 		if not self.env["content_length"] or self.env["content_length"] <= 0:
-			print("content length parse stdin data", file=sys.stderr)
+			print("Error: missing content length for stdin data", file=sys.stderr)
 			self.status_code = 400
 			return True
 		return False
@@ -123,7 +123,7 @@ class Parser:
 		header, self.body = header_body
 		self.save_filename_in_env(header)
 		if not self.is_valid_extension():
-			print("Error: No (valid extension) file", file=sys.stderr)
+			print("Error: No valid extension file", file=sys.stderr)
 			self.status_code = 400
 
 	# check method and handles POST request

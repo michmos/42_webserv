@@ -5,7 +5,6 @@
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>
-# include <string.h>
 # include <bitset>
 # include <climits>
 # include <cstring>
@@ -27,6 +26,9 @@
 # include <csignal>
 # include <atomic>
 # include <utility>
+# include <ctime>
+# include <chrono>
+# include <thread>
 
 #define READ 0
 #define WRITE 1
@@ -45,11 +47,13 @@ class CGI {
 		~CGI( void );
 
 		void			sendBodyToStdin( const std::string &buffer );
-		void			createArgvVector(std::vector<char*> &argv_vector, const std::string &executable);
-		void			createEnvCharPtrVector(std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector);
+		void			createArgvVector( std::vector<char*> &argv_vector, const std::string &executable );
+		void			createEnvCharPtrVector( std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector );
 		std::string		receiveBuffer( void );
-		std::string		getResponseCGI( void );
+		std::string		getResponse( void );
 		int				getStatusCodeFromResponse( void );
+		void			waitForChild( void );
+		void			responseFromCGI( void );
 
 		static bool			isCgiScript( const std::string &path );
 		static std::string	getScriptExecutable( const std::string &path );

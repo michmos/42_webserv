@@ -15,7 +15,7 @@ class SaveForm:
 			print("key:", key, "value:", value, file=sys.stderr)
 			form_info += key + " = " + urllib.parse.unquote(value[:500])
 			if form_info[-1] != '\n':
-				form_info += ";"
+				form_info += "; "
 		form_info += "\n"
 		return form_info
 
