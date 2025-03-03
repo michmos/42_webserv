@@ -10,7 +10,7 @@ int	main() {
 	try {
 		Socket	server;
 
-		server.sConnect(inet_addr("127.0.0.1"), 8080);
+		server.sConnect(inet_addr("127.0.0.1"), htons(8080));
 		std::cout << "|CLIENT| connected succesfully" << std::endl;
 		std::string buff;
 		while (std::getline(std::cin, buff) && buff != "exit") {
