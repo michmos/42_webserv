@@ -18,6 +18,7 @@ public:
 	Socket(const Socket&) = delete;
 	Socket& operator=(const Socket&) = delete;
 	~Socket();
+
 	void	sBind(in_addr_t addr, in_port_t port) const;
 	void	sListen(int backlog) const;
 	int		sAccept() const;
