@@ -23,11 +23,11 @@ Socket::~Socket() {
 	close(_fd);
 }
 
-void	Socket::sBind(u_int32_t ipv4Addr, u_int16_t port) const {
+void	Socket::sBind(in_addr_t ipv4Addr, in_port_t port) const {
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = ipv4Addr;
-	addr.sin_port = htons(port);
+	addr.sin_port = port;
 
 	if (bind(_fd, (const struct sockaddr*)&addr, sizeof(addr)) == -1) {
 		throw std::runtime_error(std::string("bind(): ") + strerror(errno));
@@ -49,11 +49,11 @@ int	Socket::sAccept() const {
 	return (newClient);
 }
 
-void	Socket::sConnect(u_int32_t ipv4Addr, u_int16_t port) const {
+void	Socket::sConnect(in_addr_t ipv4Addr, in_port_t port) const {
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = ipv4Addr;
-	addr.sin_port = htons(port);
+	addr.sin_port = port;
 
 	if (connect(_fd, (const struct sockaddr*)&addr, sizeof(addr)) == -1) {
 		throw std::runtime_error(std::string("connect(): ") + strerror(errno));
