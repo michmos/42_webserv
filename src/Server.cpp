@@ -1,6 +1,5 @@
 
 #include "../inc/Server.hpp"
-#include <stdexcept>
 
 Server::Server(in_addr_t addr, in_port_t port) {
 	_listen.sBind(addr, port);
