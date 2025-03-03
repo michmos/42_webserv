@@ -1,4 +1,5 @@
 
+#include <netinet/in.h>
 #include <unordered_map>
 #include <string>
 #include <iostream>
@@ -8,7 +9,7 @@
 
 class Server {
 public:
-	Server(u_int32_t addr, u_int16_t port);
+	Server(in_addr_t addr, in_port_t port);
 	Server(const Server&) = delete;
 	Server& operator=(const Server&) = delete;
 	~Server();
