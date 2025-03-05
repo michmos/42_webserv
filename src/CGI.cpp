@@ -14,10 +14,18 @@ void	CGI::createArgvVector(std::vector<char*> &argv_vector, const std::string &e
 	argv_vector.push_back(NULL);
 }
 
+/**
+ * @brief fills the vector with the variables as env and add also a gateway key for the cgi protocol
+ * @param env_c_vector 
+ * @param env_vector 
+ */
 void	CGI::createEnvCharPtrVector(std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector) {
+	env_vector.push_back(const_cast<char*>("GATEWAY=CGI/1.1"));
+	env_vector.push_back(const_cast<char*>("SERVER_PROTOCOL=HTTP/1.1"));
 	for (auto& str : env_vector)
 	{
-		std::cerr << str << std::endl;
+		std::cerr << "env: " << str << std::endl;
+		// env_c_vector.push_back(const_cast<char*>((std::string("HTTP_") + str).c_str()));
 		env_c_vector.push_back(const_cast<char*>(str.c_str()));
 	}
 	env_c_vector.push_back(NULL);
