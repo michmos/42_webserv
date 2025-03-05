@@ -1,6 +1,5 @@
 
-#ifndef EPOLL_HPP
-# define EPOLL_HPP
+#pragma once
 
 #include <sys/types.h>
 #include <sys/epoll.h>
@@ -37,4 +36,3 @@ private:
 	std::vector<struct epoll_event>	_events;
 };
 
-#endif

@@ -1,6 +1,5 @@
 
-#ifndef SOCKET_HPP
-# define SOCKET_HPP
+#pragma once
 
 #include <sys/socket.h>
 #include <string.h>
@@ -29,5 +28,3 @@ public:
 private:
 	int	_fd;
 };
-
-#endif

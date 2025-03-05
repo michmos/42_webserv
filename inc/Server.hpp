@@ -1,3 +1,4 @@
+#pragma once
 
 #include <netinet/in.h>
 #include <unordered_map>
@@ -25,3 +26,4 @@ private:
 	void	delClient(int fd);
 	void	handleClient(u_int32_t events, int fd);
 };
+

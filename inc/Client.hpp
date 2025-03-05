@@ -1,5 +1,5 @@
-#ifndef CLIENT_HPP
-# define CLIENT_HPP
+
+#pragma once
 
 #include <iostream>
 #include <unistd.h>
@@ -34,4 +34,3 @@ private:
 
 };
 
-#endif
