@@ -55,6 +55,8 @@ class CGI {
 		void			waitForChild( void );
 		void			responseFromCGI( void );
 
+		bool				isNPHscript( const std::string &executable );
+		void				rewriteResonseFromCGI( void );
 		static bool			isCgiScript( const std::string &path );
 		static std::string	getScriptExecutable( const std::string &path );
 

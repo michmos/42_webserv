@@ -3,7 +3,9 @@
 from ResponseGenerator import ResponseGenerator
 from upload.UploadFile import UploadFile
 from upload.CGI import CGI
+from generalChecks import general_checks
 import sys
+import os
 
 # Need with env: filename / requestmethod / contentlength / querystring in UPPERCASE?
 # rules:
@@ -18,8 +20,10 @@ import sys
 # If something went wrong response HTML is errorpage
 
 def main() -> int:
-	cgi_upload = CGI()
+	if general_checks(False):
+		return 1
 
+	cgi_upload = CGI()
 	try:
 		cgi_upload.parsing()
 		if cgi_upload.get_status_code() == 200:

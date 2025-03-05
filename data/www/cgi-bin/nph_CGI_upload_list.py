@@ -2,8 +2,9 @@
 
 from ResponseGenerator import ResponseGenerator
 from upload_list.CGI import CGI
+from generalChecks import general_checks
 import sys
-import cgi
+import os
 
 # Need with env: filename / requestmethod / contentlength / querystring in UPPERCASE?
 # rules:
@@ -18,8 +19,10 @@ import cgi
 # If something went wrong response HTML is errorpage
 
 def main() -> int:
-	cgi_upload_list = CGI()
+	if general_checks(False):
+		return 1
 
+	cgi_upload_list = CGI()
 	try:
 		cgi_upload_list.parsing()
 

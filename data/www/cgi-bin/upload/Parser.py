@@ -33,8 +33,8 @@ class Parser:
 			print("Error: Request target is missing", file=sys.stderr)
 			self.status_code = 400
 			return
-		if "CONTENT-TYPE" in os.environ:
-			self.env["content_type"] = os.getenv('CONTENT-TYPE')
+		if "CONTENT_TYPE" in os.environ:
+			self.env["content_type"] = os.getenv('CONTENT_TYPE')
 		else:
 			self.status_code = 400
 			print("Error: Content-type is missing", file=sys.stderr)
@@ -106,6 +106,10 @@ class Parser:
 			return
 		post_data = sys.stdin.buffer.read(self.env["content_length"])
 
+		if "multipart/form-data" not in self.env["content_type"]:
+			self.status_code = 400
+			print("Error: wrong content-type, no multipart/form-data", file=sys.stderr)
+			return
 		boundary = self.get_boundary(self.env["content_type"])
 		boundary_data = self.extract_boundary_data(boundary, post_data)
 		if b"\r\n\r\n" not in boundary_data:

@@ -33,9 +33,9 @@ class Parser:
 				print(f"Error, no (valid) content length", file=sys.stderr)
 				return 400
 
-			if "CONTENT-TYPE" in os.environ:
-				if "application/x-www-form-urlencode" not in os.getenv('CONTENT-TYPE'):
-					print(f"Error, no valid content-type", os.getenv('CONTENT-TYPE'), file=sys.stderr)
+			if "CONTENT_TYPE" in os.environ:
+				if "application/x-www-form-urlencode" not in os.getenv('CONTENT_TYPE'):
+					print(f"Error, no valid content-type", os.getenv('CONTENT_TYPE'), file=sys.stderr)
 					return 400
 			return 200
 		else:

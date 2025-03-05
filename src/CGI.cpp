@@ -20,10 +20,18 @@ void	CGI::createArgvVector(std::vector<char*> &argv_vector, const std::string &e
 	argv_vector.push_back(NULL);
 }
 
+/**
+ * @brief fills the vector with the variables as env and add also a gateway key for the cgi protocol
+ * @param env_c_vector 
+ * @param env_vector 
+ */
 void	CGI::createEnvCharPtrVector(std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector) {
+	env_vector.push_back(const_cast<char*>("GATEWAY=CGI/1.1"));
+	env_vector.push_back(const_cast<char*>("SERVER_PROTOCOL=HTTP/1.1"));
 	for (auto& str : env_vector)
 	{
-		std::cerr << str << std::endl;
+		std::cerr << "env: " << str << std::endl;
+		// env_c_vector.push_back(const_cast<char*>((std::string("HTTP_") + str).c_str()));
 		env_c_vector.push_back(const_cast<char*>(str.c_str()));
 	}
 	env_c_vector.push_back(NULL);
@@ -60,9 +68,12 @@ void	CGI::waitForChild(void) {
 	kill(m_pid, SIGKILL);
 }
 
+/**
+ * @brief checks response status from CGI and receives header (and body) from pipe
+ * if statuscode is not set it wil generate a Internal Server Error
+ */
 void	CGI::responseFromCGI(void) {
 	// python gives only back numbers between 0 - 255 so catching this is only handy when it is not 0
-	// check for nph_ (Non-Parsed Headers)
 	if (WIFEXITED(m_status)) {
 		int return_value = WEXITSTATUS(m_status);
 		std::cerr << "return_value; " << return_value << std::endl;
@@ -79,13 +90,64 @@ void	CGI::responseFromCGI(void) {
 }
 
 /**
+ * @brief checks if the executable file starts with nph_
+ * @param executable absolute path to request target
+ * @return true if nhp_ file, else false
+ */
+bool	CGI::isNPHscript( const std::string &executable )
+{
+	size_t	index;
+	std::string	filename = "";
+
+	index = executable.find_last_of('/');
+	if (index != std::string::npos)
+		filename = executable.substr(index + 1);
+	else
+		filename = executable;
+	if (filename.size() > 4 && filename.substr(0, 4) == "nph_")
+		return true;
+	else
+		return false;
+}
+
+// @brief Set up a response for the client after receiving the header from the CGI
+void	CGI::rewriteResonseFromCGI(void) {
+	std::smatch	match;
+	std::string	new_response = "";
+	std::regex	r_content_type = std::regex(R"(Content-Type:\s+([^\r\n]+)\r\n)");
+	std::regex	r_status = std::regex(R"(Status:\s+([^\r\n]+)\r\n)");
+	std::regex	r_location = std::regex(R"(Location:\s+([^\r\n]+)\r\n)");
+	
+	if (std::regex_match(m_response, match, r_status) && match.size() == 2)
+		new_response += "HTTP/1.1 " + std::string(match[1]) + "\r\n";
+	if (std::regex_match(m_response, match, r_location) && match.size() == 2)
+		new_response += "Location: " + std::string(match[1]) + "\r\n";
+	if (std::regex_match(m_response, match, r_content_type) && match.size() == 2)
+		new_response += "Content-Type: " + std::string(match[1]) + "\r\n";
+	if (new_response.empty())
+	{
+		std::cerr << "Received wrong header from cgi" << std::endl;
+		m_response = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+		return ;
+	}
+	new_response += "\r\n";
+
+	std::size_t	index = m_response.find("\r\n\r");
+	if (index != std::string::npos)
+	{
+		if (index + 4 < m_response.size())
+			new_response += m_response.substr(index + 4) + "\r\n";
+	}
+	m_response = new_response;
+}
+
+/**
  * @brief forks the process to execve the CGI, with POST sends buffer to child
  * @param executable const string CGI filename
  * @param env_vector char* vector with key-values as env argument to CGI
  */
 CGI::CGI(const std::string &executable, std::vector<std::string> env_vector, const std::string &post_data)
 {
-	std::cerr << "execve: " << executable << std::endl;
 	std::cout << std::flush;
 	if (pipe(m_pipe_to_child) < 0 || pipe(m_pipe_from_child) < 0)
 		throwException("Pipe failed");
@@ -118,11 +180,10 @@ CGI::CGI(const std::string &executable, std::vector<std::string> env_vector, con
 	close(m_pipe_from_child[WRITE]);
 	sendBodyToStdin(post_data);
 	waitForChild();
+
 	responseFromCGI();
-	if (executable.size() > 4 && executable.substr(0, 4) == "nph_")
-	{
-		// header and body in response!
-	}
+	if (!isNPHscript(executable))
+		rewriteResonseFromCGI();
 }
 
 CGI::~CGI(void) {}
@@ -177,3 +238,24 @@ std::string CGI::getScriptExecutable(const std::string &path)
 		return "/usr/bin/php";
 	return "";
 }
+
+/**
+ * @brief This info I need for the CGI, only QUERY_STRING I have to find out with the HTML script
+ * also need to know where to store the files, specified in conf? $upload_dir/
+ */
+// int main(void) {
+// 	std::vector<char*> env_vector = {
+// 			const_cast<char*>("CONTENT_LENGTH=163"),
+// 			const_cast<char*>("REQUEST_TARGET=pictures.jpeg"),
+// 			const_cast<char*>("CONTENT_TYPE=text"),
+// 			const_cast<char*>("REQUEST_METHOD=POST"),
+// 			const_cast<char*>("QUERY_STRING=filename=picture.jpeg"),
+// 			const_cast<char*>("PATH_INFO=/upload"),
+// 			nullptr // Zorg ervoor dat het eindigt met een null-pointer voor execve
+// 	};
+// 	std::string post_data = "----MyBoundary\r\nContent-Disposition: form-data; name=\"file\"; filename=\"example.jpg\"\r\n \
+// 						Content-Type: image/jpeg\r\n\r\n<JPEG_IMAGE_DATA>\r\n----MyBoundary--\r\nlalal\n\n";
+	
+// 	CGI("upload_delete.py", env_vector, post_data);
+// 	return (0);
+// }

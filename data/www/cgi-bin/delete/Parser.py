@@ -38,7 +38,6 @@ class Parser:
 				queries = query_string.split('=')
 				found = False
 				for q in queries:
-					print("q", q, file=sys.stderr)
 					if found == True:
 						file = q
 						break
@@ -48,6 +47,11 @@ class Parser:
 			file = os.getenv('REQUEST_TARGET')
 			if "../" in file:
 				self.status_code = 403
+			if "SERVER_PROTOCOL" in os.environ and os.getenv("SERVER_PROTOCOL") == "HTTP/1.1":
+				0
+			else:
+				print("No or wrong SERVER_PROTOCOL", file=sys.stderr)
+				self.status_code = 400
 		else:
 			file = ""
 		return file

@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 
-import sys
 from ResponseGenerator import ResponseGenerator
 from submit_contact_info.Parser import Parser
 from submit_contact_info.CGI import CGI
+from generalChecks import general_checks
+
+import sys
+import os
 
 def main() -> int:
+	if general_checks(False):
+		return 1
+
 	cgi_contact = CGI()
 
 	try:

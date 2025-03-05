@@ -3,7 +3,10 @@
 from ResponseGenerator import ResponseGenerator
 from delete.DeleteFile import DeleteFile
 from delete.CGI import CGI
+from generalChecks import general_checks
+
 import sys
+import os
 
 # Need with env: filename / requestmethod / contentlength / querystring in UPPERCASE?
 # rules:
@@ -17,6 +20,9 @@ import sys
 # USE: curl -X DELETE localhost:8080/text.txt
 
 def main() -> int:
+	if general_checks(False):
+		return 1
+
 	cgi_delete = CGI()
 	try:
 		cgi_delete.parsing()
