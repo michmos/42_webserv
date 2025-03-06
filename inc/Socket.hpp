@@ -23,7 +23,6 @@ public:
 	int		sAccept() const;
 	void	sConnect(in_addr_t addr2, in_port_t port) const;
 	int		getFd() const;
-	void	setNonBlock() const;
 
 private:
 	int	_fd;

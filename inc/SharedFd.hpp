@@ -29,6 +29,7 @@ public:
 	bool	operator==(const SharedFd& other);
 	~SharedFd();
 
+	bool	isValid() const;
 	void	setNonBlock() const;
 	int		get() const;
 

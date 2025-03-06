@@ -6,14 +6,14 @@
 #include <string.h>
 #define READSIZE	100
 
-typedef enum eStatus {
+typedef enum eState {
 	DFLT,
 	READING,
 	FINISHED_READING,
 	WRITING,
 	FINISHED_WRITING,
 	FINISHED
-} tStatus;
+} tState;
 
 class Client {
 public:
@@ -23,13 +23,13 @@ public:
 	void	readFrom();
 	void	writeTo();
 
-	tStatus	getStatus() const;
-	void	setStatus(tStatus newStatus);
+	tState	getState() const;
+	void	setState(tState newState);
 	int		getFd() const;
 
 private:
 	std::string	_buff;
-	tStatus		_status;
+	tState		_state;
 	int			_fd;
 
 };
