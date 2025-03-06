@@ -1,5 +1,6 @@
 
 #include "../inc/SharedFd.hpp"
+#include <memory>
 
 UniqueFd::UniqueFd(int fd) : _fd(fd) {
 	#ifdef DEBUG
@@ -8,7 +9,8 @@ UniqueFd::UniqueFd(int fd) : _fd(fd) {
 }
 
 UniqueFd::~UniqueFd() {
-	close(_fd);
+	if (_fd > 0)
+		close(_fd);
 	#ifdef DEBUG
 	std::cout << "UniqueFd Instance destroyed" << std::endl;
 	#endif
@@ -18,7 +20,7 @@ int	UniqueFd::get() const {
 	return (_fd);
 }
 
-SharedFd::SharedFd() : _fd(nullptr) {
+SharedFd::SharedFd() : _fd(std::make_shared<UniqueFd>(-1)) {
 }
 
 SharedFd::SharedFd(int fd) {
@@ -45,26 +47,28 @@ SharedFd& SharedFd::operator=(int fd) {
 }
 
 bool	SharedFd::operator==(const SharedFd& other) {
-	if (this->_fd == other._fd)
-		return (true);
-	return (false);
+	return (this->_fd == other._fd);
 }
 
 SharedFd::~SharedFd() {
 }
 
 void	SharedFd::setNonBlock() const {
-	if (!_fd)
+	if (!this->isValid())
 		throw std::invalid_argument("setNonBlock(): _fd not set");
-	int	fd = _fd->getFd();
+	int	fd = this->get();
 	int flags = fcntl(fd, F_GETFL);
 	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
 		throw std::runtime_error(std::string("fcntl()") + strerror(errno));
 }
 
+bool	SharedFd::isValid() const {
+	return (_fd->get() >= 0);
+}
+
 int	SharedFd::get() const {
-	if (!_fd)
+	if (!this->isValid())
 		throw std::runtime_error("SharedFd.get(): _fd not set");
-	return(_fd->getFd());
+	return(_fd->get());
 
 }

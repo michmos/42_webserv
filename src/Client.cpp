@@ -3,15 +3,15 @@
 #include <stdexcept>
 
 
-Client::Client(int fd) : _fd(fd), _status(DFLT) {
+Client::Client(int fd) : _fd(fd), _state(DFLT) {
 }
 
-tStatus Client::getStatus() const {
-	return (_status);
+tState Client::getState() const {
+	return (_state);
 }
 
-void Client::setStatus(tStatus newStatus) {
-	_status = newStatus;
+void Client::setState(tState newState) {
+	_state = newState;
 }
 
 int Client::getFd() const {
@@ -19,7 +19,7 @@ int Client::getFd() const {
 }
 
 void	Client::readFrom() {
-	this->setStatus(READING);
+	this->setState(READING);
 
 	char buff[READSIZE + 1] = { '\0'};
 	int bRead = read(_fd, buff, READSIZE);
@@ -29,7 +29,7 @@ void	Client::readFrom() {
 	_buff.append(buff);
 
 	if (bRead < READSIZE) {
-		this->setStatus(FINISHED_READING);
+		this->setState(FINISHED_READING);
 		#ifdef DEBUG
 		std::cout << "Full string: " << _buff << std::endl;
 		#endif
