@@ -46,19 +46,26 @@ class CGI {
 		CGI( const std::string &script_path, std::vector<std::string> env_vector, const std::string &post_data);
 		~CGI( void );
 
-		void			sendBodyToStdin( const std::string &buffer );
+		std::string		receiveBuffer( void );
+		void			sendDataToStdin( const std::string &post_data );
 		void			createArgvVector( std::vector<char*> &argv_vector, const std::string &executable );
 		void			createEnvCharPtrVector( std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector );
-		std::string		receiveBuffer( void );
+		void			rewriteResonseFromCGI( void );
+		void			waitForChild( void );
+		
+		// GETTERS
 		std::string		getResponse( void );
 		int				getStatusCodeFromResponse( void );
-		void			waitForChild( void );
-		void			responseFromCGI( void );
+		void			getResponseFromCGI( void );
 
 		bool				isNPHscript( const std::string &executable );
-		void				rewriteResonseFromCGI( void );
 		static bool			isCgiScript( const std::string &path );
 		static std::string	getScriptExecutable( const std::string &path );
 
-
+		// CGI UTILS
+		void			setPipes(void);
+		void			closeAllPipes(void);
+		void			closeTwoPipes(int &pipe1, int &pipe2);
+		void			throwException(const char *msg );
+		void			throwExceptionExit(const char *msg );
 };

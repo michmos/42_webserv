@@ -15,10 +15,8 @@ def protocol_check() -> int:
 
 def correct_use_path_info( path_info_needed:bool ) -> bool:
 	if "PATH_INFO" in os.environ and path_info_needed == True:
-		print("info and needed", file=sys.stderr)
 		return True
 	elif "PATH_INFO" not in os.environ and path_info_needed == False:
-		print("no info and not needed", file=sys.stderr)
 		return True
 	else:
 		return False
@@ -29,10 +27,34 @@ def send_error_header( request_method:str, status_code:int ):
 	sys.stdout.write(response)
 	sys.stdout.flush()
 
+def wrong_segment( env:str ) -> bool:
+	path = os.getenv(env)
+	if "//" in path or "/./" in path or "/../" in path:
+		return True
+	else:
+		return False
+
+def wrong_use_of_path_segments() -> bool:
+	""" Checks PATH_INFO, PATH_TRANSLATED and SCRIPT_NAME if provided unsafe use of //, . or .., not allowed in our CGI"""
+	if "PATH_INFO" in os.environ and wrong_segment("PATH_INFO"):
+		print("Wrong segment in PATH_INFO", file=sys.stderr)
+		return True
+	if "PATH_TRANSLATED" in os.environ and wrong_segment("PATH_TRANSLATED"):
+		print("Wrong segment in PATH_TRANSLATED", file=sys.stderr)
+		return True
+	if "SCRIPT_NAME" in os.environ and wrong_segment("SCRIPT_NAME"):
+		print("Wrong segment in SCRIPT_NAME", file=sys.stderr)
+		return True
+	return False
+
 def general_checks( path_info_needed:bool ) -> bool:
+	""" Checks for request method, improper path manipulation and protocol version """
 	if "REQUEST_METHOD" not in os.environ:
 		print("No request method", file=sys.stderr)
 		send_error_header( "None", 400)
+		return True
+	if wrong_use_of_path_segments():
+		send_error_header( os.getenv("REQUEST_METHOD"), 404)
 		return True
 	method = os.getenv("REQUEST_METHOD")
 	status_code = protocol_check()
@@ -43,3 +65,4 @@ def general_checks( path_info_needed:bool ) -> bool:
 		send_error_header(method, 404)
 		return True
 	return False
+	
