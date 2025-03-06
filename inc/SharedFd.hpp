@@ -34,7 +34,7 @@ public:
 	int		get() const;
 
 private:
-	std::shared_ptr<UniqueFd>	_fd;
+	std::shared_ptr<UniqueFd>	_fdPtr;
 };
 
 // special hash template struct to allow SharedFd as key in unordered map
