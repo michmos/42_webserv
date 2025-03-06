@@ -1,73 +1,28 @@
-#ifndef WEBSERV_HPP
-#define WEBSERV_HPP
+#pragma once
 
-// STD libs
-# include <iostream>
-# include <fstream>
-# include <string>
-# include <vector>
-# include <exception>
-# include <algorithm>
-# include <map>
-# include <numeric>
-# include <algorithm>
-# include <regex>
-# include <unordered_map>
-# include <cctype>
-
-// C libs
-
-// ..
-
-// COLORS AND TEXT FORMATING
-# define RESET          "\033[0m"
-# define BLACK          "\033[30m"
-# define WHITE          "\033[37m"
-# define BRIGHT_WHITE   "\033[97m"
-# define RED            "\033[31m"
-# define BRIGHT_RED     "\033[91m"
-# define YELLOW         "\033[33m"
-# define BRIGHT_YELLOW  "\033[93m"
-# define BLUE           "\033[34m"
-# define LIGHT_BLUE     "\033[38;5;123m"
-# define BRIGHT_BLUE    "\033[94m"
-# define MAGENTA        "\033[35m"
-# define BRIGHT_MAGENTA "\033[95m"
-# define CYAN           "\033[36m"
-# define BRIGHT_CYAN    "\033[96m"
-# define GREEN          "\033[32m"
-# define BRIGHT_GREEN   "\033[92m"
-# define GRAY           "\033[90m"
-# define LIGHT_GRAY     "\033[37m"
-# define DARK_GRAY      "\033[90m"
-# define ORANGE         "\033[38;5;208m"
-# define PINK           "\033[38;5;213m"
-# define PURPLE         "\033[38;5;129m"
-# define BOLD           "\033[1m"
-# define UNDERLINE      "\033[4m"
-
-# define BG_BLACK          "\033[40;30m"
-# define BG_WHITE          "\033[47;30m"
-# define BG_BRIGHT_WHITE   "\033[107;30m"
-# define BG_RED            "\033[41;30m"
-# define BG_BRIGHT_RED     "\033[101;30m"
-# define BG_YELLOW         "\033[43;30m"
-# define BG_BRIGHT_YELLOW  "\033[103;30m"
-# define BG_BLUE           "\033[44;30m"
-# define BG_LIGHT_BLUE     "\033[48;5;123;30m"
-# define BG_BRIGHT_BLUE    "\033[104;30m"
-# define BG_MAGENTA        "\033[45;30m"
-# define BG_BRIGHT_MAGENTA "\033[105;30m"
-# define BG_CYAN           "\033[46;30m"
-# define BG_BRIGHT_CYAN    "\033[106;30m"
-# define BG_GREEN          "\033[42;30m"
-# define BG_BRIGHT_GREEN   "\033[102;30m"
-# define BG_GRAY           "\033[100;30m"
-# define BG_LIGHT_GRAY     "\033[47;30m"
-# define BG_DARK_GRAY      "\033[100;30m"
-# define BG_ORANGE         "\033[48;5;208;30m"
-# define BG_PINK           "\033[48;5;213;30m"
-# define BG_PURPLE         "\033[48;5;129;30m"
+#include <unordered_map>
+#include "Server.hpp"
+#include "Client.hpp"
+#include "Epoll.hpp"
+#include <stdexcept>
 
 
-#endif // WEBSERV_HPP
+class Webserv {
+public:
+	Webserv(const std::string& confPath);
+	Webserv(const Webserv& other) = delete;
+	Webserv& operator=(const Webserv& other) = delete;
+	~Webserv();
+
+	void	mainLoop();
+
+private:
+	std::unordered_map<int, std::vector<Server>>	 _servers;
+	std::unordered_map<int, Client> 				_clients;
+	Epoll											_ep;
+
+	void	addClient(int fd);
+	void	handleClient(uint32_t events, int fd);
+	void	delClient(int fd);
+	Server&	getServer(int fd, const std::string& servName);
+};
