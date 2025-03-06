@@ -35,3 +35,11 @@ public:
 private:
 	std::shared_ptr<UniqueFd>	_fd;
 };
+
+// special hash template struct to allow SharedFd as key in unordered map
+template<>
+struct std::hash<SharedFd> {
+	size_t	operator()(const SharedFd& fd) const {
+		return(std::hash<int>()(fd.get()));
+	}
+};
