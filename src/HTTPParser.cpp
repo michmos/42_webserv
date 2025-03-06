@@ -64,6 +64,7 @@ bool	HTTPParser::parseContentLength( std::string str ) {
 	}
 	catch(...)
 	{
+		std::cerr << "Something went wrong (parseContentLength)" << std::endl;
 	}
 	return (false);
 }
@@ -105,7 +106,7 @@ bool	HTTPParser::parseHTTPline(const std::string &str) {
 	return (false);
 }
 
-static std::string remove_whitespace(std::string str) {
+static std::string removeWhitespace(std::string str) {
 	if (str.empty()) 
 		return "";
 	size_t start = str.find_first_not_of(' ');
@@ -130,7 +131,7 @@ void	HTTPParser::parseExtraHeaderInformation(const std::string &str) {
 		if (upper_key[i] == '-')
 			upper_key[i] = '_';
 	}
-	m_result.headers[upper_key] = remove_whitespace(str.substr(split + 1));
+	m_result.headers[upper_key] = removeWhitespace(str.substr(split + 1));
 }
 
 /**
