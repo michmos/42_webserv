@@ -4,7 +4,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <fcntl.h>
-#include <stdexcept>
+#include <cstring>
+#include <exception>
 
 class	UniqueFd {
 public:
@@ -13,7 +14,7 @@ public:
 	UniqueFd& operator=(const UniqueFd& other) = delete;
 	~UniqueFd();
 
-	int	getFd() const;
+	int	get() const;
 private:
 	int	_fd;
 };
@@ -29,6 +30,7 @@ public:
 	~SharedFd();
 
 	void	setNonBlock() const;
+	int		get() const;
 
 private:
 	std::shared_ptr<UniqueFd>	_fd;
