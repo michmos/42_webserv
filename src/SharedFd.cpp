@@ -1,6 +1,5 @@
 
 #include "../inc/SharedFd.hpp"
-#include <stdexcept>
 
 UniqueFd::UniqueFd(int fd) : _fd(fd) {
 	#ifdef DEBUG
@@ -15,7 +14,7 @@ UniqueFd::~UniqueFd() {
 	#endif
 }
 
-int	UniqueFd::getFd() const {
+int	UniqueFd::get() const {
 	return (_fd);
 }
 
@@ -23,6 +22,8 @@ SharedFd::SharedFd() : _fd(nullptr) {
 }
 
 SharedFd::SharedFd(int fd) {
+	if (fd < 0)
+		throw std::invalid_argument("SharedFd(int): fd < 0");
 	_fd = std::make_shared<UniqueFd>(fd);
 }
 
@@ -59,4 +60,11 @@ void	SharedFd::setNonBlock() const {
 	int flags = fcntl(fd, F_GETFL);
 	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
 		throw std::runtime_error(std::string("fcntl()") + strerror(errno));
+}
+
+int	SharedFd::get() const {
+	if (!_fd)
+		throw std::runtime_error("SharedFd.get(): _fd not set");
+	return(_fd->getFd());
+
 }
