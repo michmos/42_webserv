@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "SharedFd.hpp"
 #include <iostream>
 #include <unistd.h>
 #include <string.h>
@@ -17,7 +18,7 @@ typedef enum eState {
 
 class Client {
 public:
-	Client(int fd);
+	Client(SharedFd fd);
 	~Client();
 
 	void	readFrom();

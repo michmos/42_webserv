@@ -2,60 +2,44 @@
 #include "../inc/Webserv.hpp"
 
 Webserv::Webserv(const std::string& confPath) {
-	// ConfigParser	config(confPath);
-	// std::unordered_set<int> sockets;
+	// ConfigParser	configs(confPath);
+	// std::unordered_map<std::string, SharedFd> sockets;
 	//
-	// for (auto config : config.getConfigs()) {
-	// 	create Servers with config and Sockets
+	// for (auto config& : configs.getConfigs()) {
+	// 	std::string key = config.getIp() + config.getPort().toStr();
+	// 	SharedFd lstngSock;
+	// 	auto it& = sockets.find(key);
+	// 	if (it == sockets.end()) {
+	// 		// create socket
+	// 		lstngSock = Socket::sSocket();
+	// 		Socket::sBind(lstngSock);
+	// 		Socket::sListen(listeningSock, config.getIp(), config.getPort());
+	// 	} else {
+	// 		lstngSock = it.second();
+	// 	}
 	//
+	// 	// create server
+	// 	_servers.emplace(SharedFd, Server(SharedFd, config));
 	// }
-
 }
 
 Webserv::~Webserv() {
 }
 
-void	Webserv::addClient(int fd) {
+void	Webserv::addClient(SharedFd& fd) {
 	auto it = _clients.find(fd);
-	if (it == _clients.end()) {
-		throw std::runtime_error("addClient() trying to add existing client");
+	if (it != _clients.end()) {
+		throw std::runtime_error("addClient(): trying to add existing client");
 	}
 	
-	// TODO: listening socket needs to accept first
-	_ep.add(fd, EPOLLIN | EPOLLOUT);
+	_ep.add(fd.get(), EPOLLIN | EPOLLOUT);
 	_clients.emplace(fd, Client(fd));
 }
 
-void	Webserv::delClient(int fd) {
-	auto it = _clients.find(fd);
-	if (it != _clients.end()) {
-		throw std::runtime_error("delClient() trying to del non-existant client");
-	}
-
-	_ep.del(fd);
-	_clients.erase(it);
-	// TODO: should I close fd here or is it closed somewhere else
-	// TODO: lets close it in Client destructor
-}
-
-// Server&	Webserv::getServer(int fd, const std::string& servName) {
-// 	auto it = _servers.find(fd);
-// 	if (it == _servers.end()) {
-// 		throw std::invalid_argument("getServer(): invalid fd");
-// 	}
-//
-// 	for (auto server : it->second) {
-// 		if (server.getName() == servName) {
-// 			return (server);
-// 		}
-// 	}
-// 	throw std::invalid_argument("getServer(): invalid server name");
-// }
-
-void	Webserv::handleClient(uint32_t events, int fd) {
+void	Webserv::handleClient(uint32_t events, SharedFd& fd) {
 	auto it = _clients.find(fd);
 	if (it == _clients.end()) {
-		throw std::invalid_argument("handleClient() called with unadded client");
+		throw std::invalid_argument("handleClient(): called with unadded client");
 	}
 
 	if (events & EPOLLIN) {
@@ -64,8 +48,42 @@ void	Webserv::handleClient(uint32_t events, int fd) {
 		it->second.writeTo();
 	} else if (events & (EPOLLHUP | EPOLLERR)) {
 		this->delClient(fd);
+		return;
 	}
+
+	// TODO: assign server to client after parsing of request headers
+	// - maybe also move this somewhere in if else tree above
+	//
+	// if (it->second.getState() == FINISHED_READING) {
+	// 	it->second.setServer(this->getServer(it->second.getServerFd(), it->second.getServerName());
+	// }
 }
+
+void	Webserv::delClient(SharedFd& fd) {
+	auto it = _clients.find(fd);
+	if (it == _clients.end()) {
+		throw std::runtime_error("delClient(): trying to del non-existant client");
+	}
+
+	_ep.del(fd.get());
+	_clients.erase(it);
+}
+
+
+const Server&	Webserv::getServer(SharedFd& fd, const std::string& servName) const {
+	auto it = _servers.find(fd);
+	if (it == _servers.end()) {
+		throw std::invalid_argument("getServer(): invalid fd");
+	}
+
+	for (auto& server : it->second) {
+		if (server.getName() == servName) {
+			return (server);
+		}
+	}
+	throw std::invalid_argument("getServer(): invalid server name");
+}
+
 
 void	Webserv::mainLoop() {
 	while (true) {
@@ -78,10 +96,14 @@ void	Webserv::mainLoop() {
 			// 	<< ((ev.events & (EPOLLHUP | EPOLLERR)) ? "EPOLLHUP | EPOLLERR" : "") << std::endl;
 			// #endif
 
-			if (_servers.find(ev.data.fd) != _servers.end()) {
-				this->addClient();
+			SharedFd fd = ev.data.fd;
+			const auto& it = _servers.find(fd);
+			if (it != _servers.end()) {
+				// listening socket ready
+				SharedFd newClient = Socket::sAccept(fd);
+				this->addClient(newClient);
 			} else {
-				this->handleClient(ev.events, ev.data.fd);
+				this->handleClient(ev.events, fd);
 			}
 		}
 	}
