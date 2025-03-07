@@ -9,21 +9,19 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 
+// TODO: use Namesapce instead of class
+//
 // use only for for IPv4 stream sockets
-class Socket {
+class Sockets {
 public:
-	Socket();
-	Socket(int sockFd);
-	Socket(const Socket&) = delete;
-	Socket& operator=(const Socket&) = delete;
-	~Socket();
+	Sockets() = delete;
+	Sockets(const Sockets&) = delete;
+	Sockets& operator=(const Sockets&) = delete;
+	~Sockets() = delete;
 
-	void	sBind(in_addr_t addr, in_port_t port) const;
-	void	sListen(int backlog) const;
-	int		sAccept() const;
-	void	sConnect(in_addr_t addr2, in_port_t port) const;
-	int		getFd() const;
-
-private:
-	int	_fd;
+	static void	sBind(int fd, in_addr_t addr, in_port_t port);
+	static void	sListen(int fd, int backlog);
+	static int	sAccept(int fd);
+	static void	sConnect(int fd, in_addr_t addr2, in_port_t port);
+	static int	getFd(int fd);
 };

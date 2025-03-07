@@ -4,6 +4,7 @@
 #include "Server.hpp"
 #include "Client.hpp"
 #include "Epoll.hpp"
+#include "SharedFd.hpp"
 #include <stdexcept>
 
 
@@ -17,12 +18,12 @@ public:
 	void	mainLoop();
 
 private:
-	std::unordered_map<int, std::vector<Server>>	 _servers;
-	std::unordered_map<int, Client> 				_clients;
+	std::unordered_map<SharedFd, std::vector<Server>>	 _servers;
+	std::unordered_map<SharedFd, Client> 				_clients;
 	Epoll											_ep;
 
-	void	addClient(int fd);
-	void	handleClient(uint32_t events, int fd);
-	void	delClient(int fd);
-	Server&	getServer(int fd, const std::string& servName);
+	void	addClient(SharedFd& fd);
+	void	handleClient(uint32_t events, SharedFd& fd);
+	void	delClient(SharedFd& fd);
+	const Server&	getServer(SharedFd& fd, const std::string& servName) const;
 };
