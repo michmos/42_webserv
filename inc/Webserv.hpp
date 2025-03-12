@@ -9,6 +9,9 @@
 # include <exception>
 # include <algorithm>
 # include <map>
+# include <numeric>
+# include <algorithm>
+# include <regex>
 
 // C libs
 
@@ -40,6 +43,29 @@
 # define PURPLE         "\033[38;5;129m"
 # define BOLD           "\033[1m"
 # define UNDERLINE      "\033[4m"
+
+# define BG_BLACK          "\033[40;30m"
+# define BG_WHITE          "\033[47;30m"
+# define BG_BRIGHT_WHITE   "\033[107;30m"
+# define BG_RED            "\033[41;30m"
+# define BG_BRIGHT_RED     "\033[101;30m"
+# define BG_YELLOW         "\033[43;30m"
+# define BG_BRIGHT_YELLOW  "\033[103;30m"
+# define BG_BLUE           "\033[44;30m"
+# define BG_LIGHT_BLUE     "\033[48;5;123;30m"
+# define BG_BRIGHT_BLUE    "\033[104;30m"
+# define BG_MAGENTA        "\033[45;30m"
+# define BG_BRIGHT_MAGENTA "\033[105;30m"
+# define BG_CYAN           "\033[46;30m"
+# define BG_BRIGHT_CYAN    "\033[106;30m"
+# define BG_GREEN          "\033[42;30m"
+# define BG_BRIGHT_GREEN   "\033[102;30m"
+# define BG_GRAY           "\033[100;30m"
+# define BG_LIGHT_GRAY     "\033[47;30m"
+# define BG_DARK_GRAY      "\033[100;30m"
+# define BG_ORANGE         "\033[48;5;208;30m"
+# define BG_PINK           "\033[48;5;213;30m"
+# define BG_PURPLE         "\033[48;5;129;30m"
 
 
 #endif // WEBSERV_HPP

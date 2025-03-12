@@ -15,11 +15,3 @@ Config& Config::operator=(const Config &other) {
 	}
 	return *this;
 }
-
-std::vector<ServerConfig> Config::getServers() const {
-	return this->_servers;
-}
-
-void Config::setServer(ServerConfig server) {
-	this->_servers.push_back(server);
-}
