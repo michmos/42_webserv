@@ -12,6 +12,7 @@ int main(int argc, char **argv)
 			// config_parser.printInput();
 			config_parser.parseInputToTokens();
 			config_parser.printTokens();
+			config_parser.parseTokenToConfig();
 
 		}
 		catch (std::exception &e) {

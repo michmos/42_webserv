@@ -7,13 +7,14 @@
 // LOOK INTO: location in a location
 // map can be unordered_map
 struct Location {
-	std::map<std::string, std::string> directives;
+	bool														strict_match;
+	std::unordered_map<std::string, std::vector<std::string>>	directives;
 };
 
 class Config {
 	private:
-		std::map<std::string, std::string> directives;
-		std::map<std::string, Location> locations;
+		std::unordered_map<std::string, std::vector<std::string>>	_directives;
+		std::unordered_map<std::string, Location>					_locations;
 	public:
 		Config();
 		~Config();
@@ -23,6 +24,11 @@ class Config {
 		// GETTERS
 
 		// SETTERS
+		int	setLocation(std::string key, Location loc);
+		int	setDirective(std::string key, std::vector<std::string> values);
+
+		// UTILS
+		void	printConfig();
 
 		// EXCEPTIONS
 		class ConfigException : public std::exception {

@@ -17,42 +17,49 @@
 
 enum tokenType {
 	INIT,
+	EOF_TOKEN,
 	WHITE_SPACE,
 	SERVER,
+	LOCATION,
 	BLOCK_OPEN,
 	BLOCK_CLOSE,
 	SEMICOLON,
-	STRING,
-	NUMBER,
 	OPERATOR,
-	PATH,
-	URL,
+	STRING,
+	NUMBER, // needed??
+	PATH, // needed??
+	URL, // needed??
 	// VARIABLE, // curently not implemented
-	EOF_TOKEN
 };
 
 // TOKENS FOR LEXAR
 struct token {
 	std::string::iterator		itStart;
 	std::string::iterator		itEnd;
-	std::string		value;
-	tokenType		type;
+	std::string					value;
+	tokenType					type;
 };
 
 class ConfigParser {
 	private:
 		std::string					_filepath;
 		std::string					_input;
-		std::vector<Config>			_config;
+		std::vector<Config>			_configs;
 		std::vector<token>			_tokens;
 
+		// PARSING
 		token getNextToken(token &lastToken, const std::regex &url, const std::regex &path, const std::regex &op);
-
+		// UTILS
+		void	moveOneTokenSafly(std::vector<token>::iterator &it);
+		// EXCEPTIONS
+		void	errorToken(token token, std::string msg);
+		void	getTokenPos(token token, int &line, int &col);
+		void	eraseWhitespaceToken();
 		// readConfigToLines UTILS
 		// std::ifstream openConfigFile(std::string& filepath);
-		void readFile(std::ifstream& config_file);
+		// void readFile(std::ifstream& config_file);
 		// void closeFile(std::ifstream& file);
-		std::vector<std::string>::iterator parseServerLines(std::vector<std::string>::iterator it, Config &nextServerConfig);
+		// std::vector<std::string>::iterator parseServerLines(std::vector<std::string>::iterator it, Config &nextServerConfig);
 	public:
 		ConfigParser();
 		explicit ConfigParser(const std::string& filepath);
@@ -60,16 +67,21 @@ class ConfigParser {
 		ConfigParser(const ConfigParser &toCopy);
 		ConfigParser& operator=(const ConfigParser &other);
 		// PARSING
-		void readConfigToInput();
-		void parseInputToTokens();
-		
+		void	readConfigToInput();
+		void	parseInputToTokens();
+		void	parseTokenToConfig();
+		void	parseTokenToServer(std::vector<token>::iterator &it);
+		void	parseTokenToDirective(std::vector<token>::iterator &it, Config &newServer);
+		void	parseTokenToLocation(std::vector<token>::iterator &it, Config &newServer);
+		void	parseTokenToLocDir(std::vector<token>::iterator &it, Location &loc);
 		// GETTERS
-		Config getConfig() const;
+		// Config getConfig() const;
 		// UTILS
-		std::string cleanWhitespace(const std::string &line);
+		// std::string cleanWhitespace(const std::string &line);
 		void printInput();
 		void printTokens();
 		// EXCEPTIONS
+
 		class ConfigParserException : public std::exception {
 			private:
 				std::string message;

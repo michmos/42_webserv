@@ -41,7 +41,7 @@ void cleanComments(std::string &line) {
 	}
 }
 
-void ConfigParser::readFile(std::ifstream& config_file) {
+std::string readFile(std::ifstream& config_file) {
 	std::vector<std::string> lines;
 	std::string line;
 	while (config_file.peek() != EOF) {
@@ -50,7 +50,7 @@ void ConfigParser::readFile(std::ifstream& config_file) {
 		lines.push_back(line);
 		lines.push_back("\n");
 	}
-	this->_input = std::accumulate(lines.begin(), lines.end(), std::string(""));
+	return (std::accumulate(lines.begin(), lines.end(), std::string("")));
 }
 
 void closeFile(std::ifstream& file) {
@@ -65,7 +65,7 @@ void closeFile(std::ifstream& file) {
 void ConfigParser::readConfigToInput() {
 	try {
 		std::ifstream config_file = openConfigFile(this->_filepath);
-		this->readFile(config_file);
+		this->_input = readFile(config_file);
 		closeFile(config_file);
 	} catch (std::exception &e) {
 		throw ConfigParser::ConfigParserException(e.what());
@@ -83,136 +83,28 @@ void ConfigParser::printInput() {
 	std::cout << this->_input << std::endl;
 }
 
-
-// Get the server block as a vector of strings
-// std::vector<std::string> extractServerBlock(std::vector<std::string>& lines) {
-// 	std::vector<std::string> extractedBlock;
-// 	bool capturing = false;
-// 	int braceCount = 0;
-// 	auto it = lines.begin();
-
-// 	while (it != lines.end()) {
-// 		if (!capturing) {
-// 			if (it->find("server") != std::string::npos && it->find("{") != std::string::npos) {
-// 				capturing = true;
-// 				braceCount = 1;
-// 				extractedBlock.push_back(*it);
-// 				it = lines.erase(it);
-// 				continue;
-// 			}
-// 		} else {
-// 			extractedBlock.push_back(*it);
-// 			if (it->find("{") != std::string::npos) {
-// 				braceCount++;
-// 			}
-// 			if (it->find("}") != std::string::npos) {
-// 				braceCount--;
-// 				if (braceCount == 0) {
-// 					it = lines.erase(it);
-// 					break;
-// 				}
-// 			}
-// 			it = lines.erase(it);
-// 			continue;
-// 		}
-// 		++it;
-// 	}
-// 	return extractedBlock;
-// }
-// void ConfigParser::parseConfigLines() {
-// 	std::vector<std::string> serverBlock;
-// 	serverBlock = extractServerBlock(this->_lines);
-// 	while (!serverBlock.empty())
-// 	{
-// 		for (std::vector<std::string>::iterator it = serverBlock.begin(); it != serverBlock.end(); it++) {
-// 			std::cout << GREEN << *it << RESET << std::endl;
-// 		}
-// 		std::cout << BOLD << CYAN << "Server block END \n\n" << RESET << std::endl;
-// 		serverBlock = extractServerBlock(this->_lines);
-// 	}
-// }
-
-// std::vector<std::string>::iterator ConfigParser::parseServerLines(std::vector<std::string>::iterator it, Config &nextServerConfig) {
-// 	std::string line;
-// 	for (; it != this->_lines.end(); it++) {
-// 		line = *it;
-// 		if (line.find("{") != std::string::npos) {
-// 			std::cout << GREEN << "\"{\"-INDEX: " << std::distance(this->_lines.begin(), it) << RESET << std::endl;
-// 			break;
-// 		}
-// 	}
-// 	if (it == this->_lines.end()) {
-// 		throw ConfigParser::ConfigParserException("ERROR PARSING: no opening brace found for server block started at line:" + (1 + std::distance(this->_lines.begin(), it)));
-// 	}
-// 	std::vector<std::string>::iterator itEnd = it;
-// 	for (; itEnd != this->_lines.end(); itEnd++) {
-// 		line = *itEnd;
-// 		if (line.find("}") != std::string::npos) {
-// 			break;
-// 		}
-// 	}
-// 	return it;
-// }
-
-// void ConfigParser::parseConfigLines() {
-// 	for (std::vector<std::string>::iterator it = this->_lines.begin(); it != this->_lines.end(); it++) {
-// 		Config nextServerConfig;
-// 		if (it->find("server ") != std::string::npos) {
-// 			std::cout << GREEN << "\"Server\"-INDEX: " << std::distance(this->_lines.begin(), it) << RESET << std::endl;
-// 			// it = parseServerLines(it, nextServerConfig);
-// 			// checkServerConfig(nextServerConfig);
-// 			this->_config.push_back(nextServerConfig);
-// 		}
-// 	}
-// 	if (_config.empty()) {
-// 		throw ConfigParser::ConfigParserException("ERROR PARSING: no server blocks found in config file");
-// 	}
-// }
-
-
 void ConfigParser::printTokens() {
-	for (std::vector<token>::iterator it = _tokens.begin(); it != _tokens.end(); it++) {
-		switch (it->type) {
-		case SERVER:
-			std::cout << BG_BRIGHT_BLUE << it->value << RESET;
-			break;
-		case BLOCK_OPEN:
-			std::cout << BG_BRIGHT_CYAN << it->value << RESET;
-			break;
-		case BLOCK_CLOSE:
-			std::cout << BG_BRIGHT_GREEN << it->value << RESET;
-			break;
-		case SEMICOLON:
-			std::cout << BG_BRIGHT_YELLOW << it->value << RESET;
-			break;
-		case STRING:
-			std::cout << BG_BRIGHT_MAGENTA << it->value << RESET;
-			break;
-		case NUMBER:
-			std::cout << BG_PINK << it->value << RESET;
-			break;
-		case WHITE_SPACE:
-			if (it->value == "\n")
-				std::cout << it->value;
-			else
-				std::cout << BG_BRIGHT_WHITE << it->value << RESET;
-			break;
-		case URL:
-			std::cout << BG_CYAN << it->value << RESET;
-			break;
-		case PATH:
-			std::cout << BG_GREEN << it->value << RESET;
-			break;
-		case OPERATOR:
-			std::cout << BG_PURPLE << it->value << RESET;
-			break;
-		case EOF_TOKEN:
-			std::cout << BG_RED << it->value << RESET;
-			break;
-		default:
-			std::cout << BG_RED << it->value << RESET;
-			break;
-		}
+	std::unordered_map<tokenType, std::string> tokenColorMap = {
+		{INIT, BG_BRIGHT_WHITE},
+		{WHITE_SPACE, BG_BRIGHT_WHITE},
+		{SERVER, BG_BRIGHT_BLUE},
+		{LOCATION, BG_BLUE},
+		{BLOCK_OPEN, BG_BRIGHT_CYAN},
+		{BLOCK_CLOSE, BG_BRIGHT_GREEN},
+		{SEMICOLON, BG_BRIGHT_YELLOW},
+		{STRING, BG_BRIGHT_MAGENTA},
+		{NUMBER, BG_YELLOW},
+		{URL, BG_CYAN},
+		{PATH, BG_GREEN},
+		{OPERATOR, BG_PURPLE},
+		{EOF_TOKEN, BG_RED}
+	};
+	for (const auto &it : _tokens) {
+		std::string color = tokenColorMap.count(it.type) ? tokenColorMap[it.type] : BG_RED;
+		if (it.value != "\n")
+			std::cout << color << it.value << RESET;
+		else
+			std::cout << it.value << RESET;
 	}
 }
 
@@ -230,6 +122,8 @@ token ConfigParser::getNextToken(token &lastToken, const std::regex &url_regex, 
 		newToken.type = EOF_TOKEN;
 	} else if (newToken.value == "server") {
 		newToken.type = SERVER;
+	} else if (newToken.value == "location") {
+		newToken.type = LOCATION;
 	} else if (newToken.value == "{") {
 		newToken.type = BLOCK_OPEN;
 	} else if (newToken.value == "}") {
@@ -256,7 +150,7 @@ void ConfigParser::parseInputToTokens() {
 	token newToken;
 	static const std::regex url_regex(R"(https?:\/\/[a-zA-Z0-9\-_\.\/]+)");
 	static const std::regex path_regex(R"(^(/[a-zA-Z0-9._~!$&'()*+,;=:@-]*)*$)");
-	static const std::regex op_regex(R"([=~!^][=~!^|]*)");
+	static const std::regex op_regex(R"([=~!^][=~!^|*]*)");
 	newToken.type = INIT;
 	newToken.itEnd = this->_input.begin();
 	while (newToken.type != EOF_TOKEN) {
@@ -265,3 +159,146 @@ void ConfigParser::parseInputToTokens() {
 	}
 }
 
+void	ConfigParser::getTokenPos(token token, int &line, int &col) {
+	line = 1;
+	col = 1;
+	for (std::string::iterator i = this->_input.begin(); i != this->_input.end() && i != token.itStart; i++) {
+		col++;
+		if (*i == '\n') {
+			line++;
+			col = 0;
+		}
+	}
+}
+
+void	ConfigParser::errorToken(token token, std::string msg) {
+	int line;
+	int col;
+	getTokenPos(token, line, col);
+	throw ConfigParser::ConfigParserException("Unexpected token at Ln " + std::to_string(line) + ", Col " + std::to_string(col) + " " + msg);
+}
+
+void ConfigParser::parseTokenToDirective(std::vector<token>::iterator &it, Config &newServer) {
+	std::string key = it->value;
+	std::vector<token>::iterator key_it = it;
+	std::vector<std::string> values;
+	moveOneTokenSafly(it);
+	for (;it != this->_tokens.end(); it++) {
+		if (it->type < STRING)
+			break;
+		values.push_back(it->value);
+	}
+	if (it->type != SEMICOLON)
+		errorToken(*it, "Expected: ;");
+	if (newServer.setDirective(key, values) == -1) {
+		errorToken(*key_it, "Info: duplicate directive key.");
+	}
+}
+
+void	ConfigParser::moveOneTokenSafly(std::vector<token>::iterator &it) {
+	it++;
+	if (it == this->_tokens.end())
+		errorToken(*it, "Unexpected EOF!");
+	else if (it->type == EOF_TOKEN)
+		errorToken(*it, "Unexpected EOF!");
+}
+
+void ConfigParser::parseTokenToLocDir(std::vector<token>::iterator &it, Location &loc) {
+	std::string key = it->value;
+	std::vector<token>::iterator key_it = it;
+	std::vector<std::string> values;
+	moveOneTokenSafly(it);
+	for (;it != this->_tokens.end(); it++) {
+		if (it->type < STRING)
+			break;
+		values.push_back(it->value);
+	}
+	if (it->type != SEMICOLON)
+		errorToken(*it, "Expected: ;");
+	if (loc.directives.find(key) != loc.directives.end())
+		errorToken(*key_it, "Info: duplicate directive key.");
+	loc.directives[key] = values;
+}
+
+void ConfigParser::parseTokenToLocation(std::vector<token>::iterator &it, Config &newServer) {
+	moveOneTokenSafly(it);
+	Location newloc;
+	std::string path_key;
+
+	if (it->value == "=") {
+		newloc.strict_match = 1;
+		moveOneTokenSafly(it);
+	} else
+		newloc.strict_match = 0;
+
+	if (it->type == PATH) {
+		path_key = it->value;
+		moveOneTokenSafly(it);
+	} else
+		errorToken(*it, "Expected: PATH");
+
+	if (it->type == BLOCK_OPEN)
+		moveOneTokenSafly(it);
+	else
+		errorToken(*it, "Expected: {");
+
+	for (;it != this->_tokens.end(); it++) {
+		if (it->type == STRING)
+			parseTokenToLocDir(it, newloc);
+		else if (it->type == BLOCK_CLOSE) {
+			// moveOneTokenSafly(it);
+			break;
+		}
+		else
+			errorToken(*it, "Expected STRING or }");
+	}
+	newServer.setLocation(path_key, newloc);
+}
+
+void ConfigParser::parseTokenToServer(std::vector<token>::iterator &it) {
+	moveOneTokenSafly(it);
+	if (it == this->_tokens.end() || it->type != BLOCK_OPEN)
+		errorToken(*it, "{");
+	else if (it->type == BLOCK_OPEN)
+		moveOneTokenSafly(it);
+	Config newServer;
+	for (;it != this->_tokens.end(); ++it) {
+		if (it->type == STRING)
+			parseTokenToDirective(it, newServer);
+		else if (it->type == LOCATION)
+			parseTokenToLocation(it, newServer);
+		else if (it->type == BLOCK_CLOSE) {
+			it++;
+			break;
+		}
+		else {
+			std::cout << "TEST: " << it->value << std::endl;
+			errorToken(*it, "Expected STRING, LOCATION or }");
+		}
+	}
+	newServer.printConfig();
+	this->_configs.push_back(newServer);
+}
+
+void	ConfigParser::eraseWhitespaceToken() {
+	for (std::vector<token>::iterator it = this->_tokens.begin(); it != this->_tokens.end(); ++it) {
+		if (it->type == WHITE_SPACE) {
+			this->_tokens.erase(it);
+			it--;
+		}
+	}
+}
+
+void	ConfigParser::parseTokenToConfig() {
+	eraseWhitespaceToken();
+	printTokens();
+	for (std::vector<token>::iterator it = this->_tokens.begin(); it != this->_tokens.end(); ++it) {
+		if (it->type == SERVER)
+			parseTokenToServer(it);
+		else
+			errorToken(*it, "Expected: server");
+	}
+	if (this->_configs.empty())
+		throw ConfigParser::ConfigParserException("Missing any Server config in .conf file.");
+		// ERROR
+}
