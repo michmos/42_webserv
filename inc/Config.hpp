@@ -17,7 +17,7 @@ class Config {
 		std::unordered_map<std::string, Location>					_locations;
 
 		// UTILS
-		std::vector<std::unordered_map<std::string, std::vector<std::string>::iterator>> getPathRange(const std::string locKey);
+		std::map<std::string, std::vector<std::string>> getPathRange(const std::string locKey);
 	public:
 		Config();
 		~Config();

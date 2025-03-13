@@ -114,6 +114,12 @@ std::uint64_t	Config::getClientBodySize() {
 
 
 
+std::map<std::string, std::vector<std::string>> Config::getPathRange(const std::string locKey) {
+	std::map<std::string, std::vector<std::string>> locMap;
+	if (locKey == "/")
+		return (locMap);
+	return (locMap);
+}
 
 // root /tmp/www;
 std::vector<std::string>	Config::getRoot(const std::string locKey) {
@@ -130,15 +136,15 @@ std::vector<std::string>	Config::getRoot(const std::string locKey) {
 	return ((*(this->_directives.find("root"))).second);
 }
 
-// allow_methods  DELETE POST GET;
-std::vector<std::string>	Config::getMothods(const std::string locKey) {
-	return ((*(this->_directives.find("return"))).second);
-}
+// // allow_methods  DELETE POST GET;
+// std::vector<std::string>	Config::getMothods(const std::string locKey) {
+// 	return ((*(this->_directives.find("return"))).second);
+// }
 
-// index index.html index.php;
-std::vector<std::string>	Config::getIndex(const std::string locKey) {
-	return ((*(this->_directives.find("return"))).second);
-}
+// // index index.html index.php;
+// std::vector<std::string>	Config::getIndex(const std::string locKey) {
+// 	return ((*(this->_directives.find("return"))).second);
+// }
 
 
 // bool	Config::getLocAutoindex(const std::string locKey);	// autoindex on;
