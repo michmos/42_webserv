@@ -55,17 +55,14 @@ class ConfigParser {
 		void	errorToken(token token, std::string msg);
 		void	getTokenPos(token token, int &line, int &col);
 		void	eraseWhitespaceToken();
-		// readConfigToLines UTILS
-		// std::ifstream openConfigFile(std::string& filepath);
-		// void readFile(std::ifstream& config_file);
-		// void closeFile(std::ifstream& file);
-		// std::vector<std::string>::iterator parseServerLines(std::vector<std::string>::iterator it, Config &nextServerConfig);
+
 	public:
 		ConfigParser();
 		explicit ConfigParser(const std::string& filepath);
 		~ConfigParser();
 		ConfigParser(const ConfigParser &toCopy);
 		ConfigParser& operator=(const ConfigParser &other);
+
 		// PARSING
 		void	readConfigToInput();
 		void	parseInputToTokens();
@@ -74,14 +71,19 @@ class ConfigParser {
 		void	parseTokenToDirective(std::vector<token>::iterator &it, Config &newServer);
 		void	parseTokenToLocation(std::vector<token>::iterator &it, Config &newServer);
 		void	parseTokenToLocDir(std::vector<token>::iterator &it, Location &loc);
+
+		void	checkPort();
+		void	checkHost();
+		void	checkServerName();
+		void	checkClientBodySize(); // https://nginx.org/en/docs/syntax.html
+
 		// GETTERS
-		// Config getConfig() const;
+
 		// UTILS
-		// std::string cleanWhitespace(const std::string &line);
 		void printInput();
 		void printTokens();
-		// EXCEPTIONS
 
+		// EXCEPTIONS
 		class ConfigParserException : public std::exception {
 			private:
 				std::string message;

@@ -291,7 +291,7 @@ void	ConfigParser::eraseWhitespaceToken() {
 
 void	ConfigParser::parseTokenToConfig() {
 	eraseWhitespaceToken();
-	printTokens();
+	// printTokens();
 	for (std::vector<token>::iterator it = this->_tokens.begin(); it != this->_tokens.end(); ++it) {
 		if (it->type == SERVER)
 			parseTokenToServer(it);

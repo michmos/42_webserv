@@ -13,6 +13,7 @@
 # include <algorithm>
 # include <regex>
 # include <unordered_map>
+# include <cctype>
 
 // C libs
 

@@ -43,6 +43,7 @@ int Config::setLocation(const std::string key, Location loc) {
 // 	private:
 // 		std::unordered_map<std::string, std::vector<std::string>>	_directives;
 // 		std::unordered_map<std::string, Location>					_locations;
+
 void Config::printConfig() {
 	std::cout << BOLD << "\n CONFIG PRINT - DIRECTIVES:" << RESET << std::endl;
 	for (auto it = _directives.begin(); it != _directives.end(); it++) {
@@ -62,3 +63,82 @@ void Config::printConfig() {
 		}
 	}
 }
+
+// GETTER
+std::unordered_map<std::string, Location>	Config::getLocations() {
+	return (this->_locations);
+}
+std::unordered_map<std::string, std::vector<std::string>> Config::getDirectives() {
+	return (this->_directives);
+}
+
+int	Config::getPort() {
+	int port = 0;
+	std::string strPort = (*(this->_directives.find("listen"))).second.front();
+	// try {
+	port = stoi(strPort);
+	// } catch (std::exception &e) {
+	// 	throw Config::ConfigException(e.what());
+	// }
+	// if (port < 0 || port > 65535)
+	// 	throw Config::ConfigException("Port out of range!");
+	return (port);
+}
+
+std::string	Config::getHost() {
+	return ((*(this->_directives.find("host"))).second.front());
+}
+
+std::string	Config::getServerName() {
+	return ((*(this->_directives.find("server_name"))).second.front());
+}
+
+std::uint64_t	Config::getClientBodySize() {
+	std::uint64_t	size;
+	std::string strSize = (*(this->_directives.find("listen"))).second.front();
+	size = stoi(strSize);
+	if (tolower(strSize.back()) == 'k')
+		size *= 1024;
+	else if (tolower(strSize.back()) == 'm')
+		size *= (1024*1024);
+	else if (tolower(strSize.back()) == 'g')
+		size *= (1024*1024*1024);
+	return (size);
+}
+
+// // return 301 http://example.com/newpage;
+// std::vector<std::string>	Config::getRedirect(const std::string locKey) {
+// 	if (locKey == "/")
+// 		return ((*(this->_directives.find("return"))).second);
+// }
+
+
+
+
+// root /tmp/www;
+std::vector<std::string>	Config::getRoot(const std::string locKey) {
+	if (locKey != "/") {
+		auto it = this->_locations.find(locKey);
+		if (it != this->_locations.end()) {
+			Location loc = it->second;
+			auto it_root = loc.directives.find("root");
+			if (it_root != loc.directives.end()) {
+
+			}
+		}
+	}
+	return ((*(this->_directives.find("root"))).second);
+}
+
+// allow_methods  DELETE POST GET;
+std::vector<std::string>	Config::getMothods(const std::string locKey) {
+	return ((*(this->_directives.find("return"))).second);
+}
+
+// index index.html index.php;
+std::vector<std::string>	Config::getIndex(const std::string locKey) {
+	return ((*(this->_directives.find("return"))).second);
+}
+
+
+// bool	Config::getLocAutoindex(const std::string locKey);	// autoindex on;
