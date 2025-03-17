@@ -32,20 +32,8 @@ int Config::setLocation(const std::string key, Location loc) {
 	return (0);
 }
 
-
-
-// struct Location {
-// 	bool														strict_match;
-// 	std::unordered_map<std::string, std::vector<std::string>>	directives;
-// };
-
-// class Config {
-// 	private:
-// 		std::unordered_map<std::string, std::vector<std::string>>	_directives;
-// 		std::unordered_map<std::string, Location>					_locations;
-
 void Config::printConfig() {
-	std::cout << BOLD << "\n CONFIG PRINT - DIRECTIVES:" << RESET << std::endl;
+	std::cout << BOLD << BG_LIGHT_GRAY << BLACK << "\n CONFIG PRINT - DIRECTIVES:" << RESET << std::endl;
 	for (auto it = _directives.begin(); it != _directives.end(); it++) {
 		std::cout << it->first << " : ";
 		for (const std::string &str : it->second)
@@ -111,7 +99,6 @@ std::uint64_t	Config::getClientBodySize() {
 // 	if (locKey == "/")
 // 		return ((*(this->_directives.find("return"))).second);
 // }
-
 
 
 std::map<std::string, std::vector<std::string>> Config::getPathRange(const std::string locKey) {

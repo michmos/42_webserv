@@ -293,10 +293,14 @@ void	ConfigParser::parseTokenToConfig() {
 	eraseWhitespaceToken();
 	// printTokens();
 	for (std::vector<token>::iterator it = this->_tokens.begin(); it != this->_tokens.end(); ++it) {
-		if (it->type == SERVER)
+		if (it->type == SERVER) {
 			parseTokenToServer(it);
-		else
+			// std::cout << it->type << ":" << it->value << std::endl;
+			it--;
+		}
+		else if (it->type != EOF_TOKEN) {
 			errorToken(*it, "Expected: server");
+		}
 	}
 	if (this->_configs.empty())
 		throw ConfigParser::ConfigParserException("Missing any Server config in .conf file.");
