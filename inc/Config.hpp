@@ -39,7 +39,7 @@ class Config {
 
 		std::vector<std::string>	getRedirect(const std::string locKey);	// return 301 http://example.com/newpage;
 		std::vector<std::string>	getRoot(const std::string locKey);		// root /tmp/www;
-		std::vector<std::string>	getMothods(const std::string locKey);
+		std::vector<std::string>	getMothods(const std::string locKey);	// allow_methods  DELETE POST GET;
 		std::vector<std::string>	getIndex(const std::string locKey);		// index index.html index.php;
 
 		bool						getLocAutoindex(const std::string locKey);	// autoindex on;
