@@ -8,12 +8,6 @@ int main(int argc, char **argv)
 		{
 			std::string	config = (argc == 1 ? "configs/default.conf" : argv[1]);
 			ConfigParser config_parser(config);
-			config_parser.readConfigToInput();
-			// config_parser.printInput();
-			config_parser.parseInputToTokens();
-			config_parser.printTokens();
-			config_parser.parseTokenToConfig();
-
 		}
 		catch (std::exception &e) {
 			std::cerr << e.what() << std::endl;

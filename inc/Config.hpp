@@ -4,7 +4,7 @@
 #include "Webserv.hpp"
 
 
-// LOOK INTO: location in a location
+// LOOK INTO:
 // map can be unordered_map
 struct Location {
 	bool														strict_match;
@@ -32,21 +32,18 @@ class Config {
 		std::unordered_map<std::string, std::vector<std::string>>	getDirectives();
 		std::unordered_map<std::string, Location>					getLocations();
 
+		//		need for WebServer Class
 		int				getPort();
 		std::string		getHost();
 		std::string		getServerName();
-		std::uint64_t	getClientBodySize();
 
-		std::vector<std::string>	getRedirect(const std::string locKey);	// return 301 http://example.com/newpage;
-		std::vector<std::string>	getRoot(const std::string locKey);		// root /tmp/www;
-		std::vector<std::string>	getMothods(const std::string locKey);	// allow_methods  DELETE POST GET;
-		std::vector<std::string>	getIndex(const std::string locKey);		// index index.html index.php;
-
+		//		need for Client Class
+		std::uint64_t				getClientBodySize();
+		std::vector<std::string>	getRedirect(const std::string locKey);		// return 301 http://example.com/newpage;
+		std::vector<std::string>	getRoot(const std::string locKey);			// root /tmp/www;
+		std::vector<std::string>	getMothods(const std::string locKey);		// allow_methods  DELETE POST GET;
+		std::vector<std::string>	getIndex(const std::string locKey);			// index index.html index.php;
 		bool						getLocAutoindex(const std::string locKey);	// autoindex on;
-
-
-
-
 
 		// UTILS
 		void	printConfig();

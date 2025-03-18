@@ -5,6 +5,10 @@ ConfigParser::ConfigParser() {
 
 ConfigParser::ConfigParser(const std::string& filepath) {
 	this->_filepath = filepath;
+	readConfigToInput();
+	parseInputToTokens();
+	printTokens();
+	parseTokenToConfig();
 }
 
 ConfigParser::~ConfigParser() {
@@ -71,13 +75,6 @@ void ConfigParser::readConfigToInput() {
 		throw ConfigParser::ConfigParserException(e.what());
 	}
 }
-
-// std::string ConfigParser::cleanWhitespace(const std::string &line) {
-// 	std::string cleanedLine = line;
-// 	cleanedLine.erase(0, cleanedLine.find_first_not_of(" \t"));
-// 	cleanedLine.erase(cleanedLine.find_last_not_of(" \t") + 1);
-// 	return cleanedLine;
-// }
 
 void ConfigParser::printInput() {
 	std::cout << this->_input << std::endl;
