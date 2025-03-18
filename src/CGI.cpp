@@ -1,23 +1,52 @@
 #include "CGI.hpp"
 
+void	CGI::add_pipe_events(void) {
+	std::memset(&epoll_event_pipe_[0], 0, sizeof(epoll_event_pipe_[0]));
+	std::memset(&epoll_event_pipe_[1], 0, sizeof(epoll_event_pipe_[1]));
+	// epoll_event_pipe_[0].data.fd = pipe_to_child_[WRITE];
+	epoll_event_pipe_[0].events = EPOLLOUT | EPOLLET;
+	epoll_event_pipe_[1].data.fd = pipe_from_child_[READ];
+	epoll_event_pipe_[1].events = EPOLLIN | EPOLLET;
+}
+
+
+void	CGI::addEventWithData(int epoll_fd) {
+	std::shared_ptr<std::string>	buffer;
+	
+	setPipes();
+	add_pipe_events();
+	buffer = std::make_shared<std::string>(post_data_);
+	epoll_event_pipe_[0].data.ptr = static_cast<void*>(buffer.get());;
+	std::cerr << pipe_to_child_[WRITE] << " : " << pipe_from_child_[READ] << " epollfd: " << epoll_fd << std::endl;
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, pipe_to_child_[WRITE], &epoll_event_pipe_[0]) == -1)
+	{
+		std::cerr << "Failed to add event to epoll" << errno << strerror(errno) << std::endl;
+	}
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, pipe_from_child_[READ], &epoll_event_pipe_[1]) == -1)
+	{
+		std::cerr << "Failed to add event to epoll" << std::endl;
+		return;
+	}
+}
+
+CGI::CGI(const std::string &post_data) : post_data_(post_data) { }
+
 /**
  * @brief forks the process to execve the CGI, with POST sends buffer to child
  * @param executable const string CGI filename
  * @param env_vector char* vector with key-values as env argument to CGI
  */
-CGI::CGI(const std::string &executable, std::vector<std::string> env_vector, const std::string &post_data)
-{
+void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_vector) {
 	std::cout << std::flush;
-	setPipes();
-	m_pid = fork();
-	if (m_pid < 0)
+	pid_ = fork();
+	if (pid_ < 0)
 		throwException("Fork failed");
-	else if (m_pid == 0) 
+	else if (pid_ == 0) 
 	{
-		closeTwoPipes(m_pipe_to_child[WRITE], m_pipe_from_child[READ]);
-		if (dup2(m_pipe_to_child[READ], STDIN_FILENO) < 0)
+		closeTwoPipes(pipe_to_child_[WRITE], pipe_from_child_[READ]);
+		if (dup2(pipe_to_child_[READ], STDIN_FILENO) < 0)
 			throwExceptionExit("dub2 failed");
-		if (dup2(m_pipe_from_child[1], STDOUT_FILENO) < 0)
+		if (dup2(pipe_from_child_[1], STDOUT_FILENO) < 0)
 			throwExceptionExit("dub2 failed");
 
 		std::vector<char*>	argv_vector;
@@ -28,23 +57,73 @@ CGI::CGI(const std::string &executable, std::vector<std::string> env_vector, con
 		if (execve(executable.c_str(), argv_vector.data(), env_c_vector.data()) == -1)
 		{
 			std::cerr << "Error: Execve failed: " << std::strerror(errno) << std::endl;
-			closeTwoPipes(m_pipe_to_child[READ], m_pipe_from_child[WRITE]);
+			closeTwoPipes(pipe_to_child_[READ], pipe_from_child_[WRITE]);
 		}
 		exit(1);
 	}
-	closeTwoPipes(m_pipe_to_child[READ], m_pipe_from_child[WRITE]);
-	sendDataToStdin(post_data);
+	// addEventWithData(epoll_fd);
+	// send data as write action to server EPOLLOUT instead of sendDataToStdin
+	sendDataToStdin(post_data_);
+	// Not wait for child but fork a timeout where also close the piples
 	waitForChild();
-	closeAllPipes();
+	// not here, the server get this response
 	getResponseFromCGI();
+	// close all pipes in timeout mangager
+	watchDog();
+	closeAllPipes();
+	// this check somewhere else
 	if (!isNPHscript(executable))
 		rewriteResonseFromCGI();
+	// closeTwoPipes(pipe_to_child_[READ], pipe_from_child_[WRITE]);
 }
-
 CGI::~CGI(void) {}
 
+void	CGI::create_events_from_pipes() {
+	epoll_event_pipe_[0].data.fd = pipe_to_child_[WRITE];
+	epoll_event_pipe_[0].events = EPOLLOUT;
+	epoll_event_pipe_[1].data.fd = pipe_from_child_[READ];
+	epoll_event_pipe_[1].events = EPOLLIN;
+}
+
 std::string CGI::getResponse(void) {
-	return (m_response);
+	return (response_);
+}
+
+
+#define TIMEOUT 10 // from configfile?
+
+void	CGI::watchDog(void) {
+	pid_t	pid;
+	int		status;
+	time_t	start;
+	time_t	now;
+	bool	timeout = false;
+
+	pid = fork();
+	if (pid < 0)
+		throwException("Fork failed");
+	else if (pid == 0)
+	{
+		start = time(NULL);
+		while (waitpid(pid_, &status, WNOHANG) == 0)
+		{
+			now = time(NULL);
+			if (now - start > TIMEOUT)
+			{
+				timeout = true;
+				break ;
+			}
+			sleep(1);
+		}
+		if (timeout)
+			kill(pid_, SIGKILL);
+		closeAllPipes();
+		exit(0);
+	}
+	else
+	{
+		closeAllPipes();
+	}
 }
 
 /**
@@ -56,7 +135,7 @@ int	CGI::getStatusCodeFromResponse(void) {
 	std::smatch	match;
 	int			status_code = 0;
 
-	if (!m_response.empty() && std::regex_search(m_response, match, status_code_regex))
+	if (!response_.empty() && std::regex_search(response_, match, status_code_regex))
 	{
 		std::string to_string = match[1];
 		if (to_string.size() < 9)
@@ -77,12 +156,12 @@ void	CGI::waitForChild(void) {
 
 	while (std::time(nullptr) - start_time < 5)
 	{
-		if (waitpid(m_pid, &m_status, WNOHANG) > 0)
+		if (waitpid(pid_, &status_, WNOHANG) > 0)
 			return ;
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 	std::cerr << "Timeout in CGI, process will be killed" << std::endl;
-	if (kill(m_pid, SIGKILL) == -1)
+	if (kill(pid_, SIGKILL) == -1)
 		std::cerr << "Error kill: " << std::strerror(errno) << std::endl;
 }
 
@@ -91,18 +170,18 @@ void	CGI::waitForChild(void) {
  * if statuscode is not set it wil generate a Internal Server Error
  */
 void	CGI::getResponseFromCGI(void) {
-	if (WIFEXITED(m_status)) {
-		int return_value = WEXITSTATUS(m_status);
-		m_response = receiveBuffer();
+	if (WIFEXITED(status_)) {
+		int return_value = WEXITSTATUS(status_);
+		response_ = receiveBuffer();
 		if (return_value != 0) {
 			int status_code = getStatusCodeFromResponse();
 			std::cerr << "status_code; " << status_code << std::endl;
 			// compare with configfile error pages.
-			std::cerr << "response" << m_response << std::endl;
+			std::cerr << "response" << response_ << std::endl;
 		}
 	}
 	else
-		m_response = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+		response_ = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
 }
 
 /**
@@ -136,27 +215,27 @@ void	CGI::rewriteResonseFromCGI(void) {
 	std::regex	r_status = std::regex(R"(Status:\s+([^\r\n]+)\r\n)");
 	std::regex	r_location = std::regex(R"(Location:\s+([^\r\n]+)\r\n)");
 	
-	if (std::regex_match(m_response, match, r_status) && match.size() == 2)
+	if (std::regex_match(response_, match, r_status) && match.size() == 2)
 		new_response += "HTTP/1.1 " + std::string(match[1]) + "\r\n";
-	if (std::regex_match(m_response, match, r_location) && match.size() == 2)
+	if (std::regex_match(response_, match, r_location) && match.size() == 2)
 		new_response += "Location: " + std::string(match[1]) + "\r\n";
-	if (std::regex_match(m_response, match, r_content_type) && match.size() == 2)
+	if (std::regex_match(response_, match, r_content_type) && match.size() == 2)
 		new_response += "Content-Type: " + std::string(match[1]) + "\r\n";
 	if (new_response.empty())
 	{
 		std::cerr << "Error: Received wrong formated header from CGI" << std::endl;
-		m_response = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+		response_ = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
 		return ;
 	}
 	new_response += "\r\n";
 
-	std::size_t	index = m_response.find("\r\n\r");
+	std::size_t	index = response_.find("\r\n\r");
 	if (index != std::string::npos)
 	{
-		if (index + 4 < m_response.size())
-			new_response += m_response.substr(index + 4) + "\r\n";
+		if (index + 4 < response_.size())
+			new_response += response_.substr(index + 4) + "\r\n";
 	}
-	m_response = new_response;
+	response_ = new_response;
 }
 
 /**
@@ -191,7 +270,7 @@ bool CGI::isCgiScript(const std::string &path)
 std::string	CGI::receiveBuffer(void) {
 	char buffer[1024];
 	
-	ssize_t bytesRead = read(m_pipe_from_child[READ], buffer, sizeof(buffer) - 1);
+	ssize_t bytesRead = read(pipe_from_child_[READ], buffer, sizeof(buffer) - 1);
 	if (bytesRead > 0)
 		buffer[bytesRead] = '\0';
 	else
@@ -213,7 +292,7 @@ std::string	CGI::receiveBuffer(void) {
 void	CGI::sendDataToStdin( const std::string &post_data) {
 	ssize_t	readBytes;
 
-	readBytes = write(m_pipe_to_child[WRITE], post_data.c_str(), post_data.size());
+	readBytes = write(pipe_to_child_[WRITE], post_data.c_str(), post_data.size());
 	if (readBytes != (ssize_t)post_data.size())
 	{
 		if (readBytes == -1)
@@ -221,6 +300,6 @@ void	CGI::sendDataToStdin( const std::string &post_data) {
 		else
 			std::cerr << "Error write: not written right amount" << std::endl;
 	}
-	close(m_pipe_to_child[WRITE]);
-	m_pipe_to_child[WRITE] = -1;
+	close(pipe_to_child_[WRITE]);
+	pipe_to_child_[WRITE] = -1;
 }

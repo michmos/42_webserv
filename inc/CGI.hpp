@@ -35,23 +35,28 @@
 
 class CGI {
 	private:
-		std::string m_path;
-		int			m_pipe_to_child[2];
-		int			m_pipe_from_child[2];
-		pid_t		m_pid;
-		int			m_status;
-		std::string m_response;
+		std::string 		path_;
+		int					pipe_to_child_[2];
+		int					pipe_from_child_[2];
+		pid_t				pid_;
+		int					status_;
+		std::string 		response_;
+		const std::string	post_data_;
+		epoll_event			epoll_event_pipe_[2];
 
 	public:
-		CGI( const std::string &script_path, std::vector<std::string> env_vector, const std::string &post_data);
+		CGI( const std::string &post_data);
 		~CGI( void );
 
+		void			forkCGI( const std::string &executable, std::vector<std::string> env_vector );
 		std::string		receiveBuffer( void );
 		void			sendDataToStdin( const std::string &post_data );
 		void			createArgvVector( std::vector<char*> &argv_vector, const std::string &executable );
 		void			createEnvCharPtrVector( std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector );
 		void			rewriteResonseFromCGI( void );
 		void			waitForChild( void );
+		void			addEventWithData( int epoll_fd );
+		void			add_pipe_events( void );
 		
 		// GETTERS
 		std::string		getResponse( void );
@@ -62,10 +67,13 @@ class CGI {
 		static bool			isCgiScript( const std::string &path );
 		static std::string	getScriptExecutable( const std::string &path );
 
+		void			create_events_from_pipes();
+		void			watchDog( void );
+
 		// CGI UTILS
-		void			setPipes(void);
-		void			closeAllPipes(void);
-		void			closeTwoPipes(int &pipe1, int &pipe2);
-		void			throwException(const char *msg );
+		void			setPipes( void );
+		void			closeAllPipes( void);
+		void			closeTwoPipes( int &pipe1, int &pipe2 );
+		void			throwException( const char *msg );
 		void			throwExceptionExit(const char *msg );
 };

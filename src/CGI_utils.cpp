@@ -14,25 +14,25 @@ void	CGI::throwExceptionExit(const char *msg)  {
 }
 
 void	CGI::closeAllPipes(void) {
-	if (m_pipe_from_child[WRITE] != -1)
-		close(m_pipe_from_child[WRITE]);
-	if (m_pipe_from_child[READ] != -1)
-		close(m_pipe_from_child[READ]);
-	if (m_pipe_to_child[WRITE] != -1)
-		close(m_pipe_to_child[WRITE]);
-	if (m_pipe_to_child[READ] != -1)
-		close(m_pipe_to_child[READ]);
+	if (pipe_from_child_[WRITE] != -1)
+		close(pipe_from_child_[WRITE]);
+	if (pipe_from_child_[READ] != -1)
+		close(pipe_from_child_[READ]);
+	if (pipe_to_child_[WRITE] != -1)
+		close(pipe_to_child_[WRITE]);
+	if (pipe_to_child_[READ] != -1)
+		close(pipe_to_child_[READ]);
 }
 
 /**
  * @brief set pipes to -1 and then open both (to and from child)
 */
 void	CGI::setPipes(void) {
-	std::memset(m_pipe_from_child, -1, sizeof(m_pipe_from_child));
-	std::memset(m_pipe_to_child, -1, sizeof(m_pipe_to_child));
-	if (pipe(m_pipe_to_child) < 0)
+	std::memset(pipe_from_child_, -1, sizeof(pipe_from_child_));
+	std::memset(pipe_to_child_, -1, sizeof(pipe_to_child_));
+	if (pipe(pipe_to_child_) < 0)
 		throwException("pipe failed");
-	if (pipe(m_pipe_from_child) < 0)
+	if (pipe(pipe_from_child_) < 0)
 		throwException("pipe failed");
 }
 
