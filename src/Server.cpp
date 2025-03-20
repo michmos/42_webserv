@@ -1,4 +1,4 @@
-#include "../inc/Server.hpp"
+#include "Server.hpp"
 
 Server::Server(int fd) : _fd(fd) {
 }
@@ -17,3 +17,4 @@ const std::string& Server::getName() const {
 void	Server::setName(const std::string& name) {
 	_name = name;
 }
+

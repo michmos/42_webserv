@@ -1,5 +1,4 @@
-#include "../inc/SharedFd.hpp"
-#include <memory>
+#include "SharedFd.hpp"
 
 UniqueFd::UniqueFd(int fd) : _fd(fd) {
 	#ifdef DEBUG
