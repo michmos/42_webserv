@@ -1,11 +1,13 @@
 
 #pragma once
 
-#include "SharedFd.hpp"
-#include <iostream>
-#include <unistd.h>
-#include <string.h>
-#define READSIZE	100
+# include "SharedFd.hpp"
+# include <iostream>
+# include <unistd.h>
+# include <string.h>
+# include <stdexcept>
+
+# define READSIZE	100
 
 typedef enum eState {
 	DFLT,
@@ -18,7 +20,7 @@ typedef enum eState {
 
 class Client {
 public:
-	Client(SharedFd fd);
+	Client(int fd);
 	~Client();
 
 	void	readFrom();

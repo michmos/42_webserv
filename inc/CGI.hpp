@@ -46,21 +46,28 @@ class CGI {
 		const std::string	post_data_;
 		epoll_event			epoll_event_pipe_[2];
 
+		int				getStatusCodeFromResponse( void );
+
+		// CGI UTILS
+		void			createArgvVector( std::vector<char*> &argv_vector, const std::string &executable );
+		void			createEnvCharPtrVector( std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector );
+		void			closeAllPipes( void);
+		void			closeTwoPipes( int &pipe1, int &pipe2 );
+		void			throwException( const char *msg );
+		void			throwExceptionExit( const char *msg );
+
 	public:
 		CGI( const std::string &post_data, std::vector<int> pipes );
 		~CGI( void );
 
 		void			forkCGI( const std::string &executable, std::vector<std::string> env_vector );
-		// std::string	receiveBuffer( void );
-		// void			sendDataToStdin( const std::string &post_data );
-		void			createArgvVector( std::vector<char*> &argv_vector, const std::string &executable );
-		void			createEnvCharPtrVector( std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector );
+		std::string		receiveBuffer( int fd );
+		void			sendDataToStdin( int fd );
 		void			rewriteResonseFromCGI( void );
 		
 		// GETTERS
 		std::string		getResponse( void );
-		int				getStatusCodeFromResponse( void );
-		void			getResponseFromCGI( void );
+		void			getResponseFromCGI( int fd );
 
 		bool				isNPHscript( const std::string &executable );
 		static bool			isCgiScript( const std::string &path );
@@ -68,11 +75,4 @@ class CGI {
 		std::vector<char*>	createEnv( std::vector<std::string> &envStrings, const HTTPRequest request );
 
 		void			watchDog( void );
-
-		// CGI UTILS
-		void			setPipes( void );
-		void			closeAllPipes( void);
-		void			closeTwoPipes( int &pipe1, int &pipe2 );
-		void			throwException( const char *msg );
-		void			throwExceptionExit( const char *msg );
 };

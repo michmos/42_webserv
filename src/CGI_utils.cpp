@@ -7,12 +7,13 @@ void	CGI::throwException(const char *msg) {
 	throw std::exception();
 }
 
-void	CGI::throwExceptionExit(const char *msg)  {
+void	CGI::throwExceptionExit(const char *msg) {
 	std::cerr << "Error: " << msg << std::endl;
 	closeAllPipes();
 	exit(EXIT_FAILURE);
 }
 
+/// @brief closes pipe_from_child and pipe_to_child 
 void	CGI::closeAllPipes(void) {
 	if (pipe_from_child_[WRITE] != -1)
 		close(pipe_from_child_[WRITE]);
@@ -24,21 +25,7 @@ void	CGI::closeAllPipes(void) {
 		close(pipe_to_child_[READ]);
 }
 
-/**
- * @brief set pipes to -1 and then open both (to and from child)
-*/
-void	CGI::setPipes(void) {
-	std::memset(pipe_from_child_, -1, sizeof(pipe_from_child_));
-	std::memset(pipe_to_child_, -1, sizeof(pipe_to_child_));
-	if (pipe(pipe_to_child_) < 0)
-		throwException("pipe failed");
-	if (pipe(pipe_from_child_) < 0)
-		throwException("pipe failed");
-}
-
-/**
- * @brief closes pipes and set them to -1
- */
+/// @brief closes pipes and set them to -1
 void	CGI::closeTwoPipes(int &pipe1, int &pipe2) {
 	if (pipe1 != -1)
 	{
@@ -52,9 +39,7 @@ void	CGI::closeTwoPipes(int &pipe1, int &pipe2) {
 	}
 }
 
-/**
- * @brief creating a vector<char*> for transfor to an array of * to strings ascommand-line arguments for execve.
- */
+/// @brief creating a vector<char*> for transfor to an array of * to strings ascommand-line arguments for execve.
 void	CGI::createArgvVector(std::vector<char*> &argv_vector, const std::string &executable) {
 	argv_vector.push_back(const_cast<char *>(executable.c_str()));
 	argv_vector.push_back(NULL);

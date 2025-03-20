@@ -3,14 +3,14 @@
 HTTPClient::HTTPClient(std::function<void(int, int)> callback) : \
 	responseGenerator(std::make_unique<HTTPResponseGenerator>(*this)) {
 	pipes_.setCallbackFunction(callback);
-	STATE = RECEIVE;
+	STATE_ = RECEIVE;
 }
 
 HTTPClient::~HTTPClient(void) {
 }
 
 bool	HTTPClient::isDone(void) {
-	if (STATE == DONE)
+	if (STATE_ == DONE)
 		return (true);
 	return (false);
 }
@@ -23,34 +23,29 @@ void	HTTPClient::work(epoll_event &event) {
 	char		buffer[2048];
 	size_t		bytes_read;
 	
-	if (STATE != CGISEND && STATE != CGIRECEIVE)
+	if (STATE_ != CGISEND && STATE_ != CGIRECEIVE)
 	{
 		// just see if read or write event?
 		// reading() / writing():
 		;
-		if (STATE == DONE && !message_que_.empty()) // maybe better to have a seperate write and read function
+		if (STATE_ == DONE && !message_que_.empty()) // maybe better to have a seperate write and read function
 		{
 			std::string	response = message_que_.front();
 			message_que_.erase(message_que_.begin());
 			write(event.data.fd, response.c_str(), sizeof(response));
 		}
 	}
-	else if (STATE == CGISEND) // send data to eventfd (pipe) 
+	else if (STATE_ == CGISEND) // send data to eventfd (pipe) 
 	{
-		write(event.data.fd, request_.body.c_str(), sizeof(request_.body));
-		close(event.data.fd);
-		STATE == CGIRECEIVE;
-		return
+		cgi_->sendDataToStdin(event.data.fd);
+		STATE_ == CGIRECEIVE;
+		return ;
 	}
-	else if (STATE == CGIRECEIVE) // read data from eventfd (pipe)
+	else if (STATE_ == CGIRECEIVE) // read data from eventfd (pipe)
 	{
-		bytes_read = ::recv(event.data.fd, buffer, sizeof(buffer), 0);
-		if (bytes_read < 0)
-			throw std::runtime_error("recv errors");
-		cgi_->getResponseFromCGI();
-		close(event.data.fd);
+		cgi_->getResponseFromCGI(event.data.fd);
 		//send back to client
-		STATE = CGIRESPONSE;
+		STATE_ = CGIRESPONSE;
 	}
 	std::string data(buffer);
 	feedData(std::move(data));
@@ -59,36 +54,36 @@ void	HTTPClient::work(epoll_event &event) {
 void HTTPClient::feedData(std::string &&data) {
 	HTTPRequest	request;
 	
-	if (STATE == RECEIVE)
+	if (STATE_ == RECEIVE)
 		receiving(std::move(data));
-	if (STATE == PARSING)
+	if (STATE_ == PARSING)
 		parsing();
-	if (STATE == RESPONSE)
+	if (STATE_ == RESPONSE)
 		responding();
-	else if (STATE == STARTCGI)
+	else if (STATE_ == STARTCGI)
 		cgi();
-	else if (STATE == CGIRESPONSE)
+	else if (STATE_ == CGIRESPONSE)
 		cgiresponse();
 }
 
 void	HTTPClient::receiving(std::string &&data) {
 	parser_.addBufferToParser(data);
 	if (parser_.isRequestFullyParsed())
-		STATE = PARSING;
+		STATE_ = PARSING;
 }
 
 void	HTTPClient::parsing() {
 	request_ = parser_.getParsedRequest();
 	if (!responseGenerator->isCGI(request_))
-		STATE = RESPONSE;
+		STATE_ = RESPONSE;
 	else
-		STATE = STARTCGI;
+		STATE_ = STARTCGI;
 }
 
 void	HTTPClient::responding() {
 	responseGenerator->generateResponse(request_);
 	message_que_.push_back(responseGenerator->loadResponse());
-	STATE = DONE;
+	STATE_ = DONE;
 }
 
 void	HTTPClient::cgi(void) {
@@ -105,7 +100,7 @@ void	HTTPClient::cgi(void) {
 	cgi_->createEnv(env_strings, request_);
 	cgi_->forkCGI(request_.request_target, env_strings);
 	body = request_.body;
-	STATE = CGISEND;
+	STATE_ = CGISEND;
 }
 
 void	HTTPClient::cgiresponse(void) {

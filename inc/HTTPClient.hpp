@@ -62,7 +62,7 @@ class HTTPClient {
 		void	cgiresponse( void );
 
 	private:
-		e_state									STATE;
+		e_state									STATE_;
 
 		SharedFd								fd_;
 		Server									*server_;
