@@ -10,13 +10,15 @@
 // 	response_ = "";
 // }
 
-HTTPResponseGenerator::HTTPResponseGenerator( ) {
+HTTPResponseGenerator::HTTPResponseGenerator(void) {
 	header_ = "";
 	body_ = "";
 	content_type_ = "application/octet-stream";
 	status_code_ = 200;
 	response_ = "";
 }
+
+HTTPResponseGenerator::~HTTPResponseGenerator(void) { }
 
 bool	HTTPResponseGenerator::isCGI(const HTTPRequest request) {
 	if (request.invalidRequest)
@@ -26,8 +28,6 @@ bool	HTTPResponseGenerator::isCGI(const HTTPRequest request) {
 	else
 		return (true);
 }
-
-HTTPResponseGenerator::~HTTPResponseGenerator(void) { }
 
 void	HTTPResponseGenerator::generateResponse(const HTTPRequest request) {
 	std::string	filename(request.request_target);
@@ -90,7 +90,7 @@ std::string	HTTPResponseGenerator::resolvePath(std::string endpoint) {
 				std::cerr << "No permission" << std::endl;
 				return "";
 			}
-			return folder_file;
+			return (folder_file);
 		}
 	}
 	return ("");

@@ -7,6 +7,8 @@ CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post
 	pipe_to_child_[WRITE] = pipes[3];
 }
 
+CGI::~CGI(void) {}
+
 /**
  * @brief forks the process to execve the CGI, with POST sends buffer to child
  * @param executable const string CGI filename
@@ -27,6 +29,7 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 
 		std::vector<char*>	argv_vector;
 		std::vector<char*>	env_c_vector;
+
 		createArgvVector(argv_vector, executable);
 		createEnvCharPtrVector(env_c_vector, env_vector);
 
@@ -40,7 +43,6 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 	closeTwoPipes(pipe_to_child_[READ], pipe_from_child_[WRITE]);
 	watchDog();
 }
-CGI::~CGI(void) {}
 
 std::string CGI::getResponse(void) { return (response_); }
 
@@ -97,23 +99,6 @@ int	CGI::getStatusCodeFromResponse(void) {
 }
 
 /**
- * @brief waits 5 sec for CGI and if passed but not returned, a timeout will set and the process will be killed
- */
-void	CGI::waitForChild(void) {
-	time_t	start_time = std::time(nullptr);
-
-	while (std::time(nullptr) - start_time < 5)
-	{
-		if (waitpid(pid_, &status_, WNOHANG) > 0)
-			return ;
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	}
-	std::cerr << "Timeout in CGI, process will be killed" << std::endl;
-	if (kill(pid_, SIGKILL) == -1)
-		std::cerr << "Error kill: " << std::strerror(errno) << std::endl;
-}
-
-/**
  * @brief checks response status from CGI and receives header (and body) from pipe
  * if statuscode is not set it wil generate a Internal Server Error
  */
@@ -153,9 +138,7 @@ bool	CGI::isNPHscript( const std::string &executable )
 		return false;
 }
 
-/**
- * @brief Set up a response for the client after receiving the header from the CGI
- */
+/// @brief Set up a response for the client after receiving the header from the CGI
 void	CGI::rewriteResonseFromCGI(void) {
 	std::smatch	match;
 	std::string	new_response = "";
@@ -211,51 +194,52 @@ bool CGI::isCgiScript(const std::string &path)
 	return !executable.empty();
 }
 
-/**
- * @brief receives a response from child with a headerfile and body to return to the client
- * @return string buffer with response from child or error msg that something went wrong
- */
-std::string	CGI::receiveBuffer(void) {
-	char buffer[1024];
+// /**
+//  * @brief receives a response from child with a headerfile and body to return to the client
+//  * @return string buffer with response from child or error msg that something went wrong
+//  */
+// std::string	CGI::receiveBuffer(void) {
+// 	char buffer[1024];
 	
-	ssize_t bytesRead = read(pipe_from_child_[READ], buffer, sizeof(buffer) - 1);
-	if (bytesRead > 0)
-		buffer[bytesRead] = '\0';
-	else
-	{
-		if (bytesRead == -1)
-			std::cerr << "Error read: " << std::strerror(errno) << std::endl;
-		else
-			std::cerr << "Error: no output read"; // what now?
-		return std::string("HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\n\r\n<html>\n") +
-			"<head><title>Server Error</title></head><body><h1>Something went wrong</h1></body></html>";
-	}
-	return (buffer);
-}
+// 	ssize_t bytesRead = read(pipe_from_child_[READ], buffer, sizeof(buffer) - 1);
+// 	if (bytesRead > 0)
+// 		buffer[bytesRead] = '\0';
+// 	else
+// 	{
+// 		if (bytesRead == -1)
+// 			std::cerr << "Error read: " << std::strerror(errno) << std::endl;
+// 		else
+// 			std::cerr << "Error: no output read"; // what now?
+// 		return std::string("HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\n\r\n<html>\n") +
+// 			"<head><title>Server Error</title></head><body><h1>Something went wrong</h1></body></html>";
+// 	}
+// 	return (buffer);
+// }
 
-/**
- * @brief writes body to stdin for CGI and closes write end pipe
- * @param post_data string with body
- */
-void	CGI::sendDataToStdin( const std::string &post_data) {
-	ssize_t	readBytes;
+// /**
+//  * @brief writes body to stdin for CGI and closes write end pipe
+//  * @param post_data string with body
+//  */
+// void	CGI::sendDataToStdin(const std::string &post_data) {
+// 	ssize_t	readBytes;
 
-	readBytes = write(pipe_to_child_[WRITE], post_data.c_str(), post_data.size());
-	if (readBytes != (ssize_t)post_data.size())
-	{
-		if (readBytes == -1)
-			std::cerr << "Error write: " << std::strerror(errno) << std::endl;
-		else
-			std::cerr << "Error write: not written right amount" << std::endl;
-	}
-	close(pipe_to_child_[WRITE]);
-	pipe_to_child_[WRITE] = -1;
-}
+// 	readBytes = write(pipe_to_child_[WRITE], post_data.c_str(), post_data.size());
+// 	if (readBytes != (ssize_t)post_data.size())
+// 	{
+// 		if (readBytes == -1)
+// 			std::cerr << "Error write: " << std::strerror(errno) << std::endl;
+// 		else
+// 			std::cerr << "Error write: not written right amount" << std::endl;
+// 	}
+// 	close(pipe_to_child_[WRITE]);
+// 	pipe_to_child_[WRITE] = -1;
+// }
 
 std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, const HTTPRequest request) {
 	envStrings.push_back("REQUEST_METHOD=" + request.method);
 	envStrings.push_back("REQUEST_TARGET=" + request.request_target);
 	envStrings.push_back("CONTENT_LENGTH=" + std::to_string(request.body.size()));
+
 	for (const auto& pair : request.headers)
 	{
 		if (*pair.second.end() == '\n')
@@ -264,7 +248,7 @@ std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, const HT
 			envStrings.push_back(pair.first + "=" + pair.second);
 	}
 
-	std::vector<char*> env;
+	std::vector<char*>	env;
 	for (auto &str : envStrings)
 		env.push_back(const_cast<char*>(str.c_str()));
 	env.push_back(nullptr);

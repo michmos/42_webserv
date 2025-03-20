@@ -1,9 +1,7 @@
 
 #include "CGIPipes.hpp"
 
-CGIPipes::CGIPipes(void) {
-
-}
+CGIPipes::CGIPipes(void) { }
 
 CGIPipes::~CGIPipes(void) {
 	closeAllPipes();
@@ -47,6 +45,7 @@ void	CGIPipes::addNewPipes(void) {
 	addPipesToEpoll();
 }
 
+/// @brief takes the last pipe and exectutes the pipe_callback function
 void	CGIPipes::addPipesToEpoll() {
 	std::vector<int>	pipes = pipes_.back();
 

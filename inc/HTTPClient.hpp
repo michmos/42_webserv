@@ -67,6 +67,7 @@ class HTTPClient {
 		SharedFd								fd_;
 		Server									*server_;
 		Epoll									ep;
+		std::vector<std::string>				message_que_;
 	
 		HTTPParser								parser_;
 		HTTPRequest								request_;

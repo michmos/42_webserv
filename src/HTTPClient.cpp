@@ -20,23 +20,40 @@ void	HTTPClient::assignServer(Server server) {
 }
 
 void	HTTPClient::work(epoll_event &event) {
-	// just see if read or write event?
-	// reading() / writing():
-
-	if (STATE == CGISEND) // send data to eventfd (pipe)
+	char		buffer[2048];
+	size_t		bytes_read;
+	
+	if (STATE != CGISEND && STATE != CGIRECEIVE)
 	{
+		// just see if read or write event?
+		// reading() / writing():
+		;
+		if (STATE == DONE && !message_que_.empty()) // maybe better to have a seperate write and read function
+		{
+			std::string	response = message_que_.front();
+			message_que_.erase(message_que_.begin());
+			write(event.data.fd, response.c_str(), sizeof(response));
+		}
+	}
+	else if (STATE == CGISEND) // send data to eventfd (pipe) 
+	{
+		write(event.data.fd, request_.body.c_str(), sizeof(request_.body));
 		close(event.data.fd);
 		STATE == CGIRECEIVE;
 		return
 	}
 	else if (STATE == CGIRECEIVE) // read data from eventfd (pipe)
 	{
+		bytes_read = ::recv(event.data.fd, buffer, sizeof(buffer), 0);
+		if (bytes_read < 0)
+			throw std::runtime_error("recv errors");
 		cgi_->getResponseFromCGI();
 		close(event.data.fd);
-		//parse CGI header to HTTP header or/and send back to client
+		//send back to client
 		STATE = CGIRESPONSE;
 	}
-	feedData("data");
+	std::string data(buffer);
+	feedData(std::move(data));
 }
 
 void HTTPClient::feedData(std::string &&data) {
@@ -70,6 +87,7 @@ void	HTTPClient::parsing() {
 
 void	HTTPClient::responding() {
 	responseGenerator->generateResponse(request_);
+	message_que_.push_back(responseGenerator->loadResponse());
 	STATE = DONE;
 }
 
@@ -91,14 +109,7 @@ void	HTTPClient::cgi(void) {
 }
 
 void	HTTPClient::cgiresponse(void) {
-	std::string	response;
-	int			status_code;
-
-	response = cgi_->getResponse();
-	if (cgi_->isNPHscript(request_.request_target))
-		// send all to client...
-		;
-	else
-		// parse CGI header
-		;
+	if (!cgi_->isNPHscript(request_.request_target))
+		cgi_->rewriteResonseFromCGI();
+	message_que_.push_back(cgi_->getResponse());
 }

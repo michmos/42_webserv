@@ -56,7 +56,6 @@ class CGI {
 		void			createArgvVector( std::vector<char*> &argv_vector, const std::string &executable );
 		void			createEnvCharPtrVector( std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector );
 		void			rewriteResonseFromCGI( void );
-		void			waitForChild( void );
 		
 		// GETTERS
 		std::string		getResponse( void );
