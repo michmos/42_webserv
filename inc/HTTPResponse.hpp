@@ -26,19 +26,13 @@ class HTTPResponseGenerator {
 		std::string			content_type_;
 		std::string			httpStatusMessages_;
 		std::string			response_;
-		std::string			raw_data_;
 		int					status_code_;
 
 	public:
 		HTTPResponseGenerator( void );
 		~HTTPResponseGenerator( void );
 
-		void	generateResponse( const HTTPRequest request );
-		void	generateResponseCGI( const HTTPRequest request, std::vector<int> pipes );
-
-		void		loadMimeTypes( const std::string& filename );
+		void		generateResponse( const HTTPRequest request );
 		std::string loadResponse( void );
-		void		addRawData( std::string data );
-		std::string	getResponseCGI( void );
 		bool		isCGI(const HTTPRequest request);
 };

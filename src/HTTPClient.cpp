@@ -31,6 +31,7 @@ void	HTTPClient::work(epoll_event &event) {
 	}
 	else if (STATE == CGIRECEIVE) // read data from eventfd (pipe)
 	{
+		cgi_->getResponseFromCGI();
 		close(event.data.fd);
 		//parse CGI header to HTTP header or/and send back to client
 		STATE = CGIRESPONSE;
@@ -44,11 +45,11 @@ void HTTPClient::feedData(std::string &&data) {
 	if (STATE == RECEIVE)
 		receiving(std::move(data));
 	if (STATE == PARSING)
-		parsing(request);
+		parsing();
 	if (STATE == RESPONSE)
-		responding(request);
+		responding();
 	else if (STATE == STARTCGI)
-		cgi(request);
+		cgi();
 	else if (STATE == CGIRESPONSE)
 		cgiresponse();
 }
@@ -59,39 +60,42 @@ void	HTTPClient::receiving(std::string &&data) {
 		STATE = PARSING;
 }
 
-void	HTTPClient::parsing(HTTPRequest &request) {
-	request = parser_.getParsedRequest();
-	responseGenerator->addRawData(parser_.getRawData());
-	if (!responseGenerator->isCGI(request))
+void	HTTPClient::parsing() {
+	request_ = parser_.getParsedRequest();
+	if (!responseGenerator->isCGI(request_))
 		STATE = RESPONSE;
 	else
 		STATE = STARTCGI;
 }
 
-void	HTTPClient::responding(HTTPRequest &request) {
-	responseGenerator->generateResponse(request);
+void	HTTPClient::responding() {
+	responseGenerator->generateResponse(request_);
 	STATE = DONE;
 }
 
-void	HTTPClient::cgi(HTTPRequest &request) {
-	CGI 						cgi(request.body, pipes_.getLastPipes());
+void	HTTPClient::cgi(void) {
 	std::vector<std::string>	env_strings;
 	static std::string			body = "";
 
+	cgi_ = std::make_unique<CGI>(request_.body, pipes_.getLastPipes());
 	pipes_.addNewPipes();
-	if (request.method == "DELETE")
-		request.request_target = "data/www/cgi-bin/nph_CGI_delete.py";
+	if (request_.method == "DELETE")
+		request_.request_target = "data/www/cgi-bin/nph_CGI_delete.py";
 	else
-		request.request_target = "data/www/cgi-bin" + request.request_target;
+		request_.request_target = "data/www/cgi-bin" + request_.request_target;
 	
-	cgi.createEnv(env_strings, request);
-	cgi.forkCGI(request.request_target, env_strings);
-	body = request.body;
+	cgi_->createEnv(env_strings, request_);
+	cgi_->forkCGI(request_.request_target, env_strings);
+	body = request_.body;
 	STATE = CGISEND;
 }
 
-void	cgiresponse(void) {
-	if ("nph_")
+void	HTTPClient::cgiresponse(void) {
+	std::string	response;
+	int			status_code;
+
+	response = cgi_->getResponse();
+	if (cgi_->isNPHscript(request_.request_target))
 		// send all to client...
 		;
 	else

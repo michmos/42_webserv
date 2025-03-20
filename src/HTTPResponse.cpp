@@ -7,7 +7,6 @@
 // 	body_ = "";
 // 	content_type_ = "application/octet-stream";
 // 	status_code_ = 200;
-// 	raw_data_ = "";
 // 	response_ = "";
 // }
 
@@ -16,7 +15,6 @@ HTTPResponseGenerator::HTTPResponseGenerator( ) {
 	body_ = "";
 	content_type_ = "application/octet-stream";
 	status_code_ = 200;
-	raw_data_ = "";
 	response_ = "";
 }
 
@@ -29,29 +27,7 @@ bool	HTTPResponseGenerator::isCGI(const HTTPRequest request) {
 		return (true);
 }
 
-HTTPResponseGenerator::~HTTPResponseGenerator() { }
-
-std::string HTTPResponseGenerator::getResponseCGI(void) {
-	return (response_);
-}
-
-void	HTTPResponseGenerator::generateResponseCGI(const HTTPRequest request, std::vector<int> pipes) {
-	std::string					filename(request.request_target);
-	std::vector<std::string>	env_strings;
-
-	if (request.method == "DELETE")
-		filename = "data/www/cgi-bin/nph_CGI_delete.py";
-	else
-		filename = "data/www/cgi-bin" + filename;
-	
-
-	CGI	cgi(request.body, pipes);
-	cgi.forkCGI(filename, env_strings);
-	// response_ = cgi.getResponse(); //???
-	// readyObserver_.notifyResponseReady();
-	// response to que server to write -> EPOLLOUT event
-	// need CLIENT HERE
-}
+HTTPResponseGenerator::~HTTPResponseGenerator(void) { }
 
 void	HTTPResponseGenerator::generateResponse(const HTTPRequest request) {
 	std::string	filename(request.request_target);
@@ -69,7 +45,7 @@ void	HTTPResponseGenerator::generateResponse(const HTTPRequest request) {
 		// if (filename_.empty())
 		// 	return ("There went something wrong..."); // TO DO
 	}
-	readyObserver_.notifyResponseReady();
+	// readyObserver_.notifyResponseReady();
 }
 
 std::string	HTTPResponseGenerator::loadResponse(void) {
@@ -117,40 +93,7 @@ std::string	HTTPResponseGenerator::resolvePath(std::string endpoint) {
 			return folder_file;
 		}
 	}
-	return "";
-}
-
-// this is more a one time thing WHERE TO PUT IT?? PARSING?
-void	HTTPResponseGenerator::loadMimeTypes( const std::string& filename ) {
-	size_t			delimiter;
-	std::string		extension;
-	std::string		mimetype;
-	std::string		line;
-	std::ifstream	file(filename);
-
-	if (!file)
-		throw std::runtime_error("Failed to open file: " + filename);
-
-	while (std::getline(file, line))
-	{
-		line.erase(0, line.find_first_not_of(" \t"));
-		line.erase(line.find_last_not_of(" \t") + 1);
-
-		if (line.empty() || line[0] == '#')
-			continue;
-
-		delimiter = line.find('=');
-		if (delimiter == std::string::npos && delimiter == line.length() - 1)
-			continue ;
-
-		extension = line.substr(0, delimiter);
-		mimetype = line.substr(delimiter + 1);
-		extension.erase(0, extension.find_first_not_of(" \t"));
-		extension.erase(extension.find_last_not_of(" \t") + 1);
-		mimetype.erase(0, mimetype.find_first_not_of(" \t"));
-		mimetype.erase(mimetype.find_last_not_of(" \t") + 1);
-		mimetypes_[extension] = mimetype;
-	}
+	return ("");
 }
 
 void	HTTPResponseGenerator::getBody() {
@@ -162,7 +105,7 @@ void	HTTPResponseGenerator::getBody() {
 		buffer.clear();
 		if (!myfile)
 			throw std::runtime_error("Failed to open file: " + filename_);
-		// buffer << myfile.rdbuf();
+		buffer << myfile.rdbuf();
 		body_.assign((std::istreambuf_iterator<char>(myfile)), std::istreambuf_iterator<char>());
 	}
 	else
@@ -185,12 +128,13 @@ void	HTTPResponseGenerator::getContentType( void )
 		extension = filename_.substr(index);
 		std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
 
-		auto it = mimetypes_.find(extension);
-		if (it != mimetypes_.end())
-			content_type_ = it->second;
+		// auto it = mimetypes_.find(extension);
+		// if (it != mimetypes_.end())
+		// 	content_type_ = it->second;
 	}
 }
 
+/// @brief checks the status and get the right httpstatus message to add it to the default error page
 void	HTTPResponseGenerator::getHttpStatusMessages( void ) {
 	static const std::unordered_map<int, std::string> httpStatusMessages = {
 		{100, "100 Continue"}, {101, "101 Switching Protocols"}, {102, "102 Processing"},
@@ -216,8 +160,4 @@ void	HTTPResponseGenerator::getHttpStatusMessages( void ) {
 		if (index != body_.size())
 			body_.replace(index, 30, "Error " + httpStatusMessages_);
 	}
-}
-
-void	HTTPResponseGenerator::addRawData(std::string data) {
-	raw_data_ = data;
 }

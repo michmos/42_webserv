@@ -24,11 +24,6 @@
 # include <regex>
 # include <memory>
 
-# define FROM_CHILD_READ 0
-# define FROM_CHILD_WRITE 1
-# define TO_CHILD_READ 2
-# define TO_CHILD_WRITE 3
-
 # include "HTTPRequest.hpp"
 # include "HTTPRequestConfig.hpp"
 # include "HTTPResponse.hpp"
@@ -52,8 +47,6 @@ enum e_state {
 
 class HTTPClient {
 	public:
-
-
 		HTTPClient( std::function<void(int, int)> callback );
 		~HTTPClient( void );
 
@@ -63,19 +56,21 @@ class HTTPClient {
 
 		void	feedData( std::string &&data );
 		void	receiving( std::string &&data );
-		void	parsing( HTTPRequest &request );
-		void	cgi( HTTPRequest &request );
-		void	responding( HTTPRequest &request );
+		void	parsing( void );
+		void	cgi( void );
+		void	responding( void );
 		void	cgiresponse( void );
 
 	private:
 		e_state									STATE;
-		HTTPParser								parser_;
-		std::unique_ptr<HTTPResponseGenerator>	responseGenerator;
 
-		std::vector<std::vector<int>>			pipes_;
 		SharedFd								fd_;
 		Server									*server_;
 		Epoll									ep;
+	
+		HTTPParser								parser_;
+		HTTPRequest								request_;
+		std::unique_ptr<CGI> 					cgi_;
 		CGIPipes								pipes_;
+		std::unique_ptr<HTTPResponseGenerator>	responseGenerator;
 };

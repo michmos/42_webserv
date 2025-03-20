@@ -31,8 +31,9 @@
 # include <thread>
 # include "HTTPRequest.hpp"
 
-#define READ 0
-#define WRITE 1
+# define READ 0
+# define WRITE 1
+# define TIMEOUT 10 // from configfile?
 
 class CGI {
 	private:
@@ -65,7 +66,7 @@ class CGI {
 		bool				isNPHscript( const std::string &executable );
 		static bool			isCgiScript( const std::string &path );
 		static std::string	getScriptExecutable( const std::string &path );
-		std::vector<char*>	createEnv(std::vector<std::string> &envStrings, const HTTPRequest request);
+		std::vector<char*>	createEnv( std::vector<std::string> &envStrings, const HTTPRequest request );
 
 		void			watchDog( void );
 
@@ -74,5 +75,5 @@ class CGI {
 		void			closeAllPipes( void);
 		void			closeTwoPipes( int &pipe1, int &pipe2 );
 		void			throwException( const char *msg );
-		void			throwExceptionExit(const char *msg );
+		void			throwExceptionExit( const char *msg );
 };

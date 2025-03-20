@@ -37,29 +37,12 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 		}
 		exit(1);
 	}
-	// addEventWithData(epoll_fd);
-	// send data as write action to server EPOLLOUT instead of sendDataToStdin
-	// sendDataToStdin(post_data_);
-	// Not wait for child but fork a timeout where also close the piples
-	// waitForChild();
-	// not here, the server get this response
-	// getResponseFromCGI();
-	// close all pipes in timeout mangager
+	closeTwoPipes(pipe_to_child_[READ], pipe_from_child_[WRITE]);
 	watchDog();
-	// closeAllPipes();
-	// this check somewhere else
-	// if (!isNPHscript(executable))
-	// 	rewriteResonseFromCGI();
-	// closeTwoPipes(pipe_to_child_[READ], pipe_from_child_[WRITE]);
 }
 CGI::~CGI(void) {}
 
-std::string CGI::getResponse(void) {
-	return (response_);
-}
-
-
-#define TIMEOUT 10 // from configfile?
+std::string CGI::getResponse(void) { return (response_); }
 
 void	CGI::watchDog(void) {
 	pid_t	pid;
@@ -88,10 +71,6 @@ void	CGI::watchDog(void) {
 			kill(pid_, SIGKILL);
 		closeAllPipes();
 		exit(0);
-	}
-	else
-	{
-		closeAllPipes();
 	}
 }
 
