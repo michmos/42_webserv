@@ -1,35 +1,11 @@
 #include "CGI.hpp"
 
-void	CGI::add_pipe_events(void) {
-	std::memset(&epoll_event_pipe_[0], 0, sizeof(epoll_event_pipe_[0]));
-	std::memset(&epoll_event_pipe_[1], 0, sizeof(epoll_event_pipe_[1]));
-	// epoll_event_pipe_[0].data.fd = pipe_to_child_[WRITE];
-	epoll_event_pipe_[0].events = EPOLLOUT | EPOLLET;
-	epoll_event_pipe_[1].data.fd = pipe_from_child_[READ];
-	epoll_event_pipe_[1].events = EPOLLIN | EPOLLET;
+CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post_data) {
+	pipe_from_child_[READ] = pipes[0];
+	pipe_from_child_[WRITE] = pipes[1];
+	pipe_to_child_[READ] = pipes[2];
+	pipe_to_child_[WRITE] = pipes[3];
 }
-
-
-void	CGI::addEventWithData(int epoll_fd) {
-	std::shared_ptr<std::string>	buffer;
-	
-	setPipes();
-	add_pipe_events();
-	buffer = std::make_shared<std::string>(post_data_);
-	epoll_event_pipe_[0].data.ptr = static_cast<void*>(buffer.get());;
-	std::cerr << pipe_to_child_[WRITE] << " : " << pipe_from_child_[READ] << " epollfd: " << epoll_fd << std::endl;
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, pipe_to_child_[WRITE], &epoll_event_pipe_[0]) == -1)
-	{
-		std::cerr << "Failed to add event to epoll" << errno << strerror(errno) << std::endl;
-	}
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, pipe_from_child_[READ], &epoll_event_pipe_[1]) == -1)
-	{
-		std::cerr << "Failed to add event to epoll" << std::endl;
-		return;
-	}
-}
-
-CGI::CGI(const std::string &post_data) : post_data_(post_data) { }
 
 /**
  * @brief forks the process to execve the CGI, with POST sends buffer to child
@@ -63,27 +39,20 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 	}
 	// addEventWithData(epoll_fd);
 	// send data as write action to server EPOLLOUT instead of sendDataToStdin
-	sendDataToStdin(post_data_);
+	// sendDataToStdin(post_data_);
 	// Not wait for child but fork a timeout where also close the piples
-	waitForChild();
+	// waitForChild();
 	// not here, the server get this response
-	getResponseFromCGI();
+	// getResponseFromCGI();
 	// close all pipes in timeout mangager
 	watchDog();
-	closeAllPipes();
+	// closeAllPipes();
 	// this check somewhere else
-	if (!isNPHscript(executable))
-		rewriteResonseFromCGI();
+	// if (!isNPHscript(executable))
+	// 	rewriteResonseFromCGI();
 	// closeTwoPipes(pipe_to_child_[READ], pipe_from_child_[WRITE]);
 }
 CGI::~CGI(void) {}
-
-void	CGI::create_events_from_pipes() {
-	epoll_event_pipe_[0].data.fd = pipe_to_child_[WRITE];
-	epoll_event_pipe_[0].events = EPOLLOUT;
-	epoll_event_pipe_[1].data.fd = pipe_from_child_[READ];
-	epoll_event_pipe_[1].events = EPOLLIN;
-}
 
 std::string CGI::getResponse(void) {
 	return (response_);
@@ -302,4 +271,23 @@ void	CGI::sendDataToStdin( const std::string &post_data) {
 	}
 	close(pipe_to_child_[WRITE]);
 	pipe_to_child_[WRITE] = -1;
+}
+
+std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, const HTTPRequest request) {
+	envStrings.push_back("REQUEST_METHOD=" + request.method);
+	envStrings.push_back("REQUEST_TARGET=" + request.request_target);
+	envStrings.push_back("CONTENT_LENGTH=" + std::to_string(request.body.size()));
+	for (const auto& pair : request.headers)
+	{
+		if (*pair.second.end() == '\n')
+			envStrings.push_back(pair.first + "=" + pair.second.substr(0, pair.second.size() - 1));
+		else
+			envStrings.push_back(pair.first + "=" + pair.second);
+	}
+
+	std::vector<char*> env;
+	for (auto &str : envStrings)
+		env.push_back(const_cast<char*>(str.c_str()));
+	env.push_back(nullptr);
+	return env;
 }

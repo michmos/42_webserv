@@ -29,6 +29,7 @@
 # include <ctime>
 # include <chrono>
 # include <thread>
+# include "HTTPRequest.hpp"
 
 #define READ 0
 #define WRITE 1
@@ -45,7 +46,7 @@ class CGI {
 		epoll_event			epoll_event_pipe_[2];
 
 	public:
-		CGI( const std::string &post_data);
+		CGI( const std::string &post_data, std::vector<int> pipes );
 		~CGI( void );
 
 		void			forkCGI( const std::string &executable, std::vector<std::string> env_vector );
@@ -55,8 +56,6 @@ class CGI {
 		void			createEnvCharPtrVector( std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector );
 		void			rewriteResonseFromCGI( void );
 		void			waitForChild( void );
-		void			addEventWithData( int epoll_fd );
-		void			add_pipe_events( void );
 		
 		// GETTERS
 		std::string		getResponse( void );
@@ -66,8 +65,8 @@ class CGI {
 		bool				isNPHscript( const std::string &executable );
 		static bool			isCgiScript( const std::string &path );
 		static std::string	getScriptExecutable( const std::string &path );
+		std::vector<char*>	createEnv(std::vector<std::string> &envStrings, const HTTPRequest request);
 
-		void			create_events_from_pipes();
 		void			watchDog( void );
 
 		// CGI UTILS

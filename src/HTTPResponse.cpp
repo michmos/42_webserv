@@ -20,42 +20,48 @@ HTTPResponseGenerator::HTTPResponseGenerator( ) {
 	response_ = "";
 }
 
-std::vector<char*> createEnv(std::vector<std::string> &envStrings, const HTTPRequest request) {
-	envStrings.push_back("REQUEST_METHOD=" + request.method);
-	envStrings.push_back("REQUEST_TARGET=" + request.request_target);
-	envStrings.push_back("CONTENT_LENGTH=" + std::to_string(request.body.size()));
-	for (const auto& pair : request.headers)
-	{
-		if (*pair.second.end() == '\n')
-			envStrings.push_back(pair.first + "=" + pair.second.substr(0, pair.second.size() - 1));
-		else
-			envStrings.push_back(pair.first + "=" + pair.second);
-	}
-
-	std::vector<char*> env;
-	for (auto &str : envStrings)
-		env.push_back(const_cast<char*>(str.c_str()));
-	env.push_back(nullptr);
-	return env;
+bool	HTTPResponseGenerator::isCGI(const HTTPRequest request) {
+	if (request.invalidRequest)
+		return (false);
+	else if (!CGI::isCgiScript(request.request_target) && request.method != "DELETE")
+		return (false);
+	else
+		return (true);
 }
 
 HTTPResponseGenerator::~HTTPResponseGenerator() { }
 
-std::string HTTPResponseGenerator::getResponseCGI( void ) {
+std::string HTTPResponseGenerator::getResponseCGI(void) {
 	return (response_);
 }
 
-void	HTTPResponseGenerator::generateResponse( const HTTPRequest request, int epoll_fd) {
+void	HTTPResponseGenerator::generateResponseCGI(const HTTPRequest request, std::vector<int> pipes) {
 	std::string					filename(request.request_target);
 	std::vector<std::string>	env_strings;
+
+	if (request.method == "DELETE")
+		filename = "data/www/cgi-bin/nph_CGI_delete.py";
+	else
+		filename = "data/www/cgi-bin" + filename;
+	
+
+	CGI	cgi(request.body, pipes);
+	cgi.forkCGI(filename, env_strings);
+	// response_ = cgi.getResponse(); //???
+	// readyObserver_.notifyResponseReady();
+	// response to que server to write -> EPOLLOUT event
+	// need CLIENT HERE
+}
+
+void	HTTPResponseGenerator::generateResponse(const HTTPRequest request) {
+	std::string	filename(request.request_target);
 
 	if (request.invalidRequest)
 	{
 		status_code_ = 400;
 		filename = "custom_404.html"; // change
 	}
-	std::cerr << "filename generateResponse: " << filename << std::endl;
-	if (!CGI::isCgiScript(filename) && request.method != "DELETE")
+	else
 	{
 		filename_ = resolvePath(filename);
 		if (filename_.empty())
@@ -63,23 +69,10 @@ void	HTTPResponseGenerator::generateResponse( const HTTPRequest request, int epo
 		// if (filename_.empty())
 		// 	return ("There went something wrong..."); // TO DO
 	}
-	else
-	{
-		if (request.method == "DELETE")
-			filename = "data/www/cgi-bin/nph_CGI_delete.py";
-		else
-			filename = "data/www/cgi-bin" + filename;
-		createEnv(env_strings, request);
-
-		CGI	cgi(request.body);
-		cgi.addEventWithData(epoll_fd);
-		cgi.forkCGI(filename, env_strings);
-		response_ = cgi.getResponse(); //???
-	}
-	// readyObserver_.notifyResponseReady();
+	readyObserver_.notifyResponseReady();
 }
 
-std::string	HTTPResponseGenerator::loadResponse( void ) {
+std::string	HTTPResponseGenerator::loadResponse(void) {
 	getBody();
 	getContentType();
 	getHttpStatusMessages();
@@ -87,7 +80,7 @@ std::string	HTTPResponseGenerator::loadResponse( void ) {
 	return (header_ + body_);
 }
 
-std::string	HTTPResponseGenerator::resolvePath( std::string endpoint ) {
+std::string	HTTPResponseGenerator::resolvePath(std::string endpoint) {
 	// TO DO: folders from config
 	std::string folders[] = {
 		".",

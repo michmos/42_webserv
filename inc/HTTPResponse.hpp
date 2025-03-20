@@ -19,7 +19,6 @@ class HTTPResponseGenerator {
 		void	getContentType( void );
 		void	getHttpStatusMessages( void );
 
-		std::unordered_map<std::string, std::string> mimetypes_; // change! -> in config
 		std::vector<char *> env_;
 		std::string			filename_;
 		std::string			header_;
@@ -27,18 +26,19 @@ class HTTPResponseGenerator {
 		std::string			content_type_;
 		std::string			httpStatusMessages_;
 		std::string			response_;
-		int					status_code_;
 		std::string			raw_data_;
-		// IResponseReadyObserver &readyObserver_; // change!
+		int					status_code_;
+
 	public:
-		HTTPResponseGenerator(  );
-		// HTTPResponseGenerator( IResponseReadyObserver &observer ); // change!
+		HTTPResponseGenerator( void );
 		~HTTPResponseGenerator( void );
 
-		void	generateResponse( const HTTPRequest request, int epoll_fd );
+		void	generateResponse( const HTTPRequest request );
+		void	generateResponseCGI( const HTTPRequest request, std::vector<int> pipes );
 
 		void		loadMimeTypes( const std::string& filename );
 		std::string loadResponse( void );
 		void		addRawData( std::string data );
 		std::string	getResponseCGI( void );
+		bool		isCGI(const HTTPRequest request);
 };
