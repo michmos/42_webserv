@@ -51,8 +51,8 @@ class CGI {
 		~CGI( void );
 
 		void			forkCGI( const std::string &executable, std::vector<std::string> env_vector );
-		std::string		receiveBuffer( void );
-		void			sendDataToStdin( const std::string &post_data );
+		// std::string	receiveBuffer( void );
+		// void			sendDataToStdin( const std::string &post_data );
 		void			createArgvVector( std::vector<char*> &argv_vector, const std::string &executable );
 		void			createEnvCharPtrVector( std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector );
 		void			rewriteResonseFromCGI( void );
