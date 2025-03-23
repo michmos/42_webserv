@@ -1,19 +1,12 @@
 
 #include "../inc/SharedFd.hpp"
-#include <memory>
 
 UniqueFd::UniqueFd(int fd) : _fd(fd) {
-	#ifdef DEBUG
-	std::cout << "UniqueFd Instance created" << std::endl;
-	#endif
 }
 
 UniqueFd::~UniqueFd() {
 	if (_fd > 0)
 		close(_fd);
-	#ifdef DEBUG
-	std::cout << "UniqueFd Instance destroyed" << std::endl;
-	#endif
 }
 
 int	UniqueFd::get() const {
@@ -23,10 +16,7 @@ int	UniqueFd::get() const {
 SharedFd::SharedFd() : _fdPtr(std::make_shared<UniqueFd>(-1)) {
 }
 
-SharedFd::SharedFd(int fd) {
-	if (fd < 0)
-		throw std::invalid_argument("SharedFd(int): fd < 0");
-	_fdPtr = std::make_shared<UniqueFd>(fd);
+SharedFd::SharedFd(int fd) : _fdPtr(std::make_shared<UniqueFd>(fd)) {
 }
 
 SharedFd::SharedFd(const SharedFd& other) {
@@ -48,23 +38,23 @@ SharedFd& SharedFd::operator=(int fd) {
 
 // comparison operators
 bool	SharedFd::operator==(const SharedFd& other) {
-	return (this->_fdPtr.get() == other._fdPtr.get());
+	return (this->get() == other.get());
 }
 
 bool	SharedFd::operator<(const SharedFd& other) {
-	return (this->_fdPtr.get() < other._fdPtr.get());
+	return (this->get() < other.get());
 }
 
 bool	SharedFd::operator>(const SharedFd& other) {
-	return (this->_fdPtr.get() > other._fdPtr.get());
+	return (this->get() > other.get());
 }
 
 bool	SharedFd::operator<=(const SharedFd& other) {
-	return (this->_fdPtr.get() <= other._fdPtr.get());
+	return (this->get() <= other.get());
 }
 
 bool	SharedFd::operator>=(const SharedFd& other) {
-	return (this->_fdPtr.get() >= other._fdPtr.get());
+	return (this->get() >= other.get());
 }
 
 SharedFd::~SharedFd() {
@@ -81,11 +71,9 @@ void	SharedFd::setNonBlock() const {
 }
 
 bool	SharedFd::isValid() const {
-	return (_fdPtr->get() >= 0);
+	return (this->get() >= 0);
 }
 
 int	SharedFd::get() const {
-	if (!this->isValid())
-		throw std::runtime_error("SharedFd.get(): _fd not set");
 	return(_fdPtr->get());
 }
