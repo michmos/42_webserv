@@ -7,8 +7,41 @@ ConfigParser::ConfigParser(const std::string& filepath) {
 	this->_filepath = filepath;
 	readConfigToInput();
 	parseInputToTokens();
-	printTokens();
+	// printTokens();
 	parseTokenToConfig();
+	// for (auto &config : this->_configs) {
+	// 	config.printConfig();
+	// 	std::cout << BOLD << "getPort(): " << config.getPort() << RESET << std::endl;
+	// 	std::cout << BOLD << "getHost(): " << config.getHost() << RESET << std::endl;
+	// 	std::cout << BOLD << "getServerName(): " << config.getServerName() << RESET << std::endl;
+	// 	std::cout << BOLD << "getAutoindex(\"/\"): " << config.getAutoindex("/") << RESET << std::endl;
+	// 	std::cout << BOLD << "getClientBodySize(\"/\"): " << config.getClientBodySize("/") << RESET << std::endl;
+	// 	std::cout << BOLD << "getRoot(\"/\"): ";
+	// 	std::vector<std::string> roots = config.getRoot("/");
+	// 	for (std::vector<std::string>::iterator it = roots.begin(); it != roots.end(); ++it) {
+	// 		std::cout << *it << " ";
+	// 	}
+	// 	std::cout << RESET << std::endl;
+	// 	std::cout << BOLD << "getMethods(\"/\"): ";
+	// 	std::vector<std::string> methods = config.getMothods("/");
+	// 	for (std::vector<std::string>::iterator it = methods.begin(); it != methods.end(); ++it) {
+	// 		std::cout << *it << " ";
+	// 	}
+	// 	std::cout << RESET << std::endl;
+	// 	std::cout << BOLD << "getIndex(\"/\"): ";
+	// 	std::vector<std::string> index = config.getIndex("/");
+	// 	for (std::vector<std::string>::iterator it = index.begin(); it != index.end(); ++it) {
+	// 		std::cout << *it << " ";
+	// 	}
+	// 	std::cout << RESET << std::endl;
+	// 	std::cout << BOLD << "getRedirect(\"/\"): ";
+	// 	std::vector<std::string> redirect = config.getRedirect("/");
+	// 	for (std::vector<std::string>::iterator it = redirect.begin(); it != redirect.end(); ++it) {
+	// 		std::cout << *it << " ";
+	// 	}
+	// 	std::cout << RESET << std::endl;
+	// }
+	
 }
 
 ConfigParser::~ConfigParser() {
@@ -243,7 +276,6 @@ void ConfigParser::parseTokenToLocation(std::vector<token>::iterator &it, Config
 		if (it->type == STRING)
 			parseTokenToLocDir(it, newloc);
 		else if (it->type == BLOCK_CLOSE) {
-			// moveOneTokenSafly(it);
 			break;
 		}
 		else
@@ -273,7 +305,7 @@ void ConfigParser::parseTokenToServer(std::vector<token>::iterator &it) {
 			errorToken(*it, "Expected STRING, LOCATION or }");
 		}
 	}
-	newServer.printConfig();
+	// newServer.printConfig();
 	this->_configs.push_back(newServer);
 }
 
@@ -292,7 +324,6 @@ void	ConfigParser::parseTokenToConfig() {
 	for (std::vector<token>::iterator it = this->_tokens.begin(); it != this->_tokens.end(); ++it) {
 		if (it->type == SERVER) {
 			parseTokenToServer(it);
-			// std::cout << it->type << ":" << it->value << std::endl;
 			it--;
 		}
 		else if (it->type != EOF_TOKEN) {
@@ -301,5 +332,4 @@ void	ConfigParser::parseTokenToConfig() {
 	}
 	if (this->_configs.empty())
 		throw ConfigParser::ConfigParserException("Missing any Server config in .conf file.");
-		// ERROR
 }
