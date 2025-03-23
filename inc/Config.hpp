@@ -1,8 +1,11 @@
 #ifndef SERVERCONFIG_HPP
 #define SERVERCONFIG_HPP
 
-#include "Webserv.hpp"
-
+#include <cstdint>
+#include <map>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 // LOOK INTO:
 // map can be unordered_map
