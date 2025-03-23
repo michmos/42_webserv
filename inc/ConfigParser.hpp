@@ -78,6 +78,8 @@ class ConfigParser {
 		void	checkClientBodySize(); // https://nginx.org/en/docs/syntax.html
 
 		// GETTERS
+		std::vector<Config> getConfigs() const { return this->_configs; }
+		
 
 		// UTILS
 		void printInput();
