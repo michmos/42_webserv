@@ -13,13 +13,20 @@
 class Socket {
 public:
 	Socket();
-	Socket(const Socket&) = delete;
-	Socket& operator=(const Socket&) = delete;
+	Socket(int sockFd);
+	Socket& operator=(int sockFd);
+	Socket(const Socket&);
+	Socket& operator=(const Socket&);
 	~Socket();
 
+
+	// - addr: e.g. inet_addr("127.0.0.1")
+	// - port: e.g. htons(8080)
 	void			bind(in_addr_t addr, in_port_t port);
 	void			listen(int backlog);
 	int				accept();
+	// - addr: e.g. inet_addr("127.0.0.1")
+	// - port: e.g. htons(8080)
 	void			connect(in_addr_t addr2, in_port_t port);
 	const SharedFd&	getFd() const;
 
