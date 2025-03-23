@@ -1,7 +1,7 @@
 #ifndef CONFIGPARSER_HPP
 #define CONFIGPARSER_HPP
-#include "Webserv.hpp"
 #include "Config.hpp"
+#include <regex>
 
 // ENUM IDEAS
 // Whitespace: Spaces, tabs, newlines (used for token separation but not meaningful).
@@ -33,8 +33,7 @@ enum tokenType {
 };
 
 // TOKENS FOR LEXAR
-struct token {
-	std::string::iterator		itStart;
+struct token { std::string::iterator		itStart;
 	std::string::iterator		itEnd;
 	std::string					value;
 	tokenType					type;

@@ -5,6 +5,8 @@
 #include "Client.hpp"
 #include "Epoll.hpp"
 #include "SharedFd.hpp"
+#include "ConfigParser.hpp"
+#include "Config.hpp"
 #include <stdexcept>
 
 
