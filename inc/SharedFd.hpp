@@ -27,6 +27,10 @@ public:
 	SharedFd& operator=(const SharedFd& other);
 	SharedFd& operator=(int fd);
 	bool	operator==(const SharedFd& other);
+	bool	operator<(const SharedFd& other);
+	bool	operator>(const SharedFd& other);
+	bool	operator<=(const SharedFd& other);
+	bool	operator>=(const SharedFd& other);
 	~SharedFd();
 
 	bool	isValid() const;

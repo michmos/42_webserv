@@ -35,6 +35,7 @@ SharedFd::SharedFd(const SharedFd& other) {
 	}
 }
 
+// assignment operators
 SharedFd& SharedFd::operator=(const SharedFd& other) {
 	this->_fdPtr = other._fdPtr;
 	return(*this);
@@ -45,13 +46,31 @@ SharedFd& SharedFd::operator=(int fd) {
 	return(*this);
 }
 
+// comparison operators
 bool	SharedFd::operator==(const SharedFd& other) {
-	return (this->_fdPtr == other._fdPtr);
+	return (this->_fdPtr.get() == other._fdPtr.get());
+}
+
+bool	SharedFd::operator<(const SharedFd& other) {
+	return (this->_fdPtr.get() < other._fdPtr.get());
+}
+
+bool	SharedFd::operator>(const SharedFd& other) {
+	return (this->_fdPtr.get() > other._fdPtr.get());
+}
+
+bool	SharedFd::operator<=(const SharedFd& other) {
+	return (this->_fdPtr.get() <= other._fdPtr.get());
+}
+
+bool	SharedFd::operator>=(const SharedFd& other) {
+	return (this->_fdPtr.get() >= other._fdPtr.get());
 }
 
 SharedFd::~SharedFd() {
 }
 
+// TODO: forbidden flag
 void	SharedFd::setNonBlock() const {
 	if (!this->isValid())
 		throw std::invalid_argument("setNonBlock(): _fd not set");
