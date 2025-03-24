@@ -1,21 +1,10 @@
 
 #include "../inc/Server.hpp"
 
-Server::Server(int fd) : _fd(fd) {
+Server::Server(const Socket& serverSock, const Config& conf, const std::string& name)
+	: _sock(serverSock), _config(conf), _name(name) {
 }
 
 Server::~Server() {
-}
-
-int	Server::getFd() const {
-	return(_fd);
-}
-
-const std::string& Server::getName() const {
-	return(_name);
-}
-
-void	Server::setName(const std::string& name) {
-	_name = name;
 }
 
