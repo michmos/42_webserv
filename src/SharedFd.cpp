@@ -29,27 +29,6 @@ SharedFd& SharedFd::operator=(int fd) {
 	return (*this);
 }
 
-// comparison operators
-bool	SharedFd::operator==(const SharedFd& other) {
-	return (this->_fd == other._fd);
-}
-
-bool	SharedFd::operator<(const SharedFd& other) {
-	return (this->_fd < other._fd);
-}
-
-bool	SharedFd::operator>(const SharedFd& other) {
-	return (this->_fd > other._fd);
-}
-
-bool	SharedFd::operator<=(const SharedFd& other) {
-	return (this->_fd <= other._fd);
-}
-
-bool	SharedFd::operator>=(const SharedFd& other) {
-	return (this->_fd >= other._fd);
-}
-
 // TODO: potentially rmv err_msg 
 SharedFd::~SharedFd() {
 	_refCounts[_fd]--;
@@ -70,10 +49,3 @@ void	SharedFd::setNonBlock() const {
 		throw std::runtime_error(std::string("fcntl()") + strerror(errno));
 }
 
-bool	SharedFd::isValid() const {
-	return (this->_fd >= 0);
-}
-
-int	SharedFd::get() const {
-	return(_fd);
-}
