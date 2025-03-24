@@ -1,5 +1,4 @@
-
-#include "CGIPipes.hpp"
+#include "../inc/CGIPipes.hpp"
 
 CGIPipes::CGIPipes(void) { }
 
@@ -11,7 +10,7 @@ void	CGIPipes::setCallbackFunction(std::function<void(int, int)> callback) {
 	pipe_callback_ = callback;
 }
 
-std::vector<int>&	CGIPipes::getLastPipes(void) { return (pipes_.back()); }
+std::vector<int>	CGIPipes::getLastPipes(void) { return (pipes_.back()); }
 
 /// @brief set pipes to -1 and then open both (to and from child) + nonblock
 void	CGIPipes::addNewPipes(void) {

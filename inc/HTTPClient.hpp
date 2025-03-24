@@ -1,18 +1,9 @@
 #pragma once
 
-# include <poll.h>
 # include <iostream>
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <arpa/inet.h>
-# include <string.h>
 # include <bitset>
 # include <climits>
 # include <cstring>
-# include <sys/epoll.h>
-# include <errno.h>
-# include <unistd.h>
-# include <fcntl.h>
 # include <cstdio>
 # include <fstream>
 # include <sstream>
@@ -23,6 +14,16 @@
 # include <cstdlib>
 # include <regex>
 # include <memory>
+
+# include <errno.h>
+# include <unistd.h>
+# include <fcntl.h>
+# include <poll.h>
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <arpa/inet.h>
+# include <string.h>
+# include <sys/epoll.h>
 
 # include "HTTPRequest.hpp"
 # include "HTTPRequestConfig.hpp"
@@ -47,7 +48,7 @@ enum e_state {
 
 class HTTPClient {
 	public:
-		HTTPClient( std::function<void(int, int)> callback );
+		explicit HTTPClient( std::function<void(int, int)> callback );
 		~HTTPClient( void );
 
 		void	work( epoll_event &event );

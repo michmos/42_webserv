@@ -1,4 +1,4 @@
-#include "CGI.hpp"
+#include "../inc/CGI.hpp"
 
 CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post_data) {
 	pipe_from_child_[READ] = pipes[0];

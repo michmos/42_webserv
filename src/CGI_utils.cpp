@@ -1,4 +1,4 @@
-#include "CGI.hpp"
+#include "../inc/CGI.hpp"
 
 void	CGI::throwException(const char *msg) {
 	std::cerr << "Error: " << msg << std::endl;

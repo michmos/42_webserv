@@ -1,5 +1,4 @@
-# include "HTTPResponse.hpp"
-# include "CGI.hpp"
+# include "../inc/HTTPResponse.hpp"
 
 // HTTPResponseGenerator::HTTPResponseGenerator( IResponseReadyObserver &observer ) \
 // 	: readyObserver_(observer) {

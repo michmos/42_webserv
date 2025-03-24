@@ -36,4 +36,5 @@
 .cache
 .DS_Store
 .vscode
+webserv
 __pycache__

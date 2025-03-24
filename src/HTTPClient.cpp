@@ -1,7 +1,7 @@
-#include "HTTPClient.hpp"
+#include "../inc/HTTPClient.hpp"
 
 HTTPClient::HTTPClient(std::function<void(int, int)> callback) : \
-	responseGenerator(std::make_unique<HTTPResponseGenerator>(*this)) {
+	responseGenerator(std::make_unique<HTTPResponseGenerator>()) {
 	pipes_.setCallbackFunction(callback);
 	STATE_ = RECEIVE;
 }
@@ -36,13 +36,14 @@ void	HTTPClient::work(epoll_event &event) {
 		{
 			std::string	response = message_que_.front();
 			message_que_.erase(message_que_.begin());
-			write(event.data.fd, response.c_str(), sizeof(response));
+			bytes_read = write(event.data.fd, response.c_str(), sizeof(response));
+			// something with bytes?
 		}
 	}
 	else if (STATE_ == CGISEND) // send data to eventfd (pipe) 
 	{
 		cgi_->sendDataToStdin(event.data.fd);
-		STATE_ == CGIRECEIVE;
+		STATE_ = CGIRECEIVE;
 		return ;
 	}
 	else if (STATE_ == CGIRECEIVE) // read data from eventfd (pipe)

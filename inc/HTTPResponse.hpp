@@ -1,14 +1,18 @@
+#pragma once
+
 # include <iostream>
 # include <fstream>
 # include <sstream>
 # include <filesystem>
 # include <unordered_map>
 # include <algorithm>
+
 # include <sys/stat.h>
 # include <unistd.h>
 
 # include "CGI.hpp"
 # include "HTTPRequest.hpp"
+# include "CGI.hpp"
 
 class HTTPResponseGenerator {
 	private:

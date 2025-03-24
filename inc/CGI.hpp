@@ -1,34 +1,14 @@
 #pragma once
 
-# include <poll.h>
 # include <iostream>
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <arpa/inet.h>
-# include <bitset>
-# include <climits>
 # include <cstring>
-# include <sys/epoll.h>
-# include <errno.h>
-# include <unistd.h>
-# include <fcntl.h>
-# include <cstdio>
-# include <fstream>
-# include <sstream>
-# include <string>
-# include <unordered_map>
-# include <map>
 # include <vector>
-# include <cstdlib>
 # include <regex>
-# include <sys/types.h>
+
+# include <unistd.h>
 # include <sys/wait.h>
-# include <csignal>
-# include <atomic>
-# include <utility>
-# include <ctime>
-# include <chrono>
-# include <thread>
+# include <sys/epoll.h>
+
 # include "HTTPRequest.hpp"
 
 # define READ 0
@@ -57,7 +37,7 @@ class CGI {
 		void			throwExceptionExit( const char *msg );
 
 	public:
-		CGI( const std::string &post_data, std::vector<int> pipes );
+		explicit CGI( const std::string &post_data, std::vector<int> pipes );
 		~CGI( void );
 
 		void			forkCGI( const std::string &executable, std::vector<std::string> env_vector );
