@@ -9,28 +9,10 @@ CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post
 
 CGI::~CGI(void) {}
 
-void	CGI::createArgvVector(std::vector<char*> &argv_vector, const std::string &executable) {
-	argv_vector.push_back(const_cast<char *>(executable.c_str()));
-	argv_vector.push_back(NULL);
-}
-
 /**
- * @brief fills the vector with the variables as env and add also a gateway key for the cgi protocol
- * @param env_c_vector 
- * @param env_vector 
+ * @brief extract statuscode from CGI response
+ * @return int with statuscode or zero if not found
  */
-void	CGI::createEnvCharPtrVector(std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector) {
-	env_vector.push_back(const_cast<char*>("GATEWAY=CGI/1.1"));
-	env_vector.push_back(const_cast<char*>("SERVER_PROTOCOL=HTTP/1.1"));
-	for (auto& str : env_vector)
-	{
-		std::cerr << "env: " << str << std::endl;
-		// env_c_vector.push_back(const_cast<char*>((std::string("HTTP_") + str).c_str()));
-		env_c_vector.push_back(const_cast<char*>(str.c_str()));
-	}
-	env_c_vector.push_back(NULL);
-}
-
 int	CGI::getStatusCodeFromResponse(void) {
 	std::regex	status_code_regex(R"(HTTP/1.1 (\d+))");
 	std::smatch	match;
@@ -45,7 +27,7 @@ int	CGI::getStatusCodeFromResponse(void) {
 			status_code = 500;
 	}
 	else
-		std::cerr << "No response or statuscode is found in response" << std::endl;
+		std::cerr << "Error: No response or statuscode is found in response" << std::endl;
 	return (status_code);
 }
 
@@ -181,8 +163,14 @@ bool	CGI::isNPHscript( const std::string &executable ) {
 		return (false);
 }
 
+<<<<<<< HEAD
 /// @brief Set up a response for the client after receiving the header from the CGI
 /// saves the result again in response_
+=======
+/**
+ * @brief Set up a response for the client after receiving the header from the CGI
+ */
+>>>>>>> efa991b (added CGI utils and function we can use for parsing HTTP headers and mimetypes)
 void	CGI::rewriteResonseFromCGI(void) {
 	std::smatch	match;
 	std::string	new_response = "";
