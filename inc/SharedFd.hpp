@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <stdexcept>
 
+#define UNVALID_FD -1
+
 class	SharedFd {
 public:
 	SharedFd();
