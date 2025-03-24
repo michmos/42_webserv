@@ -1,22 +1,14 @@
 
 #include "../inc/SharedFd.hpp"
 
-UniqueFd::UniqueFd(int fd) : _fd(fd) {
+std::unordered_map<int, int> SharedFd::_refCounts;
+
+SharedFd::SharedFd() : _fd(-1) {
+	_refCounts[-1]++;
 }
 
-UniqueFd::~UniqueFd() {
-	if (_fd > 0)
-		close(_fd);
-}
-
-int	UniqueFd::get() const {
-	return (_fd);
-}
-
-SharedFd::SharedFd() : _fdPtr(std::make_shared<UniqueFd>(-1)) {
-}
-
-SharedFd::SharedFd(int fd) : _fdPtr(std::make_shared<UniqueFd>(fd)) {
+SharedFd::SharedFd(int fd) : _fd(fd) {
+	_refCounts[fd]++;
 }
 
 SharedFd::SharedFd(const SharedFd& other) {
@@ -25,39 +17,48 @@ SharedFd::SharedFd(const SharedFd& other) {
 	}
 }
 
-// assignment operators
 SharedFd& SharedFd::operator=(const SharedFd& other) {
-	this->_fdPtr = other._fdPtr;
-	return(*this);
+	_refCounts[this->_fd]--;
+	this->_fd = other._fd;
+	_refCounts[this->_fd]++;
+	return (*this);
 }
 
 SharedFd& SharedFd::operator=(int fd) {
-	this->_fdPtr = std::make_shared<UniqueFd>(fd);
-	return(*this);
+	_refCounts[this->_fd]--;
+	this->_fd = fd;
+	_refCounts[this->_fd]++;
+	return (*this);
 }
 
 // comparison operators
 bool	SharedFd::operator==(const SharedFd& other) {
-	return (this->get() == other.get());
+	return (this->_fd == other._fd);
 }
 
 bool	SharedFd::operator<(const SharedFd& other) {
-	return (this->get() < other.get());
+	return (this->_fd < other._fd);
 }
 
 bool	SharedFd::operator>(const SharedFd& other) {
-	return (this->get() > other.get());
+	return (this->_fd > other._fd);
 }
 
 bool	SharedFd::operator<=(const SharedFd& other) {
-	return (this->get() <= other.get());
+	return (this->_fd <= other._fd);
 }
 
 bool	SharedFd::operator>=(const SharedFd& other) {
-	return (this->get() >= other.get());
+	return (this->_fd >= other._fd);
 }
 
 SharedFd::~SharedFd() {
+	_refCounts[_fd]--;
+	if (_refCounts[_fd] == 0 && _fd >= 0)
+	{
+		if(close(_fd) ==-1)
+			std::runtime_error(std::string("close(): ") + strerror(errno));
+	}
 }
 
 // TODO: forbidden flag
@@ -71,9 +72,9 @@ void	SharedFd::setNonBlock() const {
 }
 
 bool	SharedFd::isValid() const {
-	return (this->get() >= 0);
+	return (this->_fd >= 0);
 }
 
 int	SharedFd::get() const {
-	return(_fdPtr->get());
+	return(_fd);
 }
