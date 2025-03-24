@@ -28,7 +28,7 @@ public:
 	// - addr: e.g. inet_addr("127.0.0.1")
 	// - port: e.g. htons(8080)
 	void			connect(in_addr_t addr2, in_port_t port);
-	const SharedFd&	getFd() const;
+	inline const SharedFd&	getFd() const { return (_fd); }
 
 private:
 	SharedFd	_fd;

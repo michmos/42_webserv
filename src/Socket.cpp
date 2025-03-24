@@ -1,7 +1,5 @@
 
 #include "../inc/Socket.hpp"
-#include <stdexcept>
-#include <string>
 
 Socket::Socket() : _fd(::socket(AF_INET, SOCK_STREAM, 0)) {
 	if (_fd == -1) {
@@ -74,9 +72,5 @@ void	Socket::connect(in_addr_t ipv4Addr, in_port_t port) {
 	if (::connect(_fd.get(), (const struct sockaddr*)&addr, sizeof(addr)) == -1) {
 		throw std::runtime_error(std::string("connect(): ") + strerror(errno));
 	}
-}
-
-const SharedFd&	Socket::getFd() const {
-	return (_fd);
 }
 
