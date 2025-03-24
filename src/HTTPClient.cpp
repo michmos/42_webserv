@@ -19,6 +19,10 @@ void	HTTPClient::assignServer(Server server) {
 	server_ = &server;
 }
 
+/**
+ * @brief checks state and processes event. Write or Read action
+ * @param event epoll_event of the current event
+ */
 void	HTTPClient::work(epoll_event &event) {
 	char		buffer[2048];
 	size_t		bytes_read;
@@ -51,6 +55,10 @@ void	HTTPClient::work(epoll_event &event) {
 	feedData(std::move(data));
 }
 
+/**
+ * @brief data -> receiving, parsing, responding, cgi & cgi response (Update state)
+ * @param data string with read data
+ */
 void HTTPClient::feedData(std::string &&data) {
 	HTTPRequest	request;
 	
@@ -66,13 +74,18 @@ void HTTPClient::feedData(std::string &&data) {
 		cgiresponse();
 }
 
+/**
+ * @brief adds the data to ther parser and checks if everything is received
+ * @param data string with read data
+ */
 void	HTTPClient::receiving(std::string &&data) {
 	parser_.addBufferToParser(data);
 	if (parser_.isRequestFullyParsed())
 		STATE_ = PARSING;
 }
 
-void	HTTPClient::parsing() {
+/// @brief parse the HTTP request header and checks if it is a cgi target
+void	HTTPClient::parsing(void) {
 	request_ = parser_.getParsedRequest();
 	if (!responseGenerator->isCGI(request_))
 		STATE_ = RESPONSE;
@@ -80,12 +93,15 @@ void	HTTPClient::parsing() {
 		STATE_ = STARTCGI;
 }
 
-void	HTTPClient::responding() {
+
+/// @brief regenerates response and add this one to the que.
+void	HTTPClient::responding(void) {
 	responseGenerator->generateResponse(request_);
 	message_que_.push_back(responseGenerator->loadResponse());
 	STATE_ = DONE;
 }
 
+/// @brief creates a CGI class, checks the method/target, starts the cgi
 void	HTTPClient::cgi(void) {
 	std::vector<std::string>	env_strings;
 	static std::string			body = "";
@@ -103,6 +119,7 @@ void	HTTPClient::cgi(void) {
 	STATE_ = CGISEND;
 }
 
+/// @brief checks if cgi header has to be rewritten and add response to que.
 void	HTTPClient::cgiresponse(void) {
 	if (!cgi_->isNPHscript(request_.request_target))
 		cgi_->rewriteResonseFromCGI();

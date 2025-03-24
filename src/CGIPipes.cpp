@@ -50,8 +50,8 @@ void	CGIPipes::addPipesToEpoll() {
 	std::vector<int>	pipes = pipes_.back();
 
 	pipe_callback_(pipes[TO_CHILD_WRITE], pipes[FROM_CHILD_READ]);
-	// ep_.add(pipes[TO_CHILD_WRITE], EPOLLOUT | EPOLLET);
-	// ep_.add(pipes[FROM_CHILD_READ], EPOLLIN | EPOLLET);
+	// ep_.add(pipes[TO_CHILD_WRITE], EPOLLOUT);
+	// ep_.add(pipes[FROM_CHILD_READ], EPOLLIN);
 }
 
 /// @brief closes all pipes that are stored in a vector<vector<int>> array
