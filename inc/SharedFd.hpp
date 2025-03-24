@@ -1,23 +1,12 @@
 
 #pragma once
-#include <memory>
+
 #include <unistd.h>
 #include <iostream>
 #include <fcntl.h>
 #include <cstring>
-#include <exception>
-
-class	UniqueFd {
-public:
-	UniqueFd(int fd);
-	UniqueFd(const UniqueFd& other) = delete;
-	UniqueFd& operator=(const UniqueFd& other) = delete;
-	~UniqueFd();
-
-	int	get() const;
-private:
-	int	_fd;
-};
+#include <unordered_map>
+#include <stdexcept>
 
 class	SharedFd {
 public:
@@ -38,7 +27,8 @@ public:
 	int		get() const;
 
 private:
-	std::shared_ptr<UniqueFd>	_fdPtr;
+	int	_fd;
+	static std::unordered_map<int, int> _refCounts;
 };
 
 // special hash template struct to allow SharedFd as key in unordered map
