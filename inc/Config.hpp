@@ -6,6 +6,11 @@
 
 // LOOK INTO:
 // map can be unordered_map
+
+
+// make a static for the mime.types conf
+// make the htpp wrapper maybe??
+// read and store the mime.type map
 struct Location {
 	bool														strict_match;
 	std::unordered_map<std::string, std::vector<std::string>>	directives;
@@ -43,7 +48,7 @@ class Config {
 		std::uint64_t				getClientBodySize(const std::string locKey);	// client_max_body_size 10M;
 		std::vector<std::string>	getRedirect(const std::string locKey);			// return 301 http://example.com/newpage;
 		std::vector<std::string>	getRoot(const std::string locKey);				// root /tmp/www;
-		std::vector<std::string>	getMothods(const std::string locKey);			// allow_methods  DELETE POST GET;
+		std::vector<std::string>	getMethods(const std::string locKey);			// allow_methods  DELETE POST GET;
 		std::vector<std::string>	getIndex(const std::string locKey);				// index index.html index.php;
 
 		// UTILS

@@ -9,39 +9,40 @@ ConfigParser::ConfigParser(const std::string& filepath) {
 	parseInputToTokens();
 	// printTokens();
 	parseTokenToConfig();
+	// _configs[0].getLocDirectives("/api/test/test2");
 	// for (auto &config : this->_configs) {
 	// 	config.printConfig();
-	// 	std::cout << BOLD << "getPort(): " << config.getPort() << RESET << std::endl;
-	// 	std::cout << BOLD << "getHost(): " << config.getHost() << RESET << std::endl;
-	// 	std::cout << BOLD << "getServerName(): " << config.getServerName() << RESET << std::endl;
-	// 	std::cout << BOLD << "getAutoindex(\"/\"): " << config.getAutoindex("/") << RESET << std::endl;
-	// 	std::cout << BOLD << "getClientBodySize(\"/\"): " << config.getClientBodySize("/") << RESET << std::endl;
-	// 	std::cout << BOLD << "getRoot(\"/\"): ";
-	// 	std::vector<std::string> roots = config.getRoot("/");
-	// 	for (std::vector<std::string>::iterator it = roots.begin(); it != roots.end(); ++it) {
-	// 		std::cout << *it << " ";
-	// 	}
-	// 	std::cout << RESET << std::endl;
-	// 	std::cout << BOLD << "getMethods(\"/\"): ";
-	// 	std::vector<std::string> methods = config.getMothods("/");
-	// 	for (std::vector<std::string>::iterator it = methods.begin(); it != methods.end(); ++it) {
-	// 		std::cout << *it << " ";
-	// 	}
-	// 	std::cout << RESET << std::endl;
-	// 	std::cout << BOLD << "getIndex(\"/\"): ";
-	// 	std::vector<std::string> index = config.getIndex("/");
-	// 	for (std::vector<std::string>::iterator it = index.begin(); it != index.end(); ++it) {
-	// 		std::cout << *it << " ";
-	// 	}
-	// 	std::cout << RESET << std::endl;
-	// 	std::cout << BOLD << "getRedirect(\"/\"): ";
-	// 	std::vector<std::string> redirect = config.getRedirect("/");
-	// 	for (std::vector<std::string>::iterator it = redirect.begin(); it != redirect.end(); ++it) {
-	// 		std::cout << *it << " ";
-	// 	}
-	// 	std::cout << RESET << std::endl;
+		// std::cout << BOLD << "getPort(): " << config.getPort() << RESET << std::endl;
+		// std::cout << BOLD << "getHost(): " << config.getHost() << RESET << std::endl;
+		// std::cout << BOLD << "getServerName(): " << config.getServerName() << RESET << std::endl;
+		// std::cout << BOLD << "getAutoindex(\"/\"): " << config.getAutoindex("/") << RESET << std::endl;
+		// std::cout << BOLD << "getClientBodySize(\"/\"): " << config.getClientBodySize("/") << RESET << std::endl;
+		// std::cout << BOLD << "getRoot(\"/\"): ";
+		// std::vector<std::string> roots = config.getRoot("/");
+		// for (std::vector<std::string>::iterator it = roots.begin(); it != roots.end(); ++it) {
+		// 	std::cout << *it << " ";
+		// }
+		// std::cout << RESET << std::endl;
+		// std::cout << BOLD << "getMethods(\"/\"): ";
+		// std::vector<std::string> methods = config.getMethods("/");
+		// for (std::vector<std::string>::iterator it = methods.begin(); it != methods.end(); ++it) {
+		// 	std::cout << *it << " ";
+		// }
+		// std::cout << RESET << std::endl;
+		// std::cout << BOLD << "getIndex(\"/\"): ";
+		// std::vector<std::string> index = config.getIndex("/");
+		// for (std::vector<std::string>::iterator it = index.begin(); it != index.end(); ++it) {
+		// 	std::cout << *it << " ";
+		// }
+		// std::cout << RESET << std::endl;
+		// std::cout << BOLD << "getRedirect(\"/\"): ";
+		// std::vector<std::string> redirect = config.getRedirect("/");
+		// for (std::vector<std::string>::iterator it = redirect.begin(); it != redirect.end(); ++it) {
+		// 	std::cout << *it << " ";
+		// }
+		// std::cout << RESET << std::endl;
 	// }
-	
+
 }
 
 ConfigParser::~ConfigParser() {

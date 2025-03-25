@@ -157,7 +157,7 @@ std::vector<std::string>	Config::getRoot(const std::string locKey) {
 }
 
 // // allow_methods  DELETE POST GET;
-std::vector<std::string>	Config::getMothods(const std::string locKey) {
+std::vector<std::string>	Config::getMethods(const std::string locKey) {
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("allow_methods");
 	if (it != dirMap.end()) {
