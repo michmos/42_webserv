@@ -1,22 +1,22 @@
 #pragma once
 
 #include "Config.hpp"
-#include "Socket.hpp"
+#include "SharedFd.hpp"
 #include <string>
 
 class Server {
 public:
-	Server(const Socket& serverSock, const Config& _conf, const std::string& name);
+	Server(SharedFd lstngSock, const std::string& name, const Config& conf);
 	Server(const Server&) = delete;
 	Server& operator=(const Server&) = delete;
 	~Server();
 
-	inline const Socket& getSocket() const { return (_sock); }
+	inline const SharedFd& getFd() const { return (_lstngSock); }
 	inline const std::string& getName() const { return (_name); }
 	inline const Config& getConfig() const { return (_config); }
 
 private:
-	Socket			_sock;
+	SharedFd		_lstngSock;
 	std::string		_name;
 	Config			_config;
 };

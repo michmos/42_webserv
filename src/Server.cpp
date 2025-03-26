@@ -1,9 +1,8 @@
 
 #include "../inc/Server.hpp"
 
-Server::Server(const Socket& serverSock, const Config& conf, const std::string& name)
-	: _sock(serverSock), _config(conf), _name(name) {
-}
+Server::Server(SharedFd lstngSock, const std::string& name, const Config& conf)
+	: _lstngSock(lstngSock), _name(name), _config(conf) {};
 
 Server::~Server() {
 }
