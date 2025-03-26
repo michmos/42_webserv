@@ -2,25 +2,30 @@
 #include "../inc/Webserv.hpp"
 
 Webserv::Webserv(const std::string& confPath) {
-	// ConfigParser	configs(confPath);
-	// std::unordered_map<std::string, SharedFd> sockets;
-	//
-	// for (auto config& : configs.getConfigs()) {
-	// 	std::string key = config.getIp() + config.getPort().toStr();
-	// 	SharedFd lstngSock;
-	// 	auto it& = sockets.find(key);
-	// 	if (it == sockets.end()) {
-	// 		// create socket
-	// 		lstngSock = Socket::sSocket();
-	// 		Socket::sBind(lstngSock);
-	// 		Socket::sListen(listeningSock, config.getIp(), config.getPort());
-	// 	} else {
-	// 		lstngSock = it.second();
-	// 	}
-	//
-	// 	// create server
-	// 	_servers.emplace(SharedFd, Server(SharedFd, config));
-	// }
+	std::vector configs = ConfigParser("pathToConfig").getConfigs();
+	std::unordered_map<std::string, Socket> sockets;
+
+	for (auto& config : configs) {
+		SharedFd	serverFd;
+
+		std::string key = config.getHost() + std::to_string(config.getPort());
+		const auto& it = sockets.find(key);
+		if (it == sockets.end()) {
+			// no fitting socket existing
+			Socket	serverSock;
+			serverSock.bind(inet_addr(config.getHost().c_str()), htons(config.getPort()));
+			serverSock.listen(5);
+
+			sockets[key] = serverSock;
+			serverFd = serverSock.getFd();
+		} else {
+			// use existing socket
+			serverFd = it->second.getFd();
+		}
+
+		Server	newServer(serverFd, config.getServerName(), config);
+		_servers[serverFd].push_back(newServer);
+	}
 }
 
 Webserv::~Webserv() {
