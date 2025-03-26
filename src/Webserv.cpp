@@ -30,14 +30,27 @@ Webserv::Webserv(const std::string& confPath) {
 Webserv::~Webserv() {
 }
 
-void	Webserv::addClient(SharedFd& fd) {
-	auto it = _clients.find(fd);
-	if (it != _clients.end()) {
+void	Webserv::addClient(SharedFd& clientSock, SharedFd& servSock) {
+	if (_clients.find(clientSock) != _clients.end()) {
 		throw std::runtime_error("addClient(): trying to add existing client");
 	}
 	
-	_ep.add(fd.get(), EPOLLIN | EPOLLOUT);
-	_clients.emplace(fd, Client(fd));
+	_ep.add(clientSock.get(), EPOLLIN | EPOLLOUT);
+	_clients.emplace(
+		clientSock, 
+		Client(
+			clientSock,
+			servSock,
+			// function to add an epoll event to epoll instance - used for callback
+			std::move([this](struct epoll_event ev) {
+				_ep.add(ev.data.fd, ev.events);
+			}),
+			// function to get ptr to config - used for callback
+			std::move([this](const SharedFd& servSock, const std::string& servName) {
+				return(this->getConfig(servSock, servName));
+			})
+		)
+	);
 }
 
 void	Webserv::handleClient(uint32_t events, SharedFd& fd) {

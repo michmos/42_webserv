@@ -30,5 +30,5 @@ private:
 
 	void	addClient(SharedFd& clientSock, SharedFd& servSock);
 	void	delClient(SharedFd& fd);
-	const Config&	getConfig(SharedFd& serverSock, const std::string& serverName) const;
+	const Config* const	getConfig(const SharedFd& serverSock, const std::string& serverName) const;
 };
