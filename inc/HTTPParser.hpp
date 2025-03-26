@@ -9,10 +9,10 @@
 # include <sstream>
 # include <functional>
 
+# include <sys/stat.h>
+
 # include "HTTPRequest.hpp"
 # include "HTTPClient.hpp"
-
-typedef void (HTTPClient::*Callback)(std::vector<std::string>);
 
 class HTTPParser
 {
@@ -22,32 +22,25 @@ class HTTPParser
 
 		void				clearParser( void );
 
-		void				addBufferToParser( std::string &buff, HTTPClient *client );
-		bool				isRequestFullyParsed( void );
+		void				addBufferToParser( std::string &buff, HTTPClient *client, e_state &STATE_ );
 		std::string 		getRawData( void );
 		const HTTPRequest	getParsedRequest( void );
+		bool				isValidHeader( HTTPClient *client );
 
 	private:
-		enum State {
-			COLLECT_HEADER,
-			COLLECT_BODY,
-			DONE
-		};
-
-		State		current_state_;
 		HTTPRequest	result_;
 		std::string	rawRequest_;
 		std::string	header_;
 		size_t		content_length_;
 		bool		chunked_;
 
-		bool	isValidHeader( void );
+		
 		bool	isHeadersParsed( void );
-		void	verifyBodyCompletion( void );
+		void	verifyBodyCompletion( e_state &STATE );
 
 		void	splitHeaderBody( void );
-		void	addIfProcessIsChunked( const std::string &buff );
-		bool	compareWithConfig( HTTPClient *client ) ;
+		void	addIfProcessIsChunked( const std::string &buff, e_state &STATE );
+		bool	validWithConfig( HTTPClient *client ) ;
 
 		// Parsing header
 		bool	tryParseContentLength( std::string str );

@@ -1,7 +1,8 @@
 # include "../inc/HTTPParser.hpp"
 
 HTTPParser::HTTPParser(void) : \
-	current_state_(COLLECT_HEADER), content_length_(0), chunked_(false) {
+	content_length_(0), chunked_(false) {
+	result_.status_code = 200;
 }
 
 HTTPParser::~HTTPParser(void) { }
@@ -23,16 +24,16 @@ void	HTTPParser::splitHeaderBody(void) {
 }
 
 /// @brief if available, checks if content length is same as size body
-void	HTTPParser::verifyBodyCompletion(void) {
-	if (current_state_ == DONE)
+void	HTTPParser::verifyBodyCompletion(e_state &STATE) {
+	if (STATE == PARSING)
 		return ;
 	if (content_length_ > 0)
 	{
 		if (result_.body.size() == content_length_)
-			current_state_ = DONE;
+			STATE = PARSING;
 	}
 	else
-		current_state_ = DONE;
+		STATE = PARSING;
 }
 
 /**
@@ -71,7 +72,9 @@ bool	HTTPParser::tryParseContentLength(std::string str) {
  * @brief header needs a method, target or protocol
  * @return bool is one or more of these are present
  */
-bool	HTTPParser::isValidHeader(void) {
+bool	HTTPParser::isValidHeader(HTTPClient *client) {
+	if (!validWithConfig(client))
+		return (false);
 	if (result_.method.empty() || \
 		result_.request_target.empty() || \
 		result_.protocol.empty())
@@ -202,14 +205,14 @@ bool	HTTPParser::parseRequest(void) {
 		else
 			parseExtraHeaderInformation(str);
 	}
-	return (isValidHeader());	
+	return (false);	
 }
 
 /**
  * @brief saves chunks and checks when chunksize == 0 (ready);
  * @param buff std::string with readbuffer;
  */
-void	HTTPParser::addIfProcessIsChunked(const std::string &buff) {
+void	HTTPParser::addIfProcessIsChunked(const std::string &buff, e_state &STATE) {
 	std::string	raw_body(result_.body + buff);
 	std::string	chunk_size_str;
 	size_t		found;
@@ -223,7 +226,7 @@ void	HTTPParser::addIfProcessIsChunked(const std::string &buff) {
 		
 		if (chunk_size == 0)
 		{
-			current_state_ = DONE;
+			STATE = PARSING;
 			return ;
 		}
 		pos = found + 2;
@@ -242,12 +245,12 @@ bool	isBiggerMaxBodyLength(size_t content_length, uint64_t max_size)
 		return (false);
 }
 
-bool	HTTPParser::compareWithConfig(HTTPClient *client) {
+bool	HTTPParser::validWithConfig(HTTPClient *client) {
 	Config	*config = &client->getConfig();
 	size_t	length;
 
 	if (!client->isConfigSet())
-		return (false);
+		return (false); // WHat now?
 	// MAX CLIENT CHECK
 	if (content_length_ != 0)
 		length = content_length_;
@@ -256,6 +259,8 @@ bool	HTTPParser::compareWithConfig(HTTPClient *client) {
 	if (isBiggerMaxBodyLength(length,  config->getClientBodySize(result_.request_target)))
 	{
 		// TO BIG
+		result_.status_code = 413;
+		return (true);
 	}
 	// METHOD CHECK
 	std::vector<std::string>	allowed_methods = config->getMothods(result_.request_target);
@@ -263,6 +268,27 @@ bool	HTTPParser::compareWithConfig(HTTPClient *client) {
 	if (it == allowed_methods.end()) // not found
 	{
 		// WRONG METHOD
+		result_.status_code = 405;
+		return (true);
+	}
+	return (false);
+}
+
+static void	generatePath(std::string &endpoint, Config *config) {
+	std::string	folder_file;
+	struct stat	statbuf;
+
+	for(const auto &pair : config->getLocations())
+	{
+		if (pair.first[pair.first.size() - 1] == '/')
+			folder_file = pair.first + endpoint;
+		else
+			folder_file = pair.first + "/" + endpoint;
+		if (stat(folder_file.c_str(), &statbuf) == 0)
+		{
+			endpoint = folder_file;
+			return ;
+		}
 	}
 }
 
@@ -270,8 +296,8 @@ bool	HTTPParser::compareWithConfig(HTTPClient *client) {
  * @brief process readbuffer by state;
  * @param buff std::string with readbuffer;
  */
-void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client) {
-	if (current_state_ == COLLECT_HEADER)
+void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client, e_state &STATE) {
+	if (STATE == RECEIVEHEADER)
 	{
 		rawRequest_ += buff;
 		buff = "";
@@ -279,41 +305,35 @@ void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client) {
 		{
 			splitHeaderBody();
 			result_.invalidRequest = parseRequest();
-			if (result_.invalidRequest == true)
-				current_state_ = DONE;
-			else
-				current_state_ = COLLECT_BODY;
+
+			// SET SERVER
 			client->setServer(result_.host);
-			if (compareWithConfig(client))
-			{
 
-			}
-			
+			// generate PATH
+			generatePath(result_.request_target, &client->getConfig());
 
+			// Validate with config and results from parsing
+			if (!result_.invalidRequest)
+				result_.invalidRequest = isValidHeader(client);
+			if (result_.invalidRequest == true)
+				STATE = PARSING;
+			else
+				STATE = RECEIVEBODY;
 		}
 		else
 			return ;
 	}
-	if (current_state_ == COLLECT_BODY)
+	if (STATE == RECEIVEBODY)
 	{
 		if (chunked_)
-			addIfProcessIsChunked(buff);
+			addIfProcessIsChunked(buff, STATE);
 		else
 			result_.body += buff;
 	}
-	verifyBodyCompletion();
-}
-
-bool	HTTPParser::isRequestFullyParsed(void)
-{
-	if (current_state_ == DONE)
-		return (true);
-	else
-		return (false);
+	verifyBodyCompletion(STATE);
 }
 
 void	HTTPParser::clearParser(void) {
-	current_state_ = COLLECT_HEADER;
 	header_.clear();
 	rawRequest_.clear();
 	content_length_ = 0;

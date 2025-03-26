@@ -11,5 +11,6 @@ struct HTTPRequest
 	std::string 				protocol;
 	std::string 				body;
 	bool						invalidRequest;
+	int							status_code;
 	std::unordered_map<std::string, std::string> headers;
 };

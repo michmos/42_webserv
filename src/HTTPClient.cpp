@@ -1,9 +1,8 @@
 #include "../inc/HTTPClient.hpp"
 
-HTTPClient::HTTPClient(std::function<void(int, int)> callback) : \
-	responseGenerator(std::make_unique<HTTPResponseGenerator>(this)) {
+HTTPClient::HTTPClient(std::function<void(int, int)> callback) {
 	pipes_.setCallbackFunction(callback);
-	STATE_ = RECEIVE;
+	STATE_ = RECEIVEHEADER;
 	conf_set_ = false;
 	server_ = NULL;
 }
@@ -83,7 +82,7 @@ void	HTTPClient::work(epoll_event &event) {
 void HTTPClient::feedData(std::string &&data) {
 	HTTPRequest	request;
 	
-	if (STATE_ == RECEIVE)
+	if (STATE_ == RECEIVEHEADER || STATE_ == RECEIVEBODY)
 		receiving(std::move(data));
 	if (STATE_ == PARSING)
 		parsing();
@@ -100,17 +99,13 @@ void HTTPClient::feedData(std::string &&data) {
  * @param data string with read data
  */
 void	HTTPClient::receiving(std::string &&data) {
-	Config conf = server_->getConfig();
-	
-	parser_.addBufferToParser(data, this);
-	if (parser_.isRequestFullyParsed())
-		STATE_ = PARSING;
+	parser_.addBufferToParser(data, this, STATE_);
 }
 
 /// @brief parse the HTTP request header and checks if it is a cgi target
 void	HTTPClient::parsing(void) {
 	request_ = parser_.getParsedRequest();
-	if (!responseGenerator->isCGI(request_))
+	if (!responseGenerator_.isCGI(request_))
 		STATE_ = RESPONSE;
 	else
 		STATE_ = STARTCGI;

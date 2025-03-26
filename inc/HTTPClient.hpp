@@ -38,7 +38,8 @@
 # include "Config.hpp"
 
 enum e_state {
-	RECEIVE,
+	RECEIVEHEADER,
+	RECEIVEBODY,
 	PARSING,
 	STARTCGI,
 	CGISEND,
@@ -89,7 +90,7 @@ class HTTPClient {
 		HTTPRequest								request_;
 		std::unique_ptr<CGI> 					cgi_;
 		CGIPipes								pipes_;
-		std::unique_ptr<HTTPResponseGenerator>	responseGenerator;
+		HTTPResponseGenerator					responseGenerator_;
 		Config									config_;
 		bool									conf_set_;
 };
