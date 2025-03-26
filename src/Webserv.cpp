@@ -3,7 +3,7 @@
 
 Webserv::Webserv(const std::string& confPath) {
 	std::vector configs = ConfigParser("pathToConfig").getConfigs();
-	std::unordered_map<std::string, Socket> sockets;
+	std::unordered_map<std::string, SharedFd> sockets;
 
 	for (auto& config : configs) {
 		SharedFd	serverFd;
@@ -16,15 +16,14 @@ Webserv::Webserv(const std::string& confPath) {
 			serverSock.bind(inet_addr(config.getHost().c_str()), htons(config.getPort()));
 			serverSock.listen(5);
 
-			sockets[key] = serverSock;
 			serverFd = serverSock.getFd();
+			sockets[key] = serverFd;
 		} else {
 			// use existing socket
-			serverFd = it->second.getFd();
+			serverFd = it->second;
 		}
 
-		Server	newServer(serverFd, config.getServerName(), config);
-		_servers[serverFd].push_back(newServer);
+		_servers[serverFd].push_back(config);
 	}
 }
 

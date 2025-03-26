@@ -1,13 +1,17 @@
 #pragma once
 
-#include <unordered_map>
-#include "Server.hpp"
 #include "Client.hpp"
 #include "Epoll.hpp"
 #include "SharedFd.hpp"
+#include "Socket.hpp"
 #include "ConfigParser.hpp"
 #include "Config.hpp"
+
 #include <stdexcept>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unordered_map>
+#include <string>
 
 
 class Webserv {
@@ -20,12 +24,11 @@ public:
 	void	mainLoop();
 
 private:
-	std::unordered_map<SharedFd, std::vector<Server>>	 _servers;
+	std::unordered_map<SharedFd, std::vector<Config>>	_servers;
 	std::unordered_map<SharedFd, Client> 				_clients;
-	Epoll											_ep;
+	Epoll												_ep;
 
-	void	addClient(SharedFd& fd);
-	void	handleClient(uint32_t events, SharedFd& fd);
+	void	addClient(SharedFd& clientSock, SharedFd& servSock);
 	void	delClient(SharedFd& fd);
-	const Server&	getServer(SharedFd& fd, const std::string& servName) const;
+	const Config&	getConfig(SharedFd& serverSock, const std::string& serverName) const;
 };
