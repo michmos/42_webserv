@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <sys/types.h>
@@ -35,4 +34,3 @@ private:
 	int								_timeout;
 	std::vector<struct epoll_event>	_events;
 };
-

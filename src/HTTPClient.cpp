@@ -1,13 +1,14 @@
 #include "../inc/HTTPClient.hpp"
 
 HTTPClient::HTTPClient(std::function<void(int, int)> callback) : \
-	responseGenerator(std::make_unique<HTTPResponseGenerator>()) {
+	responseGenerator(std::make_unique<HTTPResponseGenerator>(this)) {
 	pipes_.setCallbackFunction(callback);
 	STATE_ = RECEIVE;
+	conf_set_ = false;
+	server_ = NULL;
 }
 
-HTTPClient::~HTTPClient(void) {
-}
+HTTPClient::~HTTPClient(void) { }
 
 bool	HTTPClient::isDone(void) {
 	if (STATE_ == DONE)
@@ -15,9 +16,28 @@ bool	HTTPClient::isDone(void) {
 	return (false);
 }
 
-void	HTTPClient::assignServer(Server server) {
+// HOW??
+void	HTTPClient::assignServerCallback(Server server) {
 	server_ = &server;
 }
+
+void	HTTPClient::setServer(std::vector<std::string> host) {
+	Config		conf;
+	std::string hostname = host[0];
+	std::string port = "";
+
+	if (conf_set_ == true)
+		return ;
+
+	if (host.size() > 1)
+		port = host[1];
+
+	// assignServerCallback();
+	// NOW server
+	config_ = server_->getConfig();
+	conf_set_ = true;
+}
+
 
 /**
  * @brief checks state and processes event. Write or Read action
@@ -80,7 +100,9 @@ void HTTPClient::feedData(std::string &&data) {
  * @param data string with read data
  */
 void	HTTPClient::receiving(std::string &&data) {
-	parser_.addBufferToParser(data);
+	Config conf = server_->getConfig();
+	
+	parser_.addBufferToParser(data, this);
 	if (parser_.isRequestFullyParsed())
 		STATE_ = PARSING;
 }
@@ -97,6 +119,7 @@ void	HTTPClient::parsing(void) {
 
 /// @brief regenerates response and add this one to the que.
 void	HTTPClient::responding(void) {
+	responseGenerator->setConfig();
 	responseGenerator->generateResponse(request_);
 	message_que_.push_back(responseGenerator->loadResponse());
 	STATE_ = DONE;
@@ -125,4 +148,10 @@ void	HTTPClient::cgiresponse(void) {
 	if (!cgi_->isNPHscript(request_.request_target))
 		cgi_->rewriteResonseFromCGI();
 	message_que_.push_back(cgi_->getResponse());
+}
+
+bool	HTTPClient::isConfigSet(void) { return (conf_set_); }
+
+Config& HTTPClient::getConfig(void) {
+	return (config_);
 }

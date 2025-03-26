@@ -1,4 +1,3 @@
-
 #include "../inc/Webserv.hpp"
 
 Webserv::Webserv(const std::string& confPath) {
@@ -33,7 +32,7 @@ void	Webserv::addClient(SharedFd& fd) {
 	}
 	
 	_ep.add(fd.get(), EPOLLIN | EPOLLOUT);
-	_clients.emplace(fd, Client(fd));
+	_clients.emplace(fd, Client(fd.get()));
 }
 
 void	Webserv::handleClient(uint32_t events, SharedFd& fd) {

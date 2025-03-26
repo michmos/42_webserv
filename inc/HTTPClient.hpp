@@ -14,6 +14,7 @@
 # include <cstdlib>
 # include <regex>
 # include <memory>
+# include <any>
 
 # include <errno.h>
 # include <unistd.h>
@@ -34,6 +35,7 @@
 # include "Server.hpp"
 # include "SharedFd.hpp"
 # include "CGIPipes.hpp"
+# include "Config.hpp"
 
 enum e_state {
 	RECEIVE,
@@ -46,6 +48,15 @@ enum e_state {
 	DONE
 };
 
+enum e_get_conf {
+	AUTOINDEX,
+	BODYSIZE,
+	REDIRECT,
+	ROOT,
+	METHODS,
+	INDEX
+};
+
 class HTTPClient {
 	public:
 		explicit HTTPClient( std::function<void(int, int)> callback );
@@ -53,7 +64,8 @@ class HTTPClient {
 
 		void	work( epoll_event &event );
 		bool	isDone( void );
-		void	assignServer( Server server );
+		void	assignServerCallback( Server server );
+		void	setServer(std::vector<std::string> host);
 
 		void	feedData( std::string &&data );
 		void	receiving( std::string &&data );
@@ -61,6 +73,9 @@ class HTTPClient {
 		void	cgi( void );
 		void	responding( void );
 		void	cgiresponse( void );
+		bool	isConfigSet(void);
+	
+		Config	&getConfig(void);
 
 	private:
 		e_state									STATE_;
@@ -75,4 +90,6 @@ class HTTPClient {
 		std::unique_ptr<CGI> 					cgi_;
 		CGIPipes								pipes_;
 		std::unique_ptr<HTTPResponseGenerator>	responseGenerator;
+		Config									config_;
+		bool									conf_set_;
 };

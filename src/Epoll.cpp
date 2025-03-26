@@ -1,4 +1,3 @@
-
 #include "../inc/Epoll.hpp"
 
 Epoll::Epoll() : 

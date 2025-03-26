@@ -114,7 +114,7 @@ bool	HTTPParser::parseHTTPline(const std::string &str) {
  * @param str raw value string
  * @return trimmed string
  */
-static std::string trim_string(const std::string &str) {
+static std::string trimString(const std::string &str) {
 	size_t	start;
 	size_t	end;
 	
@@ -149,7 +149,29 @@ void	HTTPParser::parseExtraHeaderInformation(const std::string &str) {
 		else
 			key += raw_key[i];
 	}
-	result_.headers[key] = trim_string(str.substr(split + 1));
+	result_.headers[key] = trimString(str.substr(split + 1));
+}
+
+static std::vector<std::string>	getHost(std::string &host_string) {
+	std::vector<std::string>	host;
+	size_t						split;
+	std::string					hostname;
+	std::string					port;
+
+	if (host_string.find(":") != std::string::npos)
+		host_string.erase(0, 5);
+
+	split = host_string.find(":");
+	if (split != std::string::npos)
+	{
+		hostname = host_string.substr(0, split);
+		port = host_string.substr(split + 1);
+		host.push_back(hostname);
+		host.push_back(port);
+	}
+	else
+		host.push_back(host_string);
+	return (host);
 }
 
 /**
@@ -162,7 +184,9 @@ bool	HTTPParser::parseRequest(void) {
 
 	while (std::getline(is, str))
 	{	
-		if (result_.method.empty() && str.find("HTTP/") != std::string::npos)
+		if (str.find("Host:") != std::string::npos)
+			result_.host = getHost(str);
+		else if (result_.method.empty() && str.find("HTTP/") != std::string::npos)
 		{
 			if (parseHTTPline(str))
 				return (true);
@@ -210,11 +234,43 @@ void	HTTPParser::addIfProcessIsChunked(const std::string &buff) {
 	}
 }
 
+bool	isBiggerMaxBodyLength(size_t content_length, uint64_t max_size)
+{
+	if (content_length > max_size)
+		return (true);
+	else
+		return (false);
+}
+
+bool	HTTPParser::compareWithConfig(HTTPClient *client) {
+	Config	*config = &client->getConfig();
+	size_t	length;
+
+	if (!client->isConfigSet())
+		return (false);
+	// MAX CLIENT CHECK
+	if (content_length_ != 0)
+		length = content_length_;
+	else
+		length = result_.body.size();
+	if (isBiggerMaxBodyLength(length,  config->getClientBodySize(result_.request_target)))
+	{
+		// TO BIG
+	}
+	// METHOD CHECK
+	std::vector<std::string>	allowed_methods = config->getMothods(result_.request_target);
+	auto it = std::find(allowed_methods.begin(), allowed_methods.end(), result_.method);
+	if (it == allowed_methods.end()) // not found
+	{
+		// WRONG METHOD
+	}
+}
+
 /**
  * @brief process readbuffer by state;
  * @param buff std::string with readbuffer;
  */
-void	HTTPParser::addBufferToParser(std::string &buff) {
+void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client) {
 	if (current_state_ == COLLECT_HEADER)
 	{
 		rawRequest_ += buff;
@@ -227,6 +283,13 @@ void	HTTPParser::addBufferToParser(std::string &buff) {
 				current_state_ = DONE;
 			else
 				current_state_ = COLLECT_BODY;
+			client->setServer(result_.host);
+			if (compareWithConfig(client))
+			{
+
+			}
+			
+
 		}
 		else
 			return ;
@@ -259,4 +322,4 @@ void	HTTPParser::clearParser(void) {
 
 const HTTPRequest HTTPParser::getParsedRequest(void) { return (result_); }
 
-std::string HTTPParser::getRawData(void) { return (rawRequest_);}
+std::string HTTPParser::getRawData(void) { return (rawRequest_); }

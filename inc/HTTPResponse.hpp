@@ -6,22 +6,37 @@
 # include <filesystem>
 # include <unordered_map>
 # include <algorithm>
+# include <dirent.h>
+# include <sys/types.h>
+# include <cstring>
 
 # include <sys/stat.h>
 # include <unistd.h>
 
 # include "CGI.hpp"
 # include "HTTPRequest.hpp"
-# include "CGI.hpp"
+# include "Config.hpp"
+# include "HTTPClient.hpp"
 
 class HTTPResponseGenerator {
+	public:
+		HTTPResponseGenerator( HTTPClient *client );
+		~HTTPResponseGenerator( void );
+
+		void		generateResponse( const HTTPRequest request );
+		std::string loadResponse( void );
+		bool		isCGI(const HTTPRequest request);
+		void		setConfig(void);
+
 	private:
 		std::string	resolvePath( std::string endpoint );
 
-		void	getBody( void );
-		void	createHeader( void );
-		void	getContentType( void );
-		void	getHttpStatusMessages( void );
+		void		getBody( void );
+		void		createHeader( void );
+		void		getContentType( void );
+		void		getHttpStatusMessages( void );
+		std::string	getFolder( std::string filename );
+		std::string	searchThroughIndices( std::vector<std::string> indices, bool autoindex );
 
 		std::vector<char *> env_;
 		std::string			filename_;
@@ -31,12 +46,7 @@ class HTTPResponseGenerator {
 		std::string			httpStatusMessages_;
 		std::string			response_;
 		int					status_code_;
-
-	public:
-		HTTPResponseGenerator( void );
-		~HTTPResponseGenerator( void );
-
-		void		generateResponse( const HTTPRequest request );
-		std::string loadResponse( void );
-		bool		isCGI(const HTTPRequest request);
+		bool				dir_list_;
+		HTTPClient			*client_;
+		Config				*config_;
 };

@@ -18,7 +18,7 @@ int	CGI::getStatusCodeFromResponse(void) {
 	std::smatch	match;
 	int			status_code = 0;
 
-	if (!m_response.empty() && std::regex_search(m_response, match, status_code_regex))
+	if (!response_.empty() && std::regex_search(response_, match, status_code_regex))
 	{
 		std::string to_string = match[1];
 		if (to_string.size() < 9)
@@ -163,14 +163,8 @@ bool	CGI::isNPHscript( const std::string &executable ) {
 		return (false);
 }
 
-<<<<<<< HEAD
 /// @brief Set up a response for the client after receiving the header from the CGI
 /// saves the result again in response_
-=======
-/**
- * @brief Set up a response for the client after receiving the header from the CGI
- */
->>>>>>> efa991b (added CGI utils and function we can use for parsing HTTP headers and mimetypes)
 void	CGI::rewriteResonseFromCGI(void) {
 	std::smatch	match;
 	std::string	new_response = "";

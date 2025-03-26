@@ -1,6 +1,5 @@
 
 #include "../inc/Client.hpp"
-#include <stdexcept>
 
 
 Client::Client(int fd) : _fd(fd), _state(DFLT) {

@@ -22,7 +22,7 @@ public:
 private:
 	std::unordered_map<SharedFd, std::vector<Server>>	 _servers;
 	std::unordered_map<SharedFd, Client> 				_clients;
-	Epoll											_ep;
+	Epoll												_ep;
 
 	void	addClient(SharedFd& fd);
 	void	handleClient(uint32_t events, SharedFd& fd);

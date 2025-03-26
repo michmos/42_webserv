@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <unistd.h>
@@ -8,6 +7,8 @@
 #include <unordered_map>
 #include <stdexcept>
 
+#define UNVALID_FD -1
+
 class	SharedFd {
 public:
 	SharedFd();
@@ -15,16 +16,18 @@ public:
 	SharedFd(const SharedFd& other);
 	SharedFd& operator=(const SharedFd& other);
 	SharedFd& operator=(int fd);
-	bool	operator==(const SharedFd& other);
-	bool	operator<(const SharedFd& other);
-	bool	operator>(const SharedFd& other);
-	bool	operator<=(const SharedFd& other);
-	bool	operator>=(const SharedFd& other);
 	~SharedFd();
 
-	bool	isValid() const;
-	void	setNonBlock() const;
-	int		get() const;
+	// comparison operators
+	inline bool	operator==(const SharedFd& other) const { return (this->_fd == other._fd); }
+	inline bool	operator<(const SharedFd& other) const { return (this->_fd < other._fd); }
+	inline bool	operator>(const SharedFd& other) const { return (this->_fd > other._fd); }
+	inline bool	operator<=(const SharedFd& other) const { return (this->_fd <= other._fd); }
+	inline bool	operator>=(const SharedFd& other) const { return (this->_fd >= other._fd); }
+
+	inline bool	isValid() const { return (this->_fd >= 0); }
+	inline int	get() const { return (_fd); }
+	void		setNonBlock() const;
 
 private:
 	int	_fd;
