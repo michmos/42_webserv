@@ -62,12 +62,16 @@ enum e_get_conf {
 
 class HTTPClient {
 	public:
-		explicit HTTPClient( std::function<void(int, int)> callback );
+		explicit HTTPClient(
+			SharedFd clientFd,
+			SharedFd serverFd,
+			std::function<void(struct epoll_event)> addToEpoll_cb,
+			std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb
+		);
 		~HTTPClient( void );
 
-		void	work( epoll_event &event );
+		void	handle( epoll_event &event );
 		bool	isDone( void );
-		void	assignServerCallback( Server server );
 		void	setServer(std::vector<std::string> host);
 
 		void		writeTo( int fd );
@@ -79,20 +83,20 @@ class HTTPClient {
 		void	cgi( void );
 		void	responding( void );
 		void	cgiresponse( void );
-		bool	isConfigSet(void);
-	
-		Config	&getConfig(void);
 
 	private:
 		e_state						STATE_;
 
-		Server						*server_;
+		SharedFd					clientSock_;
+		SharedFd					serverSock_;
 		std::vector<std::string>	message_que_;
 		HTTPParser					parser_;
 		HTTPRequest					request_;
 		std::unique_ptr<CGI> 		cgi_;
 		CGIPipes					pipes_;
 		HTTPResponseGenerator		responseGenerator_;
-		Config						config_;
-		bool						conf_set_;
+		const Config				*config_;
+
+		std::function<void(const std::string& serverName)> _setConfig_cb;
+		std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb_;
 };

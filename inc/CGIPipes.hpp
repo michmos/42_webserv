@@ -28,13 +28,13 @@
 class CGIPipes {
 	private:
 		std::vector<std::vector<int>>	pipes_;
-		std::function<void(int, int)>	pipe_callback_;
+		std::function<void(struct epoll_event)>	pipe_callback_;
 
 	public:
 		CGIPipes( void );
 		~CGIPipes( void );
 
-		void				setCallbackFunction( std::function<void(int, int)> callback );
+		void				setCallbackFunction( std::function<void(struct epoll_event)> callback );
 		
 		void				addNewPipes( void );
 		void				addPipesToEpoll( void );

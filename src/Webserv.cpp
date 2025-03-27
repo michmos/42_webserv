@@ -1,38 +1,55 @@
 #include "../inc/Webserv.hpp"
 
 Webserv::Webserv(const std::string& confPath) {
-	// ConfigParser	configs(confPath);
-	// std::unordered_map<std::string, SharedFd> sockets;
-	//
-	// for (auto config& : configs.getConfigs()) {
-	// 	std::string key = config.getIp() + config.getPort().toStr();
-	// 	SharedFd lstngSock;
-	// 	auto it& = sockets.find(key);
-	// 	if (it == sockets.end()) {
-	// 		// create socket
-	// 		lstngSock = Socket::sSocket();
-	// 		Socket::sBind(lstngSock);
-	// 		Socket::sListen(listeningSock, config.getIp(), config.getPort());
-	// 	} else {
-	// 		lstngSock = it.second();
-	// 	}
-	//
-	// 	// create server
-	// 	_servers.emplace(SharedFd, Server(SharedFd, config));
-	// }
+	std::vector configs = ConfigParser("pathToConfig").getConfigs();
+	std::unordered_map<std::string, SharedFd> sockets;
+
+	for (auto& config : configs) {
+		SharedFd	serverFd;
+
+		std::string key = config.getHost() + std::to_string(config.getPort());
+		const auto& it = sockets.find(key);
+		if (it == sockets.end()) {
+			// no fitting socket existing
+			Socket	serverSock;
+			serverSock.bind(inet_addr(config.getHost().c_str()), htons(config.getPort()));
+			serverSock.listen(5);
+
+			serverFd = serverSock.getFd();
+			sockets[key] = serverFd;
+		} else {
+			// use existing socket
+			serverFd = it->second;
+		}
+
+		_servers[serverFd].push_back(config);
+	}
 }
 
 Webserv::~Webserv() {
 }
 
-void	Webserv::addClient(SharedFd& fd) {
-	auto it = _clients.find(fd);
-	if (it != _clients.end()) {
+void	Webserv::addClient(SharedFd& clientSock, SharedFd& servSock) {
+	if (_clients.find(clientSock) != _clients.end()) {
 		throw std::runtime_error("addClient(): trying to add existing client");
 	}
 	
-	_ep.add(fd.get(), EPOLLIN | EPOLLOUT);
-	_clients.emplace(fd, Client(fd.get()));
+	_ep.add(clientSock.get(), EPOLLIN | EPOLLOUT);
+	_clients.emplace(
+		clientSock, 
+		Client(
+			clientSock,
+			servSock,
+			// function to add an epoll event to epoll instance - used for callback
+			std::move([this](struct epoll_event ev) {
+				_ep.add(ev.data.fd, ev.events);
+			}),
+			// function to get ptr to config - used for callback
+			std::move([this](const SharedFd& servSock, const std::string& servName) {
+				return(this->getConfig(servSock, servName));
+			})
+		)
+	);
 }
 
 void	Webserv::handleClient(uint32_t events, SharedFd& fd) {

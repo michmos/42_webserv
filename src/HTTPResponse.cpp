@@ -193,10 +193,7 @@ void	HTTPResponseGenerator::getContentType( void )
 	{
 		extension = filename_.substr(index);
 		std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-
-		// auto it = mimetypes_.find(extension);
-		// if (it != mimetypes_.end())
-		// 	content_type_ = it->second;
+		// content_type_ = config_.getMimetype(extension) 
 	}
 }
 

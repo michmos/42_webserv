@@ -1,11 +1,13 @@
 #include "../inc/HTTPClient.hpp"
 
-HTTPClient::HTTPClient(std::function<void(int, int)> callback) : \
+HTTPClient::HTTPClient(SharedFd clientFd, SharedFd serverFd, 
+	std::function<void(struct epoll_event)> addToEpoll_cb,
+	std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb
+	) : clientSock_(clientFd), serverSock_(serverFd), getConfig_cb_(getConfig_cb), \
 		responseGenerator_(this) {
-	pipes_.setCallbackFunction(callback);
+	pipes_.setCallbackFunction(addToEpoll_cb);
 	STATE_ = RECEIVEHEADER;
-	conf_set_ = false;
-	server_ = NULL;
+	config_ = NULL;
 }
 
 HTTPClient::~HTTPClient(void) { }
@@ -16,27 +18,23 @@ bool	HTTPClient::isDone(void) {
 	return (false);
 }
 
-// HOW??
-void	HTTPClient::assignServerCallback(Server server) {
-	server_ = &server;
-}
-
+/**
+ * @brief get right Config corresponding with servername from the HTTP request
+ * @param host vector string with hostname and if set port
+ */
 void	HTTPClient::setServer(std::vector<std::string> host) {
 	Config		conf;
 	std::string hostname = host[0];
 	std::string port = "";
 
-	if (conf_set_ == true)
+	// DO I still need the PORT?
+	if (config_ == NULL)
 		return ;
 
 	if (host.size() > 1)
 		port = host[1];
 
-	// assignServerCallback(hostname, port);
-
-	// NOW server
-	config_ = server_->getConfig();
-	conf_set_ = true;
+	config_ = getConfig_cb_(serverSock_, hostname);
 }
 
 void	HTTPClient::writeTo(int fd) {
@@ -66,7 +64,7 @@ std::string	HTTPClient::readFrom(int fd) {
  * @brief checks state and processes event. Write or Read action
  * @param event epoll_event of the current event
  */
-void	HTTPClient::work(epoll_event &event) {
+void	HTTPClient::handle(epoll_event &event) {
 	std::string	data;
 	
 	if (STATE_ == RECEIVEBODY || STATE_ == RECEIVEHEADER)
@@ -158,10 +156,4 @@ void	HTTPClient::cgiresponse(void) {
 	if (!cgi_->isNPHscript(request_.request_target))
 		cgi_->rewriteResonseFromCGI();
 	message_que_.push_back(cgi_->getResponse());
-}
-
-bool	HTTPClient::isConfigSet(void) { return (conf_set_); }
-
-Config& HTTPClient::getConfig(void) {
-	return (config_);
 }
