@@ -1,5 +1,6 @@
 
 #include "../inc/Webserv.hpp"
+#include <unordered_map>
 
 Webserv::Webserv(const std::string& confPath) {
 	std::vector configs = ConfigParser("pathToConfig").getConfigs();
@@ -29,6 +30,27 @@ Webserv::Webserv(const std::string& confPath) {
 Webserv::~Webserv() {
 }
 
+// used for lambda in Client Constructor - see addClient
+static const Config* const	getConfig(
+	const std::unordered_map<SharedFd, std::vector<Config>>& servers,
+	const SharedFd& socket, 
+	const std::string& servName
+	)
+{
+	auto it = servers.find(socket);
+	if (it == servers.end()) {
+		throw std::invalid_argument("getServer(): invalid fd");
+	}
+
+	for (auto& server : it->second) {
+		if (server.getServerName() == servName) {
+			return (&server);
+		}
+	}
+	return(&(it->second[0]));
+}
+
+
 void	Webserv::addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 	if (_clients.find(clientSock) != _clients.end()) {
 		throw std::runtime_error("addClient(): trying to add existing client");
@@ -48,7 +70,7 @@ void	Webserv::addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 			}),
 			// function to get ptr to config - used for callback
 			std::move([this](const SharedFd& servSock, const std::string& servName) {
-				return(this->getConfig(servSock, servName));
+				return(getConfig(_servers, servSock, servName));
 			})
 		)
 	);
@@ -64,21 +86,6 @@ void	Webserv::delClient(const SharedFd& clientSock) {
 	_clients.erase(it);
 }
 
-
-// TODO: could be moved in client contructor call as lambda
-const Config* const	Webserv::getConfig(const SharedFd& socket, const std::string& servName) const {
-	auto it = _servers.find(socket);
-	if (it == _servers.end()) {
-		throw std::invalid_argument("getServer(): invalid fd");
-	}
-
-	for (auto& server : it->second) {
-		if (server.getServerName() == servName) {
-			return (&server);
-		}
-	}
-	return(&(it->second[0]));
-}
 
 void	Webserv::mainLoop() {
 	while (true) {
