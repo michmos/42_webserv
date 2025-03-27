@@ -20,7 +20,7 @@ public:
 	Client(
 		SharedFd clientFd,
 		SharedFd serverFd,
-		std::function<void(struct epoll_event)> addToEpoll_cb,
+		std::function<void(struct epoll_event, const SharedFd&)> addToEpoll_cb,
 		std::function<const Config* const (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb
 	);
 	Client(const Client& other) = delete;

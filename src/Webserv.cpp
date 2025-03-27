@@ -41,7 +41,9 @@ void	Webserv::addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 			clientSock,
 			servSock,
 			// function to add an epoll event to epoll instance - used for callback
-			std::move([this](struct epoll_event ev) {
+			std::move([this](struct epoll_event ev, const SharedFd& clientSock) {
+				// save the client fd to be able to map the pipe fd to the client
+				ev.data.u32 = clientSock.get();
 				_ep.add(ev.data.fd, ev.events);
 			}),
 			// function to get ptr to config - used for callback
@@ -91,12 +93,17 @@ void	Webserv::mainLoop() {
 
 			SharedFd fd = ev.data.fd;
 			if (_servers.find(fd) != _servers.end()) {
-				// server listening socket ready
+				// server socket ready
 				SharedFd clientSock = sock::accept(fd.get());
 				this->addClient(clientSock, fd);
-			} else {
+			} else if (_clients.find(fd) != _clients.end()) {
 				//  client socket ready
 				_clients[fd].handle(ev);
+			} else if (_clients.find(ev.data.u32) != _clients.end()) {
+				// client pipe ready
+				_clients[ev.data.u32].handle(ev);
+			} else {
+				throw std::runtime_error("mainLoop(): fd not found");
 			}
 		}
 	}
