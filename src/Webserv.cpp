@@ -90,14 +90,13 @@ void	Webserv::mainLoop() {
 			// #endif
 
 			SharedFd fd = ev.data.fd;
-			const auto& it = _servers.find(fd);
-			if (it != _servers.end()) {
-				// is listening socket
-				SharedFd clientSock = sock::accept(it->first.get());
-				this->addClient(clientSock, it->first);
+			if (_servers.find(fd) != _servers.end()) {
+				// server listening socket ready
+				SharedFd clientSock = sock::accept(fd.get());
+				this->addClient(clientSock, fd);
 			} else {
-				// is existing client
-				_clients[it->first].handle(ev);
+				//  client socket ready
+				_clients[fd].handle(ev);
 			}
 		}
 	}
