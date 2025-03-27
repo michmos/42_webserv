@@ -51,7 +51,7 @@ static const Config* const	getConfig(
 }
 
 
-void	Webserv::addClient(const SharedFd& clientSock, const SharedFd& servSock) {
+void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 	if (_clients.find(clientSock) != _clients.end()) {
 		throw std::runtime_error("addClient(): trying to add existing client");
 	}
@@ -76,7 +76,7 @@ void	Webserv::addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 	);
 }
 
-void	Webserv::delClient(const SharedFd& clientSock) {
+void	Webserv::_delClient(const SharedFd& clientSock) {
 	const auto& it = _clients.find(clientSock);
 	if (it == _clients.end()) {
 		throw std::runtime_error("delClient(): trying to del non-existant client");
@@ -102,7 +102,7 @@ void	Webserv::mainLoop() {
 			if (_servers.find(fd) != _servers.end()) {
 				// server socket ready
 				SharedFd clientSock = sock::accept(fd.get());
-				this->addClient(clientSock, fd);
+				this->_addClient(clientSock, fd);
 			} else if (_clients.find(fd) != _clients.end()) {
 				//  client socket ready
 				_clients[fd].handle(ev);
