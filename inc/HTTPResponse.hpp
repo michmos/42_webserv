@@ -35,7 +35,7 @@ class HTTPResponseGenerator {
 		void		createHeader( void );
 		void		getContentType( void );
 		void		getHttpStatusMessages( void );
-		std::string	getFolder( std::string filename );
+		std::string	checkFolder( std::string filename );
 		std::string	searchThroughIndices( std::vector<std::string> indices, bool autoindex );
 
 		std::vector<char *> env_;

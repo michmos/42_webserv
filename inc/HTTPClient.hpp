@@ -37,6 +37,8 @@
 # include "CGIPipes.hpp"
 # include "Config.hpp"
 
+# define READSIZE 100
+
 enum e_state {
 	RECEIVEHEADER,
 	RECEIVEBODY,
@@ -68,6 +70,9 @@ class HTTPClient {
 		void	assignServerCallback( Server server );
 		void	setServer(std::vector<std::string> host);
 
+		void		writeTo( int fd );
+		std::string	readFrom( int fd );
+
 		void	feedData( std::string &&data );
 		void	receiving( std::string &&data );
 		void	parsing( void );
@@ -79,18 +84,15 @@ class HTTPClient {
 		Config	&getConfig(void);
 
 	private:
-		e_state									STATE_;
+		e_state						STATE_;
 
-		SharedFd								fd_;
-		Server									*server_;
-		Epoll									ep;
-		std::vector<std::string>				message_que_;
-	
-		HTTPParser								parser_;
-		HTTPRequest								request_;
-		std::unique_ptr<CGI> 					cgi_;
-		CGIPipes								pipes_;
-		HTTPResponseGenerator					responseGenerator_;
-		Config									config_;
-		bool									conf_set_;
+		Server						*server_;
+		std::vector<std::string>	message_que_;
+		HTTPParser					parser_;
+		HTTPRequest					request_;
+		std::unique_ptr<CGI> 		cgi_;
+		CGIPipes					pipes_;
+		HTTPResponseGenerator		responseGenerator_;
+		Config						config_;
+		bool						conf_set_;
 };

@@ -25,7 +25,7 @@ void	HTTPParser::splitHeaderBody(void) {
 
 /// @brief if available, checks if content length is same as size body
 void	HTTPParser::verifyBodyCompletion(e_state &STATE) {
-	if (STATE == PARSING)
+	if (STATE != RECEIVEHEADER && STATE != RECEIVEBODY)
 		return ;
 	if (content_length_ > 0)
 	{
@@ -292,6 +292,13 @@ static void	generatePath(std::string &endpoint, Config *config) {
 	}
 }
 
+bool	checkBodySizeLimit(size_t body_size, Config *conf, std::string path) {
+	if (body_size > conf->getClientBodySize(path))
+		return (true);
+	else
+		return (false);
+}
+
 /**
  * @brief process readbuffer by state;
  * @param buff std::string with readbuffer;
@@ -329,6 +336,11 @@ void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client, e_stat
 			addIfProcessIsChunked(buff, STATE);
 		else
 			result_.body += buff;
+	}
+	if (checkBodySizeLimit(result_.body.size(), &client->getConfig(), result_.request_target))
+	{
+		result_.status_code = 413;
+		STATE = RESPONSE;
 	}
 	verifyBodyCompletion(STATE);
 }

@@ -69,65 +69,56 @@ std::string HTTPResponseGenerator::searchThroughIndices(std::vector<std::string>
 	{
 		for (const std::string &index : indices)
 		{
-			folder_file = getFolder(index);
-			if (!folder_file.empty())
+			folder_file = checkFolder(index);
+			if (!folder_file.empty() || status_code_ == 403)
 				return (folder_file);
+			status_code_ = 200;
 		}
 		status_code_ = 404;
 		return ("");
 	}
 }
 /**
- * @brief goes through all the folders from config and checks if access is okay
+ * @brief checks if access is okay and adds indexpages if necessary
  * @param filename string with filenname
- * @return string with foldername or empty when an error appears
+ * @return path or empty when an error appears
  */
-std::string	HTTPResponseGenerator::getFolder(std::string filename) {
-	std::string	folder_file;
+std::string	HTTPResponseGenerator::checkFolder(std::string path) {
 	struct stat	statbuf;
 
-	for(const auto &pair : config_->getLocations())
+	if (stat(path.c_str(), &statbuf) == 0)
 	{
-		folder_file = pair.first + "/" + filename;
-		if (stat(folder_file.c_str(), &statbuf) == 0)
+		if (S_ISDIR(statbuf.st_mode))
 		{
-			if (S_ISDIR(statbuf.st_mode))
+			if (config_->getAutoindex(path))
 			{
-				if (config_->getAutoindex(filename))
-				{
-					dir_list_ = true;
-					return ("");
-				}
-				else
-					return (searchThroughIndices(config_->getIndex(filename), false));
+				dir_list_ = true;
+				return ("");
 			}
+			else
+				return (searchThroughIndices(config_->getIndex(path), false));
 		}
-		if (access(folder_file.c_str(), F_OK) != -1)
+	}
+	if (access(path.c_str(), F_OK) != -1)
+	{
+		if (access(path.c_str(), R_OK) == -1)
 		{
-			if (access(folder_file.c_str(), R_OK) == -1)
-			{
-				std::cerr << "No permission" << std::endl;
-				status_code_ = 403;
-				return "";
-			}
-			return (folder_file);
+			std::cerr << "No permission" << std::endl;
+			status_code_ = 403;
+			return "";
 		}
+		return (path);
 	}
 	status_code_ = 404;
 	return ("");
 }
 
 /**
- * @brief search for the folder where the endpoint is stored
+ * @brief path + file access, corrects index and checks autoindex on/off
  * @param endpoint string with request target
  * @return folder + endpoint to read from
  */
 std::string	HTTPResponseGenerator::resolvePath(std::string endpoint) {
-	std::string	filename("");
-	std::string	folder_file;
-	std::string	found;
-	std::string	path;
-
 	dir_list_ = false;
 	if (endpoint == "/")
 	{
@@ -139,16 +130,8 @@ std::string	HTTPResponseGenerator::resolvePath(std::string endpoint) {
 		endpoint = searchThroughIndices(config_->getIndex(endpoint), true);
 	}
 	else
-	{
-		if (endpoint.front() == '/')
-			endpoint.erase(0,1);
-		endpoint = getFolder(endpoint);
-	}
-	if (!endpoint.empty())
-		filename = "/" + endpoint;
-	if (dir_list_ == true)
-		filename = endpoint;
-	return (filename);
+		endpoint = checkFolder(endpoint);
+	return (endpoint);
 }
 
 /**

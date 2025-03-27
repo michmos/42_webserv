@@ -21,7 +21,6 @@ class HTTPParser
 		~HTTPParser( void );
 
 		void				clearParser( void );
-
 		void				addBufferToParser( std::string &buff, HTTPClient *client, e_state &STATE_ );
 		std::string 		getRawData( void );
 		const HTTPRequest	getParsedRequest( void );
@@ -33,7 +32,6 @@ class HTTPParser
 		std::string	header_;
 		size_t		content_length_;
 		bool		chunked_;
-
 		
 		bool	isHeadersParsed( void );
 		void	verifyBodyCompletion( e_state &STATE );

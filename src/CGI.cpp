@@ -74,6 +74,7 @@ void	CGI::watchDog(void) {
 	time_t	start;
 	time_t	now;
 	bool	timeout = false;
+	int		timeout_time;
 
 	pid = fork();
 	if (pid < 0)

@@ -1,6 +1,7 @@
 #include "../inc/HTTPClient.hpp"
 
-HTTPClient::HTTPClient(std::function<void(int, int)> callback) {
+HTTPClient::HTTPClient(std::function<void(int, int)> callback) : \
+		responseGenerator_(this) {
 	pipes_.setCallbackFunction(callback);
 	STATE_ = RECEIVEHEADER;
 	conf_set_ = false;
@@ -31,33 +32,50 @@ void	HTTPClient::setServer(std::vector<std::string> host) {
 	if (host.size() > 1)
 		port = host[1];
 
-	// assignServerCallback();
+	// assignServerCallback(hostname, port);
+
 	// NOW server
 	config_ = server_->getConfig();
 	conf_set_ = true;
 }
 
+void	HTTPClient::writeTo(int fd) {
+	size_t		bytes_write;
+	std::string	response;
+
+	if (message_que_.empty())
+		return ;
+	response = message_que_.front();
+	message_que_.erase(message_que_.begin());
+	bytes_write = write(fd, response.c_str(), response.size());
+	if (bytes_write != response.size())
+		throw std::runtime_error("write(): " + std::string(strerror(errno)));
+}
+
+std::string	HTTPClient::readFrom(int fd) {
+	char buff[READSIZE + 1] = { '\0'};
+	size_t	bytes_read;
+
+	bytes_read = read(fd, buff, READSIZE);
+	if (bytes_read == -1)
+		throw std::runtime_error(std::string("read(): ") + strerror(errno));
+	return (std::string(buff, bytes_read));
+}
 
 /**
  * @brief checks state and processes event. Write or Read action
  * @param event epoll_event of the current event
  */
 void	HTTPClient::work(epoll_event &event) {
-	char		buffer[2048];
-	size_t		bytes_read;
+	std::string	data;
 	
-	if (STATE_ != CGISEND && STATE_ != CGIRECEIVE)
+	if (STATE_ == RECEIVEBODY || STATE_ == RECEIVEHEADER)
+		data = readFrom(event.data.fd);
+	else if (STATE_ == DONE)
 	{
-		// just see if read or write event?
-		// reading() / writing():
-		;
-		if (STATE_ == DONE && !message_que_.empty()) // maybe better to have a seperate write and read function
-		{
-			std::string	response = message_que_.front();
-			message_que_.erase(message_que_.begin());
-			bytes_read = write(event.data.fd, response.c_str(), sizeof(response));
-			// something with bytes?
-		}
+		writeTo(event.data.fd);
+		// close connection?
+		return ;
 	}
 	else if (STATE_ == CGISEND) // send data to eventfd (pipe) 
 	{
@@ -68,10 +86,8 @@ void	HTTPClient::work(epoll_event &event) {
 	else if (STATE_ == CGIRECEIVE) // read data from eventfd (pipe)
 	{
 		cgi_->getResponseFromCGI(event.data.fd);
-		//send back to client
 		STATE_ = CGIRESPONSE;
 	}
-	std::string data(buffer);
 	feedData(std::move(data));
 }
 
@@ -114,9 +130,9 @@ void	HTTPClient::parsing(void) {
 
 /// @brief regenerates response and add this one to the que.
 void	HTTPClient::responding(void) {
-	responseGenerator->setConfig();
-	responseGenerator->generateResponse(request_);
-	message_que_.push_back(responseGenerator->loadResponse());
+	responseGenerator_.setConfig();
+	responseGenerator_.generateResponse(request_);
+	message_que_.push_back(responseGenerator_.loadResponse());
 	STATE_ = DONE;
 }
 
@@ -131,7 +147,6 @@ void	HTTPClient::cgi(void) {
 		request_.request_target = "data/www/cgi-bin/nph_CGI_delete.py";
 	else
 		request_.request_target = "data/www/cgi-bin" + request_.request_target;
-	
 	cgi_->createEnv(env_strings, request_);
 	cgi_->forkCGI(request_.request_target, env_strings);
 	body = request_.body;
