@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Client.hpp"
+#include "sock.hpp"
 #include "Epoll.hpp"
 #include "SharedFd.hpp"
-#include "Socket.hpp"
 #include "ConfigParser.hpp"
 #include "Config.hpp"
 
@@ -28,7 +28,7 @@ private:
 	std::unordered_map<SharedFd, Client> 				_clients;
 	Epoll												_ep;
 
-	void	addClient(SharedFd& clientSock, SharedFd& servSock);
-	void	delClient(SharedFd& fd);
+	void	addClient(const SharedFd& clientSock, const SharedFd& servSock);
+	void	delClient(const SharedFd& fd);
 	const Config* const	getConfig(const SharedFd& serverSock, const std::string& serverName) const;
 };

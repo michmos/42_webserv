@@ -12,11 +12,10 @@ Webserv::Webserv(const std::string& confPath) {
 		const auto& it = sockets.find(key);
 		if (it == sockets.end()) {
 			// no fitting socket existing
-			Socket	serverSock;
-			serverSock.bind(inet_addr(config.getHost().c_str()), htons(config.getPort()));
-			serverSock.listen(5);
+			serverFd = sock::create();
+			sock::bind(serverFd.get(), inet_addr(config.getHost().c_str()), htons(config.getPort()));
+			sock::listen(serverFd.get(), 5);
 
-			serverFd = serverSock.getFd();
 			sockets[key] = serverFd;
 		} else {
 			// use existing socket
@@ -30,7 +29,7 @@ Webserv::Webserv(const std::string& confPath) {
 Webserv::~Webserv() {
 }
 
-void	Webserv::addClient(SharedFd& clientSock, SharedFd& servSock) {
+void	Webserv::addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 	if (_clients.find(clientSock) != _clients.end()) {
 		throw std::runtime_error("addClient(): trying to add existing client");
 	}
@@ -53,59 +52,36 @@ void	Webserv::addClient(SharedFd& clientSock, SharedFd& servSock) {
 	);
 }
 
-void	Webserv::handleClient(uint32_t events, SharedFd& fd) {
-	auto it = _clients.find(fd);
-	if (it == _clients.end()) {
-		throw std::invalid_argument("handleClient(): called with unadded client");
-	}
-
-	if (events & EPOLLIN) {
-		it->second.readFrom();
-	} else if (events & EPOLLOUT) {
-		it->second.writeTo();
-	} else if (events & (EPOLLHUP | EPOLLERR)) {
-		this->delClient(fd);
-		return;
-	}
-
-	// TODO: assign server to client after parsing of request headers
-	// - maybe also move this somewhere in if else tree above
-	//
-	// if (it->second.getState() == FINISHED_READING) {
-	// 	it->second.setServer(this->getServer(it->second.getServerFd(), it->second.getServerName());
-	// }
-}
-
-void	Webserv::delClient(SharedFd& fd) {
-	auto it = _clients.find(fd);
+void	Webserv::delClient(const SharedFd& clientSock) {
+	const auto& it = _clients.find(clientSock);
 	if (it == _clients.end()) {
 		throw std::runtime_error("delClient(): trying to del non-existant client");
 	}
 
-	_ep.del(fd.get());
+	_ep.del(clientSock.get());
 	_clients.erase(it);
 }
 
 
-const Server&	Webserv::getServer(SharedFd& fd, const std::string& servName) const {
-	auto it = _servers.find(fd);
+// TODO: could be moved in client contructor call as lambda
+const Config* const	Webserv::getConfig(const SharedFd& socket, const std::string& servName) const {
+	auto it = _servers.find(socket);
 	if (it == _servers.end()) {
 		throw std::invalid_argument("getServer(): invalid fd");
 	}
 
 	for (auto& server : it->second) {
-		if (server.getName() == servName) {
-			return (server);
+		if (server.getServerName() == servName) {
+			return (&server);
 		}
 	}
-	throw std::invalid_argument("getServer(): invalid server name");
+	return(&(it->second[0]));
 }
-
 
 void	Webserv::mainLoop() {
 	while (true) {
-		auto events = _ep.wait();
-		for (auto ev : events) {
+		const auto& events = _ep.wait();
+		for (const auto& ev : events) {
 			// #ifdef DEBUG
 			// std::cout << "|SERVER| client: " << ev.data.fd << " "
 			// 	<< ((ev.events & EPOLLIN) ? "EPOLLIN " : " ")
@@ -116,11 +92,12 @@ void	Webserv::mainLoop() {
 			SharedFd fd = ev.data.fd;
 			const auto& it = _servers.find(fd);
 			if (it != _servers.end()) {
-				// listening socket ready
-				SharedFd newClient = Socket::sAccept(fd);
-				this->addClient(newClient);
+				// is listening socket
+				SharedFd clientSock = sock::accept(it->first.get());
+				this->addClient(clientSock, it->first);
 			} else {
-				this->handleClient(ev.events, fd);
+				// is existing client
+				_clients[it->first].handle(ev);
 			}
 		}
 	}
