@@ -48,6 +48,9 @@ void	HTTPClient::writeTo(int fd) {
 	bytes_write = write(fd, response.c_str(), response.size());
 	if (bytes_write != response.size())
 		throw std::runtime_error("write(): " + std::string(strerror(errno)));
+	
+	// check if everything can be written in once?
+	STATE_ = DONE;
 }
 
 std::string	HTTPClient::readFrom(int fd) {
@@ -66,65 +69,59 @@ std::string	HTTPClient::readFrom(int fd) {
  */
 void	HTTPClient::handle(epoll_event &event) {
 	std::string	data;
-	
-	if (STATE_ == RECEIVEBODY || STATE_ == RECEIVEHEADER)
-		data = readFrom(event.data.fd);
-	else if (STATE_ == DONE)
-	{
-		writeTo(event.data.fd);
-		// close connection?
-		return ;
-	}
-	else if (STATE_ == CGISEND) // send data to eventfd (pipe) 
-	{
-		cgi_->sendDataToStdin(event.data.fd);
-		STATE_ = CGIRECEIVE;
-		return ;
-	}
-	else if (STATE_ == CGIRECEIVE) // read data from eventfd (pipe)
-	{
-		cgi_->getResponseFromCGI(event.data.fd);
-		STATE_ = CGIRESPONSE;
-	}
-	feedData(std::move(data));
-}
-
-/**
- * @brief data -> receiving, parsing, responding, cgi & cgi response (Update state)
- * @param data string with read data
- */
-void HTTPClient::feedData(std::string &&data) {
 	HTTPRequest	request;
+	static bool	is_cgi_request = false;
 	
-	if (STATE_ == RECEIVEHEADER || STATE_ == RECEIVEBODY)
-		receiving(std::move(data));
+	if (STATE_ == RSV_HEADER || STATE_ == RSV_BODY) // RECEIVING
+	{
+		data = readFrom(event.data.fd);
+		parser_.addBufferToParser(data, this, STATE_);
+		if (STATE_ != PARSING)
+			return ;
+	}
+
 	if (STATE_ == PARSING)
-		parsing();
+		is_cgi_request = parsing();
+
+	if (is_cgi_request) // PROCESS CGI
+	{
+		switch (STATE_) {
+			case START_CGI:
+				cgi();
+				return ;
+			case SEND_TO_CGI:
+				cgi_->sendDataToStdin(event.data.fd); // send data to eventfd (pipe)
+				STATE_ = RSV_FROM_CGI;
+				return ;
+			case RSV_FROM_CGI:
+				cgi_->getResponseFromCGI(event.data.fd); // read data from eventfd (pipe)
+				STATE_ = CRT_RSPNS_CGI;
+		}
+	}
+
+	// CREATE RESPONSE & SEND
 	if (STATE_ == RESPONSE)
 		responding();
-	else if (STATE_ == STARTCGI)
-		cgi();
-	else if (STATE_ == CGIRESPONSE)
+	else if (STATE_ == CRT_RSPNS_CGI)
 		cgiresponse();
-}
-
-/**
- * @brief adds the data to ther parser and checks if everything is received
- * @param data string with read data
- */
-void	HTTPClient::receiving(std::string &&data) {
-	parser_.addBufferToParser(data, this, STATE_);
+	else if (STATE_ == RESPONSE)
+		writeTo(event.data.fd);
 }
 
 /// @brief parse the HTTP request header and checks if it is a cgi target
-void	HTTPClient::parsing(void) {
+bool	HTTPClient::parsing(void) {
 	request_ = parser_.getParsedRequest();
 	if (!responseGenerator_.isCGI(request_))
+	{
 		STATE_ = RESPONSE;
+		return (false);
+	}
 	else
-		STATE_ = STARTCGI;
+	{
+		STATE_ = START_CGI;
+		return (true);
+	}
 }
-
 
 /// @brief regenerates response and add this one to the que.
 void	HTTPClient::responding(void) {
@@ -148,7 +145,7 @@ void	HTTPClient::cgi(void) {
 	cgi_->createEnv(env_strings, request_);
 	cgi_->forkCGI(request_.request_target, env_strings);
 	body = request_.body;
-	STATE_ = CGISEND;
+	STATE_ = SEND_TO_CGI;
 }
 
 /// @brief checks if cgi header has to be rewritten and add response to que.

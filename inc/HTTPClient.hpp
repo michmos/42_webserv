@@ -39,14 +39,17 @@
 
 # define READSIZE 100
 
+
+
 enum e_state {
-	RECEIVEHEADER,
-	RECEIVEBODY,
+	RSV_HEADER,
+	RSV_BODY,
 	PARSING,
-	STARTCGI,
-	CGISEND,
-	CGIRECEIVE,
-	CGIRESPONSE,
+	START_CGI,
+	SEND_TO_CGI,
+	RSV_FROM_CGI,
+	CRT_RSPNS_CGI,
+	CRT_RSPNS,
 	RESPONSE,
 	DONE
 };
@@ -77,9 +80,7 @@ class HTTPClient {
 		void		writeTo( int fd );
 		std::string	readFrom( int fd );
 
-		void	feedData( std::string &&data );
-		void	receiving( std::string &&data );
-		void	parsing( void );
+		bool	parsing( void );
 		void	cgi( void );
 		void	responding( void );
 		void	cgiresponse( void );
