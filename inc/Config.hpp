@@ -31,10 +31,10 @@ class Config {
 		int	setDirective(std::string key, std::vector<std::string> values);
 
 		// GETTERS
-		std::unordered_map<std::string, std::vector<std::string>>	getDirectives();
-		std::unordered_map<std::string, Location>					getLocations();
+		std::unordered_map<std::string, std::vector<std::string>>	getDirectives() const;
+		std::unordered_map<std::string, Location>					getLocations() const;
 
-		std::unordered_map<std::string, std::vector<std::string>> getLocDirectives(const std::string locKey);
+		std::unordered_map<std::string, std::vector<std::string>> getLocDirectives(const std::string locKey) const;
 
 		//		need for WebServer Class
 		int				getPort();
@@ -42,12 +42,12 @@ class Config {
 		std::string		getServerName();
 
 		//		need for Client Class
-		bool						getAutoindex(const std::string locKey);			// autoindex on;
-		std::uint64_t				getClientBodySize(const std::string locKey);	// client_max_body_size 10M;
-		std::vector<std::string>	getRedirect(const std::string locKey);			// return 301 http://example.com/newpage;
-		std::vector<std::string>	getRoot(const std::string locKey);				// root /tmp/www;
-		std::vector<std::string>	getMothods(const std::string locKey);			// allow_methods  DELETE POST GET;
-		std::vector<std::string>	getIndex(const std::string locKey);				// index index.html index.php;
+		bool						getAutoindex(const std::string locKey) const;		// autoindex on;
+		std::uint64_t				getClientBodySize(const std::string locKey) const;	// client_max_body_size 10M;
+		std::vector<std::string>	getRedirect(const std::string locKey) const;		// return 301 http://example.com/newpage;
+		std::vector<std::string>	getRoot(const std::string locKey) const;			// root /tmp/www;
+		std::vector<std::string>	getMothods(const std::string locKey) const;			// allow_methods  DELETE POST GET;
+		std::vector<std::string>	getIndex(const std::string locKey) const;			// index index.html index.php;
 
 		// UTILS
 		void	printConfig();

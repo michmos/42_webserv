@@ -27,7 +27,7 @@ class HTTPParser
 		~HTTPParser( void );
 
 		void				clearParser( void );
-		void				addBufferToParser( std::string &buff, HTTPClient *client, e_state &STATE_ );
+		void				addBufferToParser( std::string &buff, HTTPClient *client );
 		std::string 		getRawData( void );
 		const HTTPRequest	getParsedRequest( void );
 		bool				isValidHeader( HTTPClient *client );
@@ -44,7 +44,7 @@ class HTTPParser
 		bool	verifyBodyCompletion( void );
 
 		void	splitHeaderBody( void );
-		void	addIfProcessIsChunked( const std::string &buff, e_state &STATE );
+		void	addIfProcessIsChunked( const std::string &buff );
 		bool	validWithConfig( HTTPClient *client ) ;
 
 		// Parsing header

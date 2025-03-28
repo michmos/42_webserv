@@ -211,7 +211,7 @@ bool	HTTPParser::parseRequest(void) {
  * @brief saves chunks and checks when chunksize == 0 (ready);
  * @param buff std::string with readbuffer;
  */
-void	HTTPParser::addIfProcessIsChunked(const std::string &buff, e_state &STATE) {
+void	HTTPParser::addIfProcessIsChunked(const std::string &buff) {
 	std::string	raw_body(result_.body + buff);
 	std::string	chunk_size_str;
 	size_t		found;
@@ -248,8 +248,6 @@ bool	HTTPParser::validWithConfig(HTTPClient *client) {
 	const Config	*config = client->getConfig();
 	size_t			length;
 
-	if (!client->isConfigSet())
-		return (false); // WHat now?
 	// MAX CLIENT CHECK
 	if (content_length_ != 0)
 		length = content_length_;
@@ -273,7 +271,7 @@ bool	HTTPParser::validWithConfig(HTTPClient *client) {
 	return (false);
 }
 
-static void	generatePath(std::string &endpoint, Config *config) {
+static void	generatePath(std::string &endpoint, const Config *config) {
 	std::string	folder_file;
 	struct stat	statbuf;
 
@@ -291,7 +289,7 @@ static void	generatePath(std::string &endpoint, Config *config) {
 	}
 }
 
-bool	checkBodySizeLimit(size_t body_size, Config *conf, std::string path) {
+bool	checkBodySizeLimit(size_t body_size, const Config *conf, std::string path) {
 	if (body_size > conf->getClientBodySize(path))
 		return (true);
 	else
@@ -302,7 +300,7 @@ bool	checkBodySizeLimit(size_t body_size, Config *conf, std::string path) {
  * @brief process readbuffer by state;
  * @param buff std::string with readbuffer;
  */
-void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client, e_state &STATE) {
+void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client) {
 	if (PARSE_STATE_ == RCV_HEADER)
 	{
 		rawRequest_ += buff;
@@ -316,7 +314,7 @@ void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client, e_stat
 			client->setServer(result_.host);
 
 			// generate PATH
-			generatePath(result_.request_target, &client->getConfig());
+			generatePath(result_.request_target, client->getConfig());
 
 			// Validate with config and results from parsing
 			if (!result_.invalidRequest)
@@ -332,11 +330,11 @@ void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client, e_stat
 	if (PARSE_STATE_ == RCV_BODY)
 	{
 		if (chunked_)
-			addIfProcessIsChunked(buff, STATE);
+			addIfProcessIsChunked(buff);
 		else
 			result_.body += buff;
 	}
-	if (checkBodySizeLimit(result_.body.size(), &client->getConfig(), result_.request_target))
+	if (checkBodySizeLimit(result_.body.size(), client->getConfig(), result_.request_target))
 	{
 		result_.status_code = 413;
 		PARSE_STATE_ = DONE;

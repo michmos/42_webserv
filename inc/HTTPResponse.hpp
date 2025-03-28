@@ -48,5 +48,5 @@ class HTTPResponseGenerator {
 		int					status_code_;
 		bool				dir_list_;
 		HTTPClient			*client_;
-		Config				*config_;
+		const Config		*config_;
 };

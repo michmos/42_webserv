@@ -11,7 +11,7 @@ HTTPResponseGenerator::HTTPResponseGenerator(HTTPClient *client) : client_(clien
 HTTPResponseGenerator::~HTTPResponseGenerator(void) { }
 
 void	HTTPResponseGenerator::setConfig(void) {
-	config_ = &client_->getConfig();
+	config_ = client_->getConfig();
 }
 
 bool	HTTPResponseGenerator::isCGI(const HTTPRequest request) {

@@ -59,10 +59,10 @@ void Config::printConfig() {
 }
 
 // GETTER
-std::unordered_map<std::string, std::vector<std::string>> Config::getDirectives() {
+std::unordered_map<std::string, std::vector<std::string>> Config::getDirectives() const {
 	return (this->_directives);
 }
-std::unordered_map<std::string, Location>	Config::getLocations() {
+std::unordered_map<std::string, Location>	Config::getLocations() const{
 	return (this->_locations);
 }
 
@@ -110,7 +110,7 @@ std::string	Config::getServerName() {
 }
 
 // client_max_body_size 10M;
-std::uint64_t	Config::getClientBodySize(const std::string locKey) {
+std::uint64_t	Config::getClientBodySize(const std::string locKey) const {
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("client_max_body_size");
 	std::string strSize;
@@ -133,7 +133,7 @@ std::uint64_t	Config::getClientBodySize(const std::string locKey) {
 }
 
 // return 301 http://example.com/newpage;
-std::vector<std::string>	Config::getRedirect(const std::string locKey) {
+std::vector<std::string>	Config::getRedirect(const std::string locKey) const {
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("return");
 	if (it != dirMap.end()) {
@@ -145,7 +145,7 @@ std::vector<std::string>	Config::getRedirect(const std::string locKey) {
 }
 
 // root /tmp/www;
-std::vector<std::string>	Config::getRoot(const std::string locKey) {
+std::vector<std::string>	Config::getRoot(const std::string locKey)  const{
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("index");
 	if (it != dirMap.end()) {
@@ -157,7 +157,7 @@ std::vector<std::string>	Config::getRoot(const std::string locKey) {
 }
 
 // // allow_methods  DELETE POST GET;
-std::vector<std::string>	Config::getMothods(const std::string locKey) {
+std::vector<std::string>	Config::getMothods(const std::string locKey) const {
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("allow_methods");
 	if (it != dirMap.end()) {
@@ -169,7 +169,7 @@ std::vector<std::string>	Config::getMothods(const std::string locKey) {
 }
 
 // index index.html index.php;
-std::vector<std::string>	Config::getIndex(const std::string locKey) {
+std::vector<std::string>	Config::getIndex(const std::string locKey) const {
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("index");
 	if (it != dirMap.end()) {
@@ -181,7 +181,7 @@ std::vector<std::string>	Config::getIndex(const std::string locKey) {
 }
 
 // autoindex on;
-bool	Config::getAutoindex(const std::string locKey) {
+bool	Config::getAutoindex(const std::string locKey) const {
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("autoindex");
 	if (it != dirMap.end()) {
@@ -195,7 +195,7 @@ bool	Config::getAutoindex(const std::string locKey) {
 	return (false);
 }
 
-std::unordered_map<std::string, std::vector<std::string>> Config::getLocDirectives(const std::string locKey) {
+std::unordered_map<std::string, std::vector<std::string>> Config::getLocDirectives(const std::string locKey) const {
 	std::unordered_map<std::string, std::vector<std::string>> locMap = this->_directives;
 	size_t pos = 0;
 	std::string key = "/";
