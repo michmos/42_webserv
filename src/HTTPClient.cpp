@@ -6,7 +6,7 @@ HTTPClient::HTTPClient(SharedFd clientFd, SharedFd serverFd,
 	) : clientSock_(clientFd), serverSock_(serverFd), getConfig_cb_(getConfig_cb), \
 		responseGenerator_(this) {
 	pipes_.setCallbackFunction(addToEpoll_cb);
-	STATE_ = RECEIVEHEADER;
+	STATE_ = RECEIVING;
 	config_ = NULL;
 }
 
@@ -72,44 +72,22 @@ void	HTTPClient::handle(epoll_event &event) {
 	HTTPRequest	request;
 	static bool	is_cgi_request = false;
 	
-	if (STATE_ == RSV_HEADER || STATE_ == RSV_BODY) // RECEIVING
-	{
-		data = readFrom(event.data.fd);
-		parser_.addBufferToParser(data, this, STATE_);
-		if (STATE_ != PARSING)
-			return ;
-	}
-
-	if (STATE_ == PARSING)
-		is_cgi_request = parsing();
-
-	if (is_cgi_request) // PROCESS CGI
-	{
-		switch (STATE_) {
-			case START_CGI:
-				cgi();
+	switch (STATE_) {
+		case RECEIVING:
+			data = readFrom(event.data.fd);
+			parser_.addBufferToParser(data, this, STATE_);
+			if (parsing(event.data.fd) != READY)
 				return ;
-			case SEND_TO_CGI:
-				cgi_->sendDataToStdin(event.data.fd); // send data to eventfd (pipe)
-				STATE_ = RSV_FROM_CGI;
+		case PROCESS_CGI:
+			if (is_cgi_request && cgi(event.data.fd) != READY)
 				return ;
-			case RSV_FROM_CGI:
-				cgi_->getResponseFromCGI(event.data.fd); // read data from eventfd (pipe)
-				STATE_ = CRT_RSPNS_CGI;
-		}
+		case RESPONSE:
+			responding(responseGenerator_.isCGI(request_), event.data.fd);
 	}
-
-	// CREATE RESPONSE & SEND
-	if (STATE_ == RESPONSE)
-		responding();
-	else if (STATE_ == CRT_RSPNS_CGI)
-		cgiresponse();
-	else if (STATE_ == RESPONSE)
-		writeTo(event.data.fd);
 }
 
 /// @brief parse the HTTP request header and checks if it is a cgi target
-bool	HTTPClient::parsing(void) {
+bool	HTTPClient::parsing(int fd) {
 	request_ = parser_.getParsedRequest();
 	if (!responseGenerator_.isCGI(request_))
 	{
@@ -118,34 +96,34 @@ bool	HTTPClient::parsing(void) {
 	}
 	else
 	{
-		STATE_ = START_CGI;
+		STATE_ = PROCESS_CGI;
+		cgi(fd);
 		return (true);
 	}
 }
 
 /// @brief regenerates response and add this one to the que.
-void	HTTPClient::responding(void) {
-	responseGenerator_.setConfig();
-	responseGenerator_.generateResponse(request_);
-	message_que_.push_back(responseGenerator_.loadResponse());
+void	HTTPClient::responding(bool cgi_used, int fd) {
+	if (cgi_used)
+		cgiresponse();
+	else
+	{
+		responseGenerator_.setConfig();
+		responseGenerator_.generateResponse(request_);
+		message_que_.push_back(responseGenerator_.loadResponse());
+	}
+	writeTo(fd);
 	STATE_ = DONE;
 }
 
 /// @brief creates a CGI class, checks the method/target, starts the cgi
-void	HTTPClient::cgi(void) {
+bool	HTTPClient::cgi(int fd) {
 	std::vector<std::string>	env_strings;
-	static std::string			body = "";
 
 	cgi_ = std::make_unique<CGI>(request_.body, pipes_.getLastPipes());
 	pipes_.addNewPipes();
-	if (request_.method == "DELETE")
-		request_.request_target = "data/www/cgi-bin/nph_CGI_delete.py";
-	else
-		request_.request_target = "data/www/cgi-bin" + request_.request_target;
-	cgi_->createEnv(env_strings, request_);
-	cgi_->forkCGI(request_.request_target, env_strings);
-	body = request_.body;
-	STATE_ = SEND_TO_CGI;
+	cgi_->handle_cgi(request_, fd);
+	return (cgi_->isReady());
 }
 
 /// @brief checks if cgi header has to be rewritten and add response to que.
@@ -154,3 +132,5 @@ void	HTTPClient::cgiresponse(void) {
 		cgi_->rewriteResonseFromCGI();
 	message_que_.push_back(cgi_->getResponse());
 }
+
+const Config	*HTTPClient::getConfig( void ) { return (config_); }

@@ -5,9 +5,37 @@ CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post
 	pipe_from_child_[WRITE] = pipes[1];
 	pipe_to_child_[READ] = pipes[2];
 	pipe_to_child_[WRITE] = pipes[3];
+	CGI_STATE_ = START_CGI;
 }
 
 CGI::~CGI(void) {}
+
+void	CGI::handle_cgi(HTTPRequest &request, int fd) {
+	std::vector<std::string>	env_strings;
+
+	switch (CGI_STATE_) {
+		case START_CGI:
+			if (request.method == "DELETE")
+				request.request_target = "data/www/cgi-bin/nph_CGI_delete.py";
+			else
+				request.request_target = "data/www/cgi-bin" + request.request_target;
+			createEnv(env_strings, request);
+			forkCGI(request.request_target, env_strings);
+			CGI_STATE_ = SEND_TO_CGI;
+			return ;
+		case SEND_TO_CGI:
+			sendDataToStdin(fd);
+			CGI_STATE_ = RCV_FROM_CGI;
+			return ;
+		case RCV_FROM_CGI:
+			getResponseFromCGI(fd);
+			CGI_STATE_ = CRT_RSPNS_CGI;
+	}
+}
+
+bool	CGI::isReady( void ) {
+	return (CGI_STATE_ == CRT_RSPNS_CGI);
+}
 
 /**
  * @brief extract statuscode from CGI response

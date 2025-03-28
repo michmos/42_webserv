@@ -15,6 +15,13 @@
 # define WRITE 1
 # define TIMEOUT 10 // from configfile?
 
+typedef enum CGI_STATE {
+	START_CGI,
+	SEND_TO_CGI,
+	RCV_FROM_CGI,
+	CRT_RSPNS_CGI
+};
+
 class CGI {
 	private:
 		std::string 		path_;
@@ -25,6 +32,7 @@ class CGI {
 		std::string 		response_;
 		const std::string	post_data_;
 		epoll_event			epoll_event_pipe_[2];
+		CGI_STATE			CGI_STATE_;
 
 		int				getStatusCodeFromResponse( void );
 
@@ -40,10 +48,12 @@ class CGI {
 		explicit CGI( const std::string &post_data, std::vector<int> pipes );
 		~CGI( void );
 
+		void			handle_cgi( HTTPRequest &request, int fd );
 		void			forkCGI( const std::string &executable, std::vector<std::string> env_vector );
 		std::string		receiveBuffer( int fd );
 		void			sendDataToStdin( int fd );
 		void			rewriteResonseFromCGI( void );
+		bool			isReady( void );
 		
 		// GETTERS
 		std::string		getResponse( void );

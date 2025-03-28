@@ -38,18 +38,12 @@
 # include "Config.hpp"
 
 # define READSIZE 100
-
+# define READY true
 
 
 enum e_state {
-	RSV_HEADER,
-	RSV_BODY,
-	PARSING,
-	START_CGI,
-	SEND_TO_CGI,
-	RSV_FROM_CGI,
-	CRT_RSPNS_CGI,
-	CRT_RSPNS,
+	RECEIVING,
+	PROCESS_CGI,
 	RESPONSE,
 	DONE
 };
@@ -80,10 +74,11 @@ class HTTPClient {
 		void		writeTo( int fd );
 		std::string	readFrom( int fd );
 
-		bool	parsing( void );
-		void	cgi( void );
-		void	responding( void );
+		bool	parsing( int fd );
+		bool	cgi( int fd );
+		void	responding( bool cgi_used, int fd );
 		void	cgiresponse( void );
+		const Config	*getConfig( void );
 
 	private:
 		e_state						STATE_;

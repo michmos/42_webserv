@@ -3,6 +3,7 @@
 HTTPParser::HTTPParser(void) : \
 	content_length_(0), chunked_(false) {
 	result_.status_code = 200;
+	PARSE_STATE_ = RCV_HEADER;
 }
 
 HTTPParser::~HTTPParser(void) { }
@@ -24,16 +25,14 @@ void	HTTPParser::splitHeaderBody(void) {
 }
 
 /// @brief if available, checks if content length is same as size body
-void	HTTPParser::verifyBodyCompletion(e_state &STATE) {
-	if (STATE != RECEIVEHEADER && STATE != RECEIVEBODY)
-		return ;
+bool	HTTPParser::verifyBodyCompletion(void) {
 	if (content_length_ > 0)
 	{
 		if (result_.body.size() == content_length_)
-			STATE = PARSING;
+		PARSE_STATE_ = DONE;
 	}
 	else
-		STATE = PARSING;
+	PARSE_STATE_ = DONE;
 }
 
 /**
@@ -226,7 +225,7 @@ void	HTTPParser::addIfProcessIsChunked(const std::string &buff, e_state &STATE) 
 		
 		if (chunk_size == 0)
 		{
-			STATE = PARSING;
+			PARSE_STATE_ = DONE;
 			return ;
 		}
 		pos = found + 2;
@@ -246,8 +245,8 @@ bool	isBiggerMaxBodyLength(size_t content_length, uint64_t max_size)
 }
 
 bool	HTTPParser::validWithConfig(HTTPClient *client) {
-	Config	*config = &client->getConfig();
-	size_t	length;
+	const Config	*config = client->getConfig();
+	size_t			length;
 
 	if (!client->isConfigSet())
 		return (false); // WHat now?
@@ -304,7 +303,7 @@ bool	checkBodySizeLimit(size_t body_size, Config *conf, std::string path) {
  * @param buff std::string with readbuffer;
  */
 void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client, e_state &STATE) {
-	if (STATE == RECEIVEHEADER)
+	if (PARSE_STATE_ == RCV_HEADER)
 	{
 		rawRequest_ += buff;
 		buff = "";
@@ -323,14 +322,14 @@ void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client, e_stat
 			if (!result_.invalidRequest)
 				result_.invalidRequest = isValidHeader(client);
 			if (result_.invalidRequest == true)
-				STATE = PARSING;
+				PARSE_STATE_ = DONE;
 			else
-				STATE = RECEIVEBODY;
+				PARSE_STATE_ = RCV_BODY;
 		}
 		else
 			return ;
 	}
-	if (STATE == RECEIVEBODY)
+	if (PARSE_STATE_ == RCV_BODY)
 	{
 		if (chunked_)
 			addIfProcessIsChunked(buff, STATE);
@@ -340,9 +339,9 @@ void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client, e_stat
 	if (checkBodySizeLimit(result_.body.size(), &client->getConfig(), result_.request_target))
 	{
 		result_.status_code = 413;
-		STATE = RESPONSE;
+		PARSE_STATE_ = DONE;
 	}
-	verifyBodyCompletion(STATE);
+	verifyBodyCompletion();
 }
 
 void	HTTPParser::clearParser(void) {

@@ -14,6 +14,12 @@
 # include "HTTPRequest.hpp"
 # include "HTTPClient.hpp"
 
+typedef enum PARSE_STATE {
+	RCV_HEADER,
+	RCV_BODY,
+	DONE
+};
+
 class HTTPParser
 {
 	public:
@@ -32,9 +38,10 @@ class HTTPParser
 		std::string	header_;
 		size_t		content_length_;
 		bool		chunked_;
+		PARSE_STATE	PARSE_STATE_;
 		
 		bool	isHeadersParsed( void );
-		void	verifyBodyCompletion( e_state &STATE );
+		bool	verifyBodyCompletion( void );
 
 		void	splitHeaderBody( void );
 		void	addIfProcessIsChunked( const std::string &buff, e_state &STATE );
