@@ -17,7 +17,16 @@
 
 // C libs
 
-// ..
+// DEFAULTS
+# define DEFAULT_PORT 8080
+// # define DEFAULT_HOST ????
+// # define DEFAULT_SERVER_NAME ????
+# define DEFAULT_CLIENT_BODY_SIZE 1048576 // 1m or 1MB
+# define DEFAULT_INDEX "index.html"
+# define DEFAULT_AUTOINDEX false
+# define DEFAULT_LOCATION "/"
+# define DEFAULT_SERVERS_CONFIG "configs/default.conf"
+# define DEFAULT_MIME_TYPES "configs/default.conf"
 
 // COLORS AND TEXT FORMATING
 # define RESET          "\033[0m"

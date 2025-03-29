@@ -41,7 +41,7 @@ ConfigParser::ConfigParser(const std::string& filepath) {
 	parseInputToTokens();
 	// printTokens(this->_tokens);
 	parseTokenToConfig();
-	// debugConfigPrint(this->_configs);
+	debugConfigPrint(this->_configs);
 	// _configs[0].getLocDirectives("/api/test/test2");
 }
 
@@ -483,7 +483,7 @@ void	ConfigParser::parseTokenToConfig() {
 	if (this->_configs.empty())
 		throw ConfigParser::ConfigParserException("Missing any Server config in .conf file.");
 	if (!mimeSet) {
-		readMimeToInput("configs/mime.types");
+		readMimeToInput(DEFAULT_MIME_TYPES);
 		parseMimeToTokens();
 		this->_mimeTypes = parseMimeToken();
 	}

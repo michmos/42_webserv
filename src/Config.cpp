@@ -95,11 +95,11 @@ int	Config::getPort() {
 		if (it->second.size() > 0) {
 			strPort = it->second[0];
 		}
+		port = stoi(strPort);
 	} else {
-		strPort = "80";
+		port = DEFAULT_PORT;
 	}
 	// try {
-	port = stoi(strPort);
 	// } catch (std::exception &e) {
 	// 	throw Config::ConfigException(e.what());
 	// }
@@ -108,7 +108,7 @@ int	Config::getPort() {
 	return (port);
 }
 
-std::string	Config::getHost() {
+const std::string	Config::getHost() {
 	// return ((*(this->_directives.find("host"))).second.front());
 	auto it = this->_directives.find("host");
 	if (it != this->_directives.end()) {
@@ -119,7 +119,7 @@ std::string	Config::getHost() {
 	return ("localhost");
 }
 
-std::string	Config::getServerName() {
+const std::string	Config::getServerName() {
 	// return ((*(this->_directives.find("server_name"))).second.front());
 	auto it = this->_directives.find("server_name");
 	if (it != this->_directives.end()) {
@@ -135,26 +135,26 @@ std::uint64_t	Config::getClientBodySize(const std::string locKey) {
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("client_max_body_size");
 	std::string strSize;
+	std::uint64_t	size;
 	if (it != dirMap.end()) {
 		if (it->second.size() > 0) {
 			strSize = it->second[0];
 		}
+		size = stoi(strSize);
+		if (tolower(strSize.back()) == 'k')
+			size *= 1024;
+		else if (tolower(strSize.back()) == 'm')
+			size *= (1024*1024);
+		else if (tolower(strSize.back()) == 'g')
+			size *= (1024*1024*1024);
 	} else {
-		strSize = "1m";
+		size = DEFAULT_CLIENT_BODY_SIZE;
 	}
-	std::uint64_t	size;
-	size = stoi(strSize);
-	if (tolower(strSize.back()) == 'k')
-		size *= 1024;
-	else if (tolower(strSize.back()) == 'm')
-		size *= (1024*1024);
-	else if (tolower(strSize.back()) == 'g')
-		size *= (1024*1024*1024);
 	return (size);
 }
 
 // return 301 http://example.com/newpage;
-std::vector<std::string>	Config::getRedirect(const std::string locKey) {
+const std::vector<std::string>	Config::getRedirect(const std::string locKey) {
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("return");
 	if (it != dirMap.end()) {
@@ -166,7 +166,7 @@ std::vector<std::string>	Config::getRedirect(const std::string locKey) {
 }
 
 // root /tmp/www;
-std::vector<std::string>	Config::getRoot(const std::string locKey) {
+const std::vector<std::string>	Config::getRoot(const std::string locKey) {
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("index");
 	if (it != dirMap.end()) {
@@ -177,8 +177,8 @@ std::vector<std::string>	Config::getRoot(const std::string locKey) {
 	return (std::vector<std::string>());
 }
 
-// // allow_methods  DELETE POST GET;
-std::vector<std::string>	Config::getMethods(const std::string locKey) {
+// allow_methods  DELETE POST GET;
+const std::vector<std::string>	Config::getMethods(const std::string locKey) {
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("allow_methods");
 	if (it != dirMap.end()) {
@@ -186,11 +186,11 @@ std::vector<std::string>	Config::getMethods(const std::string locKey) {
 			return it->second;
 		}
 	}
-	return (std::vector<std::string>());
+	return (std::vector<std::string>{"GET", "POST", "DELETE"});
 }
 
 // index index.html index.php;
-std::vector<std::string>	Config::getIndex(const std::string locKey) {
+const std::vector<std::string>	Config::getIndex(const std::string locKey) {
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("index");
 	if (it != dirMap.end()) {
@@ -198,7 +198,7 @@ std::vector<std::string>	Config::getIndex(const std::string locKey) {
 			return it->second;
 		}
 	}
-	return (std::vector<std::string>());
+	return (std::vector<std::string>{DEFAULT_INDEX});
 }
 
 // autoindex on;
@@ -213,6 +213,6 @@ bool	Config::getAutoindex(const std::string locKey) {
 				return (false);
 		}
 	}
-	return (false);
+	return (DEFAULT_AUTOINDEX);
 }
 

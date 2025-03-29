@@ -6,7 +6,7 @@ int main(int argc, char **argv)
 	if (argc == 1 || argc == 2) {
 		try
 		{
-			std::string	config = (argc == 1 ? "configs/default.conf" : argv[1]);
+			std::string	config = (argc == 1 ? DEFAULT_SERVERS_CONFIG : argv[1]);
 			ConfigParser config_parser(config);
 		}
 		catch (std::exception &e) {
