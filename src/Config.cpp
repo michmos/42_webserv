@@ -1,25 +1,12 @@
 #include "../inc/Config.hpp"
 
-Config::Config() {
-}
+Config::Config(std::unordered_map<std::string, std::vector<std::string>> const &mimeTypes) : _mimeTypes(mimeTypes) {}
 
 Config::~Config() {
 }
 
-Config::Config(const Config &toCopy) {
-	*this = toCopy;
-}
-
-Config& Config::operator=(const Config &other) {
-	if (this != &other) {
-		this->_directives = other._directives;
-		this->_locations = other._locations;
-	}
-	return *this;
-}
-
 int Config::setDirective(const std::string key, std::vector<std::string> values) {
-	if (_directives.find(key) != _directives.end())
+	if (key != "listen" && _directives.find(key) != _directives.end())
 		return (-1);
 	for (std::string str: values) {
 		_directives[key].push_back(str);
@@ -35,6 +22,13 @@ int Config::setLocation(const std::string key, Location loc) {
 }
 
 void Config::printConfig() {
+	std::cout << BOLD << BG_LIGHT_GRAY << BLACK << "\n CONFIG PRINT - MIME TYPES:" << RESET << std::endl;
+	for (auto it = _mimeTypes.begin(); it != _mimeTypes.end(); it++) {
+		std::cout << "\t" << it->first << " : ";
+		for (const std::string &str : it->second)
+			std::cout << str << " ";
+		std::cout << "\n";
+	}
 	std::cout << BOLD << BG_LIGHT_GRAY << BLACK << "\n CONFIG PRINT - DIRECTIVES:" << RESET << std::endl;
 	for (auto it = _directives.begin(); it != _directives.end(); it++) {
 		std::cout << "\t" << it->first << " : ";
@@ -42,7 +36,7 @@ void Config::printConfig() {
 			std::cout << str << " ";
 		std::cout << "\n";
 	}
-	std::cout << BOLD << BG_LIGHT_GRAY << BLACK << "\n LOCATIONS:" << RESET << std::endl;
+	std::cout << BOLD << BG_LIGHT_GRAY << BLACK << "\n CONFIG PRINT - LOCATIONS:" << RESET << std::endl;
 	for (const auto &pair: _locations)
 	{
 		std::cout << BOLD << pair.first << ":\n" << RESET;
@@ -58,13 +52,40 @@ void Config::printConfig() {
 	}
 }
 
-// GETTER
-std::unordered_map<std::string, std::vector<std::string>> Config::getDirectives() {
+
+// ###############################################################
+// ####################     GET RAW DATA     #####################
+const std::unordered_map<std::string, std::vector<std::string>> &Config::getDirectives() {
 	return (this->_directives);
 }
-std::unordered_map<std::string, Location>	Config::getLocations() {
+const std::unordered_map<std::string, Location>	&Config::getLocations() {
 	return (this->_locations);
 }
+const std::unordered_map<std::string, std::vector<std::string>> &Config::getMimeTypes() {
+	return (this->_mimeTypes);
+}
+const std::unordered_map<std::string, std::vector<std::string>> Config::getLocDirectives(const std::string locKey) {
+	std::unordered_map<std::string, std::vector<std::string>> locMap = this->_directives;
+	size_t pos = 0;
+	std::string key = "/";
+	while (pos < locKey.size()) {
+		auto it = this->_locations.find(key);
+		if (it != this->_locations.end()) {
+			Location loc = it->second;
+			if (loc.strict_match == false || pos + 1 == locKey.size()) {
+				for (auto it_loc = loc.directives.begin(); it_loc != loc.directives.end(); it_loc++) {
+					locMap[it_loc->first] = it_loc->second;
+				}
+			}
+		}
+		pos = locKey.find('/', pos + 1);
+		key = locKey.substr(0, pos + 1);
+	}
+	return (locMap);
+}
+// ####################     GET RAW DATA     #####################
+// ###############################################################
+
 
 int	Config::getPort() {
 	int port;
@@ -195,31 +216,3 @@ bool	Config::getAutoindex(const std::string locKey) {
 	return (false);
 }
 
-std::unordered_map<std::string, std::vector<std::string>> Config::getLocDirectives(const std::string locKey) {
-	std::unordered_map<std::string, std::vector<std::string>> locMap = this->_directives;
-	size_t pos = 0;
-	std::string key = "/";
-	while (pos < locKey.size()) {
-		auto it = this->_locations.find(key);
-		if (it != this->_locations.end()) {
-			Location loc = it->second;
-			if (loc.strict_match == false || pos + 1 == locKey.size()) {
-				for (auto it_loc = loc.directives.begin(); it_loc != loc.directives.end(); it_loc++) {
-					locMap[it_loc->first] = it_loc->second;
-				}
-			}
-		}
-		pos = locKey.find('/', pos + 1);
-		key = locKey.substr(0, pos + 1);
-	}
-	// std::cout << BOLD << "\n\n DIR RETURN LOC:" << RESET << std::endl;
-	// for (const auto &str: locMap)
-	// {
-	// 	std::cout << str.first << " : ";
-	// 	for (const std::string &str2: str.second)
-	// 		std::cout << str2 << " ";
-	// 	std::cout << "\n";
-	// }
-	// std::cout << "\n";
-	return (locMap);
-}

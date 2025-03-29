@@ -1,48 +1,48 @@
 #include "../inc/ConfigParser.hpp"
 
-ConfigParser::ConfigParser() {
+void debugConfigPrint(std::vector<Config> &configs) {
+	for (auto &config : configs) {
+		config.printConfig();
+		std::cout << BOLD << "getPort(): " << config.getPort() << RESET << std::endl;
+		std::cout << BOLD << "getHost(): " << config.getHost() << RESET << std::endl;
+		std::cout << BOLD << "getServerName(): " << config.getServerName() << RESET << std::endl;
+		std::cout << BOLD << "getAutoindex(\"/\"): " << config.getAutoindex("/") << RESET << std::endl;
+		std::cout << BOLD << "getClientBodySize(\"/\"): " << config.getClientBodySize("/") << RESET << std::endl;
+		std::cout << BOLD << "getRoot(\"/\"): ";
+		std::vector<std::string> roots = config.getRoot("/");
+		for (std::vector<std::string>::iterator it = roots.begin(); it != roots.end(); ++it) {
+			std::cout << *it << " ";
+		}
+		std::cout << RESET << std::endl;
+		std::cout << BOLD << "getMethods(\"/\"): ";
+		std::vector<std::string> methods = config.getMethods("/");
+		for (std::vector<std::string>::iterator it = methods.begin(); it != methods.end(); ++it) {
+			std::cout << *it << " ";
+		}
+		std::cout << RESET << std::endl;
+		std::cout << BOLD << "getIndex(\"/\"): ";
+		std::vector<std::string> index = config.getIndex("/");
+		for (std::vector<std::string>::iterator it = index.begin(); it != index.end(); ++it) {
+			std::cout << *it << " ";
+		}
+		std::cout << RESET << std::endl;
+		std::cout << BOLD << "getRedirect(\"/\"): ";
+		std::vector<std::string> redirect = config.getRedirect("/");
+		for (std::vector<std::string>::iterator it = redirect.begin(); it != redirect.end(); ++it) {
+			std::cout << *it << " ";
+		}
+		std::cout << RESET << std::endl;
+	}
 }
 
 ConfigParser::ConfigParser(const std::string& filepath) {
 	this->_filepath = filepath;
 	readConfigToInput();
 	parseInputToTokens();
-	// printTokens();
+	// printTokens(this->_tokens);
 	parseTokenToConfig();
+	// debugConfigPrint(this->_configs);
 	// _configs[0].getLocDirectives("/api/test/test2");
-	// for (auto &config : this->_configs) {
-	// 	config.printConfig();
-		// std::cout << BOLD << "getPort(): " << config.getPort() << RESET << std::endl;
-		// std::cout << BOLD << "getHost(): " << config.getHost() << RESET << std::endl;
-		// std::cout << BOLD << "getServerName(): " << config.getServerName() << RESET << std::endl;
-		// std::cout << BOLD << "getAutoindex(\"/\"): " << config.getAutoindex("/") << RESET << std::endl;
-		// std::cout << BOLD << "getClientBodySize(\"/\"): " << config.getClientBodySize("/") << RESET << std::endl;
-		// std::cout << BOLD << "getRoot(\"/\"): ";
-		// std::vector<std::string> roots = config.getRoot("/");
-		// for (std::vector<std::string>::iterator it = roots.begin(); it != roots.end(); ++it) {
-		// 	std::cout << *it << " ";
-		// }
-		// std::cout << RESET << std::endl;
-		// std::cout << BOLD << "getMethods(\"/\"): ";
-		// std::vector<std::string> methods = config.getMethods("/");
-		// for (std::vector<std::string>::iterator it = methods.begin(); it != methods.end(); ++it) {
-		// 	std::cout << *it << " ";
-		// }
-		// std::cout << RESET << std::endl;
-		// std::cout << BOLD << "getIndex(\"/\"): ";
-		// std::vector<std::string> index = config.getIndex("/");
-		// for (std::vector<std::string>::iterator it = index.begin(); it != index.end(); ++it) {
-		// 	std::cout << *it << " ";
-		// }
-		// std::cout << RESET << std::endl;
-		// std::cout << BOLD << "getRedirect(\"/\"): ";
-		// std::vector<std::string> redirect = config.getRedirect("/");
-		// for (std::vector<std::string>::iterator it = redirect.begin(); it != redirect.end(); ++it) {
-		// 	std::cout << *it << " ";
-		// }
-		// std::cout << RESET << std::endl;
-	// }
-
 }
 
 ConfigParser::~ConfigParser() {
@@ -60,35 +60,35 @@ ConfigParser& ConfigParser::operator=(const ConfigParser &other) {
 	return *this;
 }
 
-std::ifstream openConfigFile(std::string& filepath) {
+
+// ###############################################################
+// ################     READ AND FILEHANDLING     ################
+std::ifstream openFile(const std::string& filepath) {
 	if (filepath.empty() || filepath.length() == 0) {
-		throw ConfigParser::ConfigParserException("ERROR PARSING: config filepath is empty");
+		throw ConfigParser::ConfigParserException("ERROR PARSING: filepath is empty");
 	}
-	std::ifstream config_file;
-	config_file.open(filepath.c_str());
-	if (!config_file || !config_file.is_open()) {
-		throw ConfigParser::ConfigParserException("ERROR PARSING: could not open config file");
+	std::ifstream file;
+	file.open(filepath.c_str());
+	if (!file || !file.is_open()) {
+		throw ConfigParser::ConfigParserException("ERROR PARSING: could not open file");
 	}
-	return (config_file);
+	return (file);
 }
 
-void cleanComments(std::string &line) {
-	size_t comment_pos = line.find("#");
-	if (comment_pos != std::string::npos) {
-		line.erase(comment_pos);
+std::string readFile(std::ifstream& file) {
+	std::streampos original_pos = file.tellg();
+	file.seekg(0, std::ios::end);
+	std::streamsize fileSize = file.tellg();
+	if (fileSize < 0) {
+		throw ConfigParser::ConfigParserException("ERROR PARSING: Failed to determine config file size");
 	}
-}
-
-std::string readFile(std::ifstream& config_file) {
-	std::vector<std::string> lines;
-	std::string line;
-	while (config_file.peek() != EOF) {
-		std::getline(config_file, line);
-		cleanComments(line);
-		lines.push_back(line);
-		lines.push_back("\n");
+	file.seekg(0, std::ios::beg);
+	std::string fileContent(static_cast<size_t>(fileSize), '\0');
+	if (!file.read(&fileContent[0], fileSize)) {
+		throw ConfigParser::ConfigParserException("ERROR PARSING: Failed to read the entire config file");
 	}
-	return (std::accumulate(lines.begin(), lines.end(), std::string("")));
+	file.seekg(original_pos);
+	return (fileContent);
 }
 
 void closeFile(std::ifstream& file) {
@@ -102,7 +102,7 @@ void closeFile(std::ifstream& file) {
 
 void ConfigParser::readConfigToInput() {
 	try {
-		std::ifstream config_file = openConfigFile(this->_filepath);
+		std::ifstream config_file = openFile(this->_filepath);
 		this->_input = readFile(config_file);
 		closeFile(config_file);
 	} catch (std::exception &e) {
@@ -110,14 +110,32 @@ void ConfigParser::readConfigToInput() {
 	}
 }
 
+void ConfigParser::readMimeToInput(const std::string &filepath) {
+
+	try {
+		std::ifstream file = openFile(filepath);
+		this->_inputMime = readFile(file);
+		closeFile(file);
+	} catch (std::exception &e) {
+		throw ConfigParser::ConfigParserException(e.what());
+	}
+}
+// ################     READ AND FILEHANDLING     ################
+// ###############################################################
+
+
 void ConfigParser::printInput() {
 	std::cout << this->_input << std::endl;
 }
 
-void ConfigParser::printTokens() {
+void ConfigParser::printTokens(std::vector<token> &tokens) {
 	std::unordered_map<tokenType, std::string> tokenColorMap = {
 		{INIT, BG_BRIGHT_WHITE},
 		{WHITE_SPACE, BG_BRIGHT_WHITE},
+		{TYPES, BG_PINK},
+		{COMMENT, BG_GRAY},
+		{HTTP, BG_MAGENTA},
+		{INCLUDE, BG_ORANGE},
 		{SERVER, BG_BRIGHT_BLUE},
 		{LOCATION, BG_BLUE},
 		{BLOCK_OPEN, BG_BRIGHT_CYAN},
@@ -130,7 +148,7 @@ void ConfigParser::printTokens() {
 		{OPERATOR, BG_PURPLE},
 		{EOF_TOKEN, BG_RED}
 	};
-	for (const auto &it : _tokens) {
+	for (const auto &it : tokens) {
 		std::string color = tokenColorMap.count(it.type) ? tokenColorMap[it.type] : BG_RED;
 		if (it.value != "\n")
 			std::cout << color << it.value << RESET;
@@ -139,11 +157,24 @@ void ConfigParser::printTokens() {
 	}
 }
 
+void	ConfigParser::errorToken(token token, std::string msg) {
+	int line;
+	int col;
+	getTokenPos(token, line, col);
+	throw ConfigParser::ConfigParserException("Unexpected token at Ln " + std::to_string(line) + ", Col " + std::to_string(col) + " " + msg);
+}
+
 token ConfigParser::getNextToken(token &lastToken, const std::regex &url_regex, const std::regex &path_regex, const std::regex &op_regex) {
 	token newToken;
 	newToken.itStart = lastToken.itEnd;
+	if (*newToken.itStart == '#') {
+		newToken.type = COMMENT;
+		newToken.itEnd = std::find(newToken.itStart, this->_input.end(), '\n');
+		newToken.value = std::string(newToken.itStart, newToken.itEnd);
+		return newToken;
+	}
 	newToken.itEnd = std::find_if(newToken.itStart, this->_input.end(), [](char c) {
-		return (c == ' ' || c == '\n' || c == '\t' || c == '{' || c == '}' || c == ';');
+		return (c == ' ' || c == '\n' || c == '\t' || c == '{' || c == '}' || c == ';' || c == '#');
 	});
 	if (newToken.itStart == newToken.itEnd) {
 		newToken.itEnd++;
@@ -155,6 +186,10 @@ token ConfigParser::getNextToken(token &lastToken, const std::regex &url_regex, 
 		newToken.type = SERVER;
 	} else if (newToken.value == "location") {
 		newToken.type = LOCATION;
+	} else if (newToken.value == "http") {
+		newToken.type = HTTP;
+	} else if (newToken.value == "include") {
+		newToken.type = INCLUDE;
 	} else if (newToken.value == "{") {
 		newToken.type = BLOCK_OPEN;
 	} else if (newToken.value == "}") {
@@ -190,6 +225,45 @@ void ConfigParser::parseInputToTokens() {
 	}
 }
 
+
+token ConfigParser::getNextMimeToken(token &lastToken) {
+	token newToken;
+	newToken.itStart = lastToken.itEnd;
+	newToken.itEnd = std::find_if(newToken.itStart, this->_input.end(), [](char c) {
+		return (c == ' ' || c == '\n' || c == '\t' || c == '{' || c == '}' || c == ';' || c == '#');
+	});
+	if (newToken.itStart == newToken.itEnd) {
+		newToken.itEnd++;
+	}
+	newToken.value = std::string(newToken.itStart, newToken.itEnd);
+	if (newToken.itEnd == this->_inputMime.end()) {
+		newToken.type = EOF_TOKEN;
+	} else if (newToken.value == "types") {
+		newToken.type = TYPES;
+	} else if (newToken.value == "{") {
+		newToken.type = BLOCK_OPEN;
+	} else if (newToken.value == "}") {
+		newToken.type = BLOCK_CLOSE;
+	} else if (newToken.value == ";") {
+		newToken.type = SEMICOLON;
+	} else if (newToken.value == " " || newToken.value == "\t" || newToken.value == "\n") {
+		newToken.type = WHITE_SPACE;
+	} else {
+		newToken.type = STRING;
+	}
+	return newToken;
+}
+
+void ConfigParser::parseMimeToTokens() {
+	token newToken;
+	newToken.type = INIT;
+	newToken.itEnd = this->_inputMime.begin();
+	while (newToken.type != EOF_TOKEN) {
+		newToken = getNextMimeToken(newToken);
+		this->_tokensMime.push_back(newToken);
+	}
+}
+
 void	ConfigParser::getTokenPos(token token, int &line, int &col) {
 	line = 1;
 	col = 1;
@@ -202,18 +276,11 @@ void	ConfigParser::getTokenPos(token token, int &line, int &col) {
 	}
 }
 
-void	ConfigParser::errorToken(token token, std::string msg) {
-	int line;
-	int col;
-	getTokenPos(token, line, col);
-	throw ConfigParser::ConfigParserException("Unexpected token at Ln " + std::to_string(line) + ", Col " + std::to_string(col) + " " + msg);
-}
-
 void ConfigParser::parseTokenToDirective(std::vector<token>::iterator &it, Config &newServer) {
 	std::string key = it->value;
 	std::vector<token>::iterator key_it = it;
 	std::vector<std::string> values;
-	moveOneTokenSafly(it);
+	moveOneTokenSafly(this->_tokens, it);
 	for (;it != this->_tokens.end(); it++) {
 		if (it->type < STRING)
 			break;
@@ -226,9 +293,9 @@ void ConfigParser::parseTokenToDirective(std::vector<token>::iterator &it, Confi
 	}
 }
 
-void	ConfigParser::moveOneTokenSafly(std::vector<token>::iterator &it) {
+void	ConfigParser::moveOneTokenSafly(std::vector<token> &tokens, std::vector<token>::iterator &it) {
 	it++;
-	if (it == this->_tokens.end())
+	if (it == tokens.end())
 		errorToken(*it, "Unexpected EOF!");
 	else if (it->type == EOF_TOKEN)
 		errorToken(*it, "Unexpected EOF!");
@@ -238,7 +305,7 @@ void ConfigParser::parseTokenToLocDir(std::vector<token>::iterator &it, Location
 	std::string key = it->value;
 	std::vector<token>::iterator key_it = it;
 	std::vector<std::string> values;
-	moveOneTokenSafly(it);
+	moveOneTokenSafly(this->_tokens, it);
 	for (;it != this->_tokens.end(); it++) {
 		if (it->type < STRING)
 			break;
@@ -252,24 +319,24 @@ void ConfigParser::parseTokenToLocDir(std::vector<token>::iterator &it, Location
 }
 
 void ConfigParser::parseTokenToLocation(std::vector<token>::iterator &it, Config &newServer) {
-	moveOneTokenSafly(it);
+	moveOneTokenSafly(this->_tokens, it);
 	Location newloc;
 	std::string path_key;
 
 	if (it->value == "=") {
 		newloc.strict_match = 1;
-		moveOneTokenSafly(it);
+		moveOneTokenSafly(this->_tokens, it);
 	} else
 		newloc.strict_match = 0;
 
 	if (it->type == PATH) {
 		path_key = it->value;
-		moveOneTokenSafly(it);
+		moveOneTokenSafly(this->_tokens, it);
 	} else
 		errorToken(*it, "Expected: PATH");
 
 	if (it->type == BLOCK_OPEN)
-		moveOneTokenSafly(it);
+		moveOneTokenSafly(this->_tokens, it);
 	else
 		errorToken(*it, "Expected: {");
 
@@ -286,12 +353,12 @@ void ConfigParser::parseTokenToLocation(std::vector<token>::iterator &it, Config
 }
 
 void ConfigParser::parseTokenToServer(std::vector<token>::iterator &it) {
-	moveOneTokenSafly(it);
+	moveOneTokenSafly(this->_tokens, it);
 	if (it == this->_tokens.end() || it->type != BLOCK_OPEN)
 		errorToken(*it, "{");
 	else if (it->type == BLOCK_OPEN)
-		moveOneTokenSafly(it);
-	Config newServer;
+		moveOneTokenSafly(this->_tokens, it);
+	Config newServer(this->_mimeTypes);
 	for (;it != this->_tokens.end(); ++it) {
 		if (it->type == STRING)
 			parseTokenToDirective(it, newServer);
@@ -310,27 +377,114 @@ void ConfigParser::parseTokenToServer(std::vector<token>::iterator &it) {
 	this->_configs.push_back(newServer);
 }
 
-void	ConfigParser::eraseWhitespaceToken() {
-	for (std::vector<token>::iterator it = this->_tokens.begin(); it != this->_tokens.end(); ++it) {
-		if (it->type == WHITE_SPACE) {
-			this->_tokens.erase(it);
+void	ConfigParser::eraseToken(std::vector<token> &tokens, enum tokenType type) {
+	for (std::vector<token>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
+		if (it->type == type) {
+			tokens.erase(it);
 			it--;
 		}
 	}
 }
 
+void	ConfigParser::printMimeTypes() {
+	std::cout << BOLD << BG_LIGHT_GRAY << BLACK << "\n CONFIG PRINT - MIME TYPES:" << RESET << std::endl;
+	for (auto it = this->_mimeTypes.begin(); it != this->_mimeTypes.end(); it++) {
+		std::cout << "\t" << it->first << " : ";
+		for (const std::string &str : it->second)
+			std::cout << str << " ";
+		std::cout << "\n";
+	}
+}
+
+std::unordered_map<std::string, std::vector<std::string>>	ConfigParser::parseMimeToken() {
+	eraseToken(this->_tokensMime, WHITE_SPACE);
+	std::unordered_map<std::string, std::vector<std::string>>	mapReturn;
+	for (std::vector<token>::iterator it = this->_tokensMime.begin(); it != this->_tokensMime.end(); it++) {
+		if (it == this->_tokensMime.begin()) {
+			if (it->type != TYPES)
+				throw ConfigParser::ConfigParserException("Unexpected token in mime.types. Expected: TYPES");
+			moveOneTokenSafly(this->_tokensMime, it);
+			if (it->type != BLOCK_OPEN)
+				throw ConfigParser::ConfigParserException("Unexpected token in mime.types. Expected: BLOCK_OPEN");
+		}
+		else if (it->type == STRING) {
+			std::string key = it->value;
+			moveOneTokenSafly(this->_tokensMime, it);
+			for (; it != this->_tokensMime.end(); ++it) {
+				if (it->type == SEMICOLON) {
+					break ;
+				}
+				else if (it->type != STRING) {
+					throw ConfigParser::ConfigParserException("Unexpected token in mime.types. Expected: STRING1");
+				}
+				mapReturn[key].push_back(it->value);
+			}
+		}
+		else if (it->type == BLOCK_CLOSE) {
+			break ;
+		}
+		else {
+			std::cout << it->type << std::endl;
+			throw ConfigParser::ConfigParserException("Unexpected token in mime.types. Expected: STRING2");
+		}
+	}
+	return (mapReturn);
+}
+
 void	ConfigParser::parseTokenToConfig() {
-	eraseWhitespaceToken();
-	// printTokens();
+	eraseToken(this->_tokens, WHITE_SPACE);
+	eraseToken(this->_tokens, COMMENT);
+	bool inHttp = false;
+	bool mimeSet = false;
 	for (std::vector<token>::iterator it = this->_tokens.begin(); it != this->_tokens.end(); ++it) {
-		if (it->type == SERVER) {
+		if (it->type == HTTP) {
+			if (inHttp)
+				errorToken(*it, "Unexpected: http");
+			inHttp = true;
+			moveOneTokenSafly(this->_tokens, it);
+			if (it->type != BLOCK_OPEN)
+				errorToken(*it, "Expected: {");
+		}
+		else if (it->type == INCLUDE) {
+			if (!inHttp || mimeSet)
+				errorToken(*it, "Unexpected: include");
+			moveOneTokenSafly(this->_tokens, it);
+			if (it->type != STRING && it->type != PATH)
+				errorToken(*it, "Expected: STRING or PATH");
+			readMimeToInput(it->value);
+			parseMimeToTokens();
+			this->_mimeTypes = parseMimeToken();
+			mimeSet = true;
+			moveOneTokenSafly(this->_tokens, it);
+			if (it->type != SEMICOLON)
+				errorToken(*it, "Expected: ;");
+		}
+		else if (it->type == SERVER) {
+			if (!inHttp)
+				errorToken(*it, "Unexpected: server");
 			parseTokenToServer(it);
 			it--;
 		}
-		else if (it->type != EOF_TOKEN) {
-			errorToken(*it, "Expected: server");
+		else if (it->type == BLOCK_CLOSE) {
+			if (!inHttp)
+				errorToken(*it, "Unexpected: }");
+			inHttp = false;
+			moveOneTokenSafly(this->_tokens, it);
+			if (it->type != EOF_TOKEN)
+				errorToken(*it, "Expected: EOF");
+		}
+		else if (it->type == EOF_TOKEN) {
+			break;
+		}
+		else {
+			errorToken(*it, "Unexpected token");
 		}
 	}
 	if (this->_configs.empty())
 		throw ConfigParser::ConfigParserException("Missing any Server config in .conf file.");
+	if (!mimeSet) {
+		readMimeToInput("configs/mime.types");
+		parseMimeToTokens();
+		this->_mimeTypes = parseMimeToken();
+	}
 }

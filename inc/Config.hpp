@@ -3,11 +3,6 @@
 
 #include "Webserv.hpp"
 
-
-// LOOK INTO:
-// map can be unordered_map
-
-
 // make a static for the mime.types conf
 // make the htpp wrapper maybe??
 // read and store the mime.type map
@@ -18,32 +13,31 @@ struct Location {
 
 class Config {
 	private:
-		std::unordered_map<std::string, std::vector<std::string>>	_directives;
-		std::unordered_map<std::string, Location>					_locations;
+		std::unordered_map<std::string, std::vector<std::string>>		_directives;
+		std::unordered_map<std::string, std::vector<std::string>> const	&_mimeTypes;
+		std::unordered_map<std::string, Location>						_locations;
 
 		// UTILS
 	public:
-		Config();
+		Config() = delete;
+		Config(std::unordered_map<std::string, std::vector<std::string>> const &mimeTypes);
 		~Config();
-		Config(const Config &toCopy);
-		Config& operator=(const Config &other);
 
 		// SETTERS
 		int	setLocation(std::string key, Location loc);
 		int	setDirective(std::string key, std::vector<std::string> values);
 
-		// GETTERS
-		std::unordered_map<std::string, std::vector<std::string>>	getDirectives();
-		std::unordered_map<std::string, Location>					getLocations();
+		// GET RAW DATA
+		const std::unordered_map<std::string, std::vector<std::string>>	&getDirectives();
+		const std::unordered_map<std::string, Location>					&getLocations();
+		const std::unordered_map<std::string, std::vector<std::string>>	&getMimeTypes();
+		const std::unordered_map<std::string, std::vector<std::string>>	getLocDirectives(const std::string locKey);
 
-		std::unordered_map<std::string, std::vector<std::string>> getLocDirectives(const std::string locKey);
-
-		//		need for WebServer Class
+		//	GETTER need for WebServer/Client Class
 		int				getPort();
 		std::string		getHost();
 		std::string		getServerName();
 
-		//		need for Client Class
 		bool						getAutoindex(const std::string locKey);			// autoindex on;
 		std::uint64_t				getClientBodySize(const std::string locKey);	// client_max_body_size 10M;
 		std::vector<std::string>	getRedirect(const std::string locKey);			// return 301 http://example.com/newpage;
