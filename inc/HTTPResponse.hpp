@@ -18,10 +18,10 @@
 # include "Config.hpp"
 # include "HTTPClient.hpp"
 
-class HTTPResponseGenerator {
+class HTTPResponse {
 	public:
-		HTTPResponseGenerator( HTTPClient *client );
-		~HTTPResponseGenerator( void );
+		HTTPResponse( HTTPClient *client );
+		~HTTPResponse( void );
 
 		void		generateResponse( const HTTPRequest request );
 		std::string loadResponse( void );
@@ -29,14 +29,20 @@ class HTTPResponseGenerator {
 		void		setConfig(void);
 
 	private:
-		std::string	resolvePath( std::string endpoint );
+		
 
 		void		getBody( void );
 		void		createHeader( void );
 		void		getContentType( void );
 		void		getHttpStatusMessages( void );
+
 		std::string	checkFolder( std::string filename );
 		std::string	searchThroughIndices( std::vector<std::string> indices, bool autoindex );
+		std::string	handleAccess( const std::string &path );
+		std::string	handleDir( const std::string &path );
+		std::string	getEndpointPath( std::string endpoint );
+
+		void		checkErrorPages(std::string filename, std::vector<std::string> error_pages);
 
 		std::vector<char *> env_;
 		std::string			filename_;

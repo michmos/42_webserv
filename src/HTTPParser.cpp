@@ -245,26 +245,13 @@ bool	isBiggerMaxBodyLength(size_t content_length, uint64_t max_size)
 }
 
 bool	HTTPParser::validWithConfig(HTTPClient *client) {
-	const Config	*config = client->getConfig();
-	size_t			length;
+	const Config				*config = client->getConfig();
+	std::vector<std::string>	allow_method;
 
-	// MAX CLIENT CHECK
-	if (content_length_ != 0)
-		length = content_length_;
-	else
-		length = result_.body.size();
-	if (isBiggerMaxBodyLength(length,  config->getClientBodySize(result_.request_target)))
-	{
-		// TO BIG
-		result_.status_code = 413;
-		return (true);
-	}
 	// METHOD CHECK
-	std::vector<std::string>	allowed_methods = config->getMothods(result_.request_target);
-	auto it = std::find(allowed_methods.begin(), allowed_methods.end(), result_.method);
-	if (it == allowed_methods.end()) // not found
+	allow_method = config->getMethods(result_.request_target);
+	if (std::find(allow_method.begin(), allow_method.end(), result_.method) == allow_method.end())
 	{
-		// WRONG METHOD
 		result_.status_code = 405;
 		return (true);
 	}
@@ -272,28 +259,38 @@ bool	HTTPParser::validWithConfig(HTTPClient *client) {
 }
 
 static void	generatePath(std::string &endpoint, const Config *config) {
-	std::string	folder_file;
-	struct stat	statbuf;
+	struct stat				statbuf;
+	std::filesystem::path	full_path;
 
 	for (const std::string &root : config->getRoot(endpoint))
 	{
 		for(const auto &pair : config->getLocations())
 		{
-			if (pair.first[pair.first.size() - 1] == '/')
-				folder_file = root + pair.first + endpoint;
-			else
-				folder_file = root + pair.first + "/" + endpoint;
-			if (stat(folder_file.c_str(), &statbuf) == 0)
+			full_path = std::filesystem::path(root) / pair.first / endpoint;
+			if (stat(full_path.c_str(), &statbuf) == 0)
 			{
-				endpoint = folder_file;
+				endpoint = full_path.string();
 				return ;
 			}
 		}
 	}
 }
 
-bool	checkBodySizeLimit(size_t body_size, const Config *conf, std::string path) {
-	if (body_size > conf->getClientBodySize(path))
+bool	HTTPParser::checkBodySizeLimit(size_t body_size, const Config *config, std::string path) {
+	size_t			length;
+	std::uint64_t	max_content_length = config->getClientBodySize(path);
+
+	// MAX CLIENT CHECK
+	if (max_content_length != 0)
+		length = max_content_length;
+	else
+		length = body_size;
+	if (isBiggerMaxBodyLength(length,  max_content_length))
+	{
+		result_.status_code = 413;
+		return (true);
+	}
+	if (body_size > max_content_length)
 		return (true);
 	else
 		return (false);

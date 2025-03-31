@@ -90,7 +90,7 @@ class HTTPClient {
 		HTTPRequest					request_;
 		std::unique_ptr<CGI> 		cgi_;
 		CGIPipes					pipes_;
-		HTTPResponseGenerator		responseGenerator_;
+		HTTPResponse				responseGenerator_;
 		const Config				*config_;
 
 		std::function<void(const std::string& serverName)> _setConfig_cb;

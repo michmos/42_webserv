@@ -13,9 +13,9 @@
 
 # define READ 0
 # define WRITE 1
-# define TIMEOUT 10 // from configfile?
+# define TIMEOUT 10
 
-typedef enum CGI_STATE {
+typedef enum e_cgi_state {
 	START_CGI,
 	SEND_TO_CGI,
 	RCV_FROM_CGI,
@@ -32,7 +32,7 @@ class CGI {
 		std::string 		response_;
 		const std::string	post_data_;
 		epoll_event			epoll_event_pipe_[2];
-		CGI_STATE			CGI_STATE_;
+		e_cgi_state			CGI_STATE_;
 
 		int				getStatusCodeFromResponse( void );
 

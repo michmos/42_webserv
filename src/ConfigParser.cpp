@@ -23,7 +23,7 @@ ConfigParser::ConfigParser(const std::string& filepath) {
 	// 	}
 	// 	std::cout << RESET << std::endl;
 	// 	std::cout << BOLD << "getMethods(\"/\"): ";
-	// 	std::vector<std::string> methods = config.getMothods("/");
+	// 	std::vector<std::string> methods = config.getMethods("/");
 	// 	for (std::vector<std::string>::iterator it = methods.begin(); it != methods.end(); ++it) {
 	// 		std::cout << *it << " ";
 	// 	}

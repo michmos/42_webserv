@@ -30,12 +30,14 @@ void	CGI::handle_cgi(HTTPRequest &request, int fd) {
 		case RCV_FROM_CGI:
 			getResponseFromCGI(fd);
 			CGI_STATE_ = CRT_RSPNS_CGI;
+		case CRT_RSPNS_CGI:
+			return ;
+		default:
+			return ;
 	}
 }
 
-bool	CGI::isReady( void ) {
-	return (CGI_STATE_ == CRT_RSPNS_CGI);
-}
+bool	CGI::isReady( void ) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
 
 /**
  * @brief extract statuscode from CGI response
@@ -58,6 +60,7 @@ int	CGI::getStatusCodeFromResponse(void) {
 		std::cerr << "Error: No response or statuscode is found in response" << std::endl;
 	return (status_code);
 }
+
 
 /**
  * @brief forks the process to execve the CGI, with POST sends buffer to child
@@ -102,7 +105,6 @@ void	CGI::watchDog(void) {
 	time_t	start;
 	time_t	now;
 	bool	timeout = false;
-	int		timeout_time;
 
 	pid = fork();
 	if (pid < 0)
@@ -128,28 +130,6 @@ void	CGI::watchDog(void) {
 		closeAllPipes();
 		exit(0);
 	}
-}
-
-/**
- * @brief extract statuscode from CGI response
- * @return int with statuscode or zero if not found
- */
-int	CGI::getStatusCodeFromResponse(void) {
-	std::regex	status_code_regex(R"(HTTP/1.1 (\d+))");
-	std::smatch	match;
-	int			status_code = 0;
-
-	if (!response_.empty() && std::regex_search(response_, match, status_code_regex))
-	{
-		std::string to_string = match[1];
-		if (to_string.size() < 9)
-			status_code = std::stoi(match[1]);
-		else
-			status_code = 500;
-	}
-	else
-		std::cerr << "Error: No response or statuscode is found in response" << std::endl;
-	return (status_code);
 }
 
 /**

@@ -1,6 +1,6 @@
 # include "../inc/HTTPResponse.hpp"
 
-HTTPResponseGenerator::HTTPResponseGenerator(HTTPClient *client) : client_(client) {
+HTTPResponse::HTTPResponse(HTTPClient *client) : client_(client) {
 	header_ = "";
 	body_ = "";
 	content_type_ = "application/octet-stream";
@@ -8,13 +8,13 @@ HTTPResponseGenerator::HTTPResponseGenerator(HTTPClient *client) : client_(clien
 	response_ = "";
 }
 
-HTTPResponseGenerator::~HTTPResponseGenerator(void) { }
+HTTPResponse::~HTTPResponse(void) { }
 
-void	HTTPResponseGenerator::setConfig(void) {
+void	HTTPResponse::setConfig(void) {
 	config_ = client_->getConfig();
 }
 
-bool	HTTPResponseGenerator::isCGI(const HTTPRequest request) {
+bool	HTTPResponse::isCGI(const HTTPRequest request) {
 	if (request.invalidRequest)
 		return (false);
 	else if (!CGI::isCgiScript(request.request_target) && request.method != "DELETE")
@@ -23,27 +23,37 @@ bool	HTTPResponseGenerator::isCGI(const HTTPRequest request) {
 		return (true);
 }
 
-void	HTTPResponseGenerator::generateResponse(const HTTPRequest request) {
+// void	HTTPResponse::checkErrorPages(std::string filename, std::vector<std::string> error_pages) {
+// 	int	status_code = status_code_;
+
+// 	for (std::string &error_page : config_->getRedirect(filename))
+// 	{
+// 		if ()
+// 	}
+
+// }
+
+void	HTTPResponse::generateResponse(const HTTPRequest request) {
 	std::string	filename(request.request_target);
 
 	if (request.invalidRequest)
 	{
+		// statuscode check.
 		status_code_ = 400;
 		filename = "custom_404.html"; // change
 	}
 	else
 	{
-		filename_ = resolvePath(filename);
+		filename_ = getEndpointPath(filename);
 		if (filename_.empty())
 		{
 			// check if err_pages
-			filename_ = resolvePath("custom_404.html");
+			filename_ = getEndpointPath("custom_404.html");
 		}
 	}
-	// readyObserver_.notifyResponseReady();
 }
 
-std::string	HTTPResponseGenerator::loadResponse(void) {
+std::string	HTTPResponse::loadResponse(void) {
 	getBody();
 	getContentType();
 	getHttpStatusMessages();
@@ -52,53 +62,40 @@ std::string	HTTPResponseGenerator::loadResponse(void) {
 }
 
 
-std::string HTTPResponseGenerator::searchThroughIndices(std::vector<std::string> indices, bool autoindex) {
-	std::string	folder_file;
-	
-	if (indices.empty() && autoindex == false)
+std::string HTTPResponse::searchThroughIndices(std::vector<std::string> indices, bool autoindex) {
+	if (indices.empty())
 	{
-		status_code_ = 404;
+		if (autoindex)
+			dir_list_ = true;
+		else
+			status_code_ = 404;
 		return ("");
 	}
-	else if (indices.empty())
+
+	std::string	folder_file;
+	for (const std::string &index : indices)
+	{
+		folder_file = checkFolder(index);
+		if (!folder_file.empty() || status_code_ == 403)
+			return (folder_file);
+		status_code_ = 200;
+	}
+	status_code_ = 404;
+	return ("");
+	
+}
+
+std::string	HTTPResponse::handleDir(const std::string &path) {
+	if (config_->getAutoindex(path))
 	{
 		dir_list_ = true;
 		return ("");
 	}
 	else
-	{
-		for (const std::string &index : indices)
-		{
-			folder_file = checkFolder(index);
-			if (!folder_file.empty() || status_code_ == 403)
-				return (folder_file);
-			status_code_ = 200;
-		}
-		status_code_ = 404;
-		return ("");
-	}
+		return (searchThroughIndices(config_->getIndex(path), false));
 }
-/**
- * @brief checks if access is okay and adds indexpages if necessary
- * @param filename string with filenname
- * @return path or empty when an error appears
- */
-std::string	HTTPResponseGenerator::checkFolder(std::string path) {
-	struct stat	statbuf;
 
-	if (stat(path.c_str(), &statbuf) == 0)
-	{
-		if (S_ISDIR(statbuf.st_mode))
-		{
-			if (config_->getAutoindex(path))
-			{
-				dir_list_ = true;
-				return ("");
-			}
-			else
-				return (searchThroughIndices(config_->getIndex(path), false));
-		}
-	}
+std::string	HTTPResponse::handleAccess(const std::string &path) {
 	if (access(path.c_str(), F_OK) != -1)
 	{
 		if (access(path.c_str(), R_OK) == -1)
@@ -114,12 +111,26 @@ std::string	HTTPResponseGenerator::checkFolder(std::string path) {
 }
 
 /**
+ * @brief checks access for file or dir
+ * @param filename string with filenname
+ * @return path or empty when an error appears
+ */
+std::string	HTTPResponse::checkFolder(std::string path) {
+	struct stat	statbuf;
+
+	if (stat(path.c_str(), &statbuf) == 0 && S_ISDIR(statbuf.st_mode))
+		return (handleDir(path));
+	return (handleAccess(path));
+}
+
+/**
  * @brief path + file access, corrects index and checks autoindex on/off
  * @param endpoint string with request target
  * @return folder + endpoint to read from
  */
-std::string	HTTPResponseGenerator::resolvePath(std::string endpoint) {
+std::string	HTTPResponse::getEndpointPath(std::string endpoint) {
 	dir_list_ = false;
+
 	if (endpoint == "/")
 	{
 		if (config_->getAutoindex(endpoint) == false)
@@ -127,11 +138,10 @@ std::string	HTTPResponseGenerator::resolvePath(std::string endpoint) {
 			status_code_ = 403;
 			return ("");
 		}
-		endpoint = searchThroughIndices(config_->getIndex(endpoint), true);
+		else
+			return (searchThroughIndices(config_->getIndex(endpoint), true));
 	}
-	else
-		endpoint = checkFolder(endpoint);
-	return (endpoint);
+	return (checkFolder(endpoint));
 }
 
 /**
@@ -159,7 +169,7 @@ static std::string	getAllDirNames(const char *path) {
 }
 
 /// @brief get body from request target
-void	HTTPResponseGenerator::getBody(void) {
+void	HTTPResponse::getBody(void) {
 	if (dir_list_ == true)
 		body_ = getAllDirNames(filename_.c_str());
 	else if (!filename_.empty())
@@ -178,13 +188,13 @@ void	HTTPResponseGenerator::getBody(void) {
 }
 
 /// @brief combines all parts of HTTP header and adds right values
-void	HTTPResponseGenerator::createHeader(void) {
+void	HTTPResponse::createHeader(void) {
 	header_ = "HTTP/1.1 " + httpStatusMessages_ + "\r\n" \
 			+ "Content-Type: " + content_type_ + "\r\n" \
 			+ "Content-Length: " + std::to_string(body_.size()) + "\r\n\r\n"; // what if chunked?
 }
 
-void	HTTPResponseGenerator::getContentType( void )
+void	HTTPResponse::getContentType( void )
 {
 	std::string	extension;
 	size_t		index(filename_.find_last_of('.'));
@@ -198,7 +208,7 @@ void	HTTPResponseGenerator::getContentType( void )
 }
 
 /// @brief checks the status and get the right httpstatus message to add it to the default error page
-void	HTTPResponseGenerator::getHttpStatusMessages(void) {
+void	HTTPResponse::getHttpStatusMessages(void) {
 	static const std::unordered_map<int, std::string> httpStatusMessages = {
 		{100, "100 Continue"}, {101, "101 Switching Protocols"}, {102, "102 Processing"},
 		{200, "200 OK"}, {201, "201 Created"}, {202, "202 Accepted"}, {204, "204 No Content"},

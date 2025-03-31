@@ -75,7 +75,7 @@ void	HTTPClient::handle(epoll_event &event) {
 	switch (STATE_) {
 		case RECEIVING:
 			data = readFrom(event.data.fd);
-			parser_.addBufferToParser(data, this, STATE_);
+			parser_.addBufferToParser(data, this);
 			if (parsing(event.data.fd) != READY)
 				return ;
 		case PROCESS_CGI:
