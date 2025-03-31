@@ -1,5 +1,8 @@
 #include "../inc/CGI.hpp"
 
+// #######################     PUBLIC     ########################
+// ###############################################################
+
 CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post_data) {
 	pipe_from_child_[READ] = pipes[0];
 	pipe_from_child_[WRITE] = pipes[1];
@@ -9,6 +12,10 @@ CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post
 }
 
 CGI::~CGI(void) {}
+
+std::string CGI::getResponse(void) { return (response_); }
+
+bool	CGI::isReady( void ) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
 
 void	CGI::handle_cgi(HTTPRequest &request, int fd) {
 	std::vector<std::string>	env_strings;
@@ -37,30 +44,85 @@ void	CGI::handle_cgi(HTTPRequest &request, int fd) {
 	}
 }
 
-bool	CGI::isReady( void ) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
-
-/**
- * @brief extract statuscode from CGI response
- * @return int with statuscode or zero if not found
- */
-int	CGI::getStatusCodeFromResponse(void) {
-	std::regex	status_code_regex(R"(HTTP/1.1 (\d+))");
+/// @brief Set up a response for the client after receiving the header from the CGI
+/// saves the result again in response_
+void	CGI::rewriteResonseFromCGI(void) {
 	std::smatch	match;
-	int			status_code = 0;
-
-	if (!response_.empty() && std::regex_search(response_, match, status_code_regex))
+	std::string	new_response = "";
+	std::regex	r_content_type = std::regex(R"(Content-Type:\s+([^\r\n]+)\r\n)");
+	std::regex	r_status = std::regex(R"(Status:\s+([^\r\n]+)\r\n)");
+	std::regex	r_location = std::regex(R"(Location:\s+([^\r\n]+)\r\n)");
+	
+	if (std::regex_match(response_, match, r_status) && match.size() == 2)
+		new_response += "HTTP/1.1 " + std::string(match[1]) + "\r\n";
+	if (std::regex_match(response_, match, r_location) && match.size() == 2)
+		new_response += "Location: " + std::string(match[1]) + "\r\n";
+	if (std::regex_match(response_, match, r_content_type) && match.size() == 2)
+		new_response += "Content-Type: " + std::string(match[1]) + "\r\n";
+	if (new_response.empty())
 	{
-		std::string to_string = match[1];
-		if (to_string.size() < 9)
-			status_code = std::stoi(match[1]);
-		else
-			status_code = 500;
+		std::cerr << "Error: Received wrong formated header from CGI" << std::endl;
+		response_ = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+		return ;
 	}
-	else
-		std::cerr << "Error: No response or statuscode is found in response" << std::endl;
-	return (status_code);
+	new_response += "\r\n";
+
+	std::size_t	index = response_.find("\r\n\r");
+	if (index != std::string::npos)
+	{
+		if (index + 4 < response_.size())
+			new_response += response_.substr(index + 4) + "\r\n";
+	}
+	response_ = new_response;
 }
 
+/**
+ * @brief checks if the executable file starts with nph_
+ * @param executable absolute path to request target
+ * @return true if nhp_ file, else false
+ */
+bool	CGI::isNPHscript( const std::string &executable ) {
+	size_t		index;
+	std::string	filename = "";
+
+	index = executable.find_last_of('/');
+	if (index != std::string::npos)
+		filename = executable.substr(index + 1);
+	else
+		filename = executable;
+	if (filename.size() > 4 && filename.substr(0, 4) == "nph_")
+		return (true);
+	else
+		return (false);
+}
+
+/**
+ * @brief static function that checks if executable is allowed and valid
+ * @param path string with path and filename
+ * @return bool if cgi script is valid
+ */
+bool CGI::isCgiScript(const std::string &path)
+{
+	std::string executable = getScriptExecutable(path);
+	return !executable.empty();
+}
+
+/**
+ * @brief static function that compares executable extension with the allowed cgi scripts
+ * @param path string with path and filename
+ * @return string with path to executable program or empty when not correct
+ */
+std::string CGI::getScriptExecutable(const std::string &path)
+{
+	if (path.size() >= 3 && path.substr(path.size() - 3) == ".py")
+		return "/usr/bin/python3";
+	// if (path.size() >= 4 && path.substr(path.size() - 4) == ".php")
+	// 	return "/usr/bin/php";
+	return "";
+}
+
+// ##################     PRIVATE START_CGI     ##################
+// ###############################################################
 
 /**
  * @brief forks the process to execve the CGI, with POST sends buffer to child
@@ -97,8 +159,7 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 	watchDog();
 }
 
-std::string CGI::getResponse(void) { return (response_); }
-
+/// @brief forks a new process that checks the time of the CGI + timout time
 void	CGI::watchDog(void) {
 	pid_t	pid;
 	int		status;
@@ -132,126 +193,8 @@ void	CGI::watchDog(void) {
 	}
 }
 
-/**
- * @brief checks response status from CGI and receives header (and body) from pipe
- * if statuscode is not set it wil generate a Internal Server Error
- */
-void	CGI::getResponseFromCGI(int fd) {
-	if (WIFEXITED(status_))
-	{
-		int return_value = WEXITSTATUS(status_);
-		response_ = receiveBuffer(fd);
-		if (return_value != 0) {
-			int status_code = getStatusCodeFromResponse();
-			std::cerr << "status_code; " << status_code << std::endl;
-			// compare with configfile error pages.
-			std::cerr << "response" << response_ << std::endl;
-		}
-	}
-	else
-		response_ = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
-}
-
-/**
- * @brief checks if the executable file starts with nph_
- * @param executable absolute path to request target
- * @return true if nhp_ file, else false
- */
-bool	CGI::isNPHscript( const std::string &executable ) {
-	size_t		index;
-	std::string	filename = "";
-
-	index = executable.find_last_of('/');
-	if (index != std::string::npos)
-		filename = executable.substr(index + 1);
-	else
-		filename = executable;
-	if (filename.size() > 4 && filename.substr(0, 4) == "nph_")
-		return (true);
-	else
-		return (false);
-}
-
-/// @brief Set up a response for the client after receiving the header from the CGI
-/// saves the result again in response_
-void	CGI::rewriteResonseFromCGI(void) {
-	std::smatch	match;
-	std::string	new_response = "";
-	std::regex	r_content_type = std::regex(R"(Content-Type:\s+([^\r\n]+)\r\n)");
-	std::regex	r_status = std::regex(R"(Status:\s+([^\r\n]+)\r\n)");
-	std::regex	r_location = std::regex(R"(Location:\s+([^\r\n]+)\r\n)");
-	
-	if (std::regex_match(response_, match, r_status) && match.size() == 2)
-		new_response += "HTTP/1.1 " + std::string(match[1]) + "\r\n";
-	if (std::regex_match(response_, match, r_location) && match.size() == 2)
-		new_response += "Location: " + std::string(match[1]) + "\r\n";
-	if (std::regex_match(response_, match, r_content_type) && match.size() == 2)
-		new_response += "Content-Type: " + std::string(match[1]) + "\r\n";
-	if (new_response.empty())
-	{
-		std::cerr << "Error: Received wrong formated header from CGI" << std::endl;
-		response_ = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
-		return ;
-	}
-	new_response += "\r\n";
-
-	std::size_t	index = response_.find("\r\n\r");
-	if (index != std::string::npos)
-	{
-		if (index + 4 < response_.size())
-			new_response += response_.substr(index + 4) + "\r\n";
-	}
-	response_ = new_response;
-}
-
-/**
- * @brief compares executable extension with the allowed cgi scripts
- * @param path string with path and filename
- * @return string with path to executable program or empty when not correct
- */
-std::string CGI::getScriptExecutable(const std::string &path)
-{
-	if (path.size() >= 3 && path.substr(path.size() - 3) == ".py")
-		return "/usr/bin/python3";
-	// if (path.size() >= 4 && path.substr(path.size() - 4) == ".php")
-	// 	return "/usr/bin/php";
-	return "";
-}
-
-/**
- * @brief checks if executable is allowed and valid
- * @param path string with path and filename
- * @return bool if cgi script is valid
- */
-bool CGI::isCgiScript(const std::string &path)
-{
-	std::string executable = getScriptExecutable(path);
-	return !executable.empty();
-}
-
-/**
- * @brief receives a response from child with a headerfile and body to return to the client
- * @return string buffer with response from child or error msg that something went wrong
- */
-std::string	CGI::receiveBuffer(int fd) {
-	char buffer[1024];
-	
-	ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);
-	if (bytesRead > 0)
-		buffer[bytesRead] = '\0';
-	else
-	{
-		if (bytesRead == -1)
-			std::cerr << "Error read: " << std::strerror(errno) << std::endl;
-		else
-			std::cerr << "Error: no output read"; // what now?
-		return std::string("HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\n\r\n<html>\n") +
-			"<head><title>Server Error</title></head><body><h1>Something went wrong</h1></body></html>";
-	}
-	close(fd);
-	pipe_from_child_[READ] = -1;
-	return (buffer);
-}
+// ###############################################################
+// ###################### SEND_TO_CGI ############################
 
 /**
  * @brief writes body to stdin for CGI and closes write end pipe
@@ -296,4 +239,73 @@ std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, const HT
 		env.push_back(const_cast<char*>(str.c_str()));
 	env.push_back(nullptr);
 	return (env);
+}
+
+// ####################     RCV_FROM_CGI     #####################
+// ###############################################################
+
+/**
+ * @brief checks response status from CGI and receives header (and body) from pipe
+ * if statuscode is not set it wil generate a Internal Server Error
+ */
+void	CGI::getResponseFromCGI(int fd) {
+	if (WIFEXITED(status_))
+	{
+		int return_value = WEXITSTATUS(status_);
+		response_ = receiveBuffer(fd);
+		if (return_value != 0) {
+			int status_code = getStatusCodeFromResponse();
+			std::cerr << "status_code; " << status_code << std::endl;
+			// compare with configfile error pages.
+			std::cerr << "response" << response_ << std::endl;
+		}
+	}
+	else
+		response_ = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+}
+
+/**
+ * @brief receives a response from child with a headerfile and body to return to the client
+ * @return string buffer with response from child or error msg that something went wrong
+ */
+std::string	CGI::receiveBuffer(int fd) {
+	char buffer[1024];
+	
+	ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+	if (bytesRead > 0)
+		buffer[bytesRead] = '\0';
+	else
+	{
+		if (bytesRead == -1)
+			std::cerr << "Error read: " << std::strerror(errno) << std::endl;
+		else
+			std::cerr << "Error: no output read"; // what now?
+		return std::string("HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\n\r\n<html>\n") +
+			"<head><title>Server Error</title></head><body><h1>Something went wrong</h1></body></html>";
+	}
+	close(fd);
+	pipe_from_child_[READ] = -1;
+	return (buffer);
+}
+
+/**
+ * @brief extract statuscode from CGI response
+ * @return int with statuscode or zero if not found
+ */
+int	CGI::getStatusCodeFromResponse(void) {
+	std::regex	status_code_regex(R"(HTTP/1.1 (\d+))");
+	std::smatch	match;
+	int			status_code = 0;
+
+	if (!response_.empty() && std::regex_search(response_, match, status_code_regex))
+	{
+		std::string to_string = match[1];
+		if (to_string.size() < 9)
+			status_code = std::stoi(match[1]);
+		else
+			status_code = 500;
+	}
+	else
+		std::cerr << "Error: No response or statuscode is found in response" << std::endl;
+	return (status_code);
 }
