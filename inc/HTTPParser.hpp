@@ -50,6 +50,8 @@ class HTTPParser
 		void	addIfProcessIsChunked( const std::string &buff );
 		bool	validWithConfig( HTTPClient *client );
 		bool	checkBodySizeLimit( size_t body_size, const Config *config, std::string path );
+		void	generatePath(const Config *config);
+		bool	isRedirection(std::string &endpoint, const std::vector<std::string> &redir);
 
 		// Parsing header
 		bool	tryParseContentLength( std::string str );

@@ -42,6 +42,11 @@ void	HTTPResponse::generateResponse(const HTTPRequest request) {
 		status_code_ = 400;
 		filename = "custom_404.html"; // change
 	}
+	else if (request.status_code != 200)
+	{
+		// redirect
+		body_ = request.body;
+	}
 	else
 	{
 		filename_ = getEndpointPath(filename);
@@ -54,6 +59,8 @@ void	HTTPResponse::generateResponse(const HTTPRequest request) {
 }
 
 std::string	HTTPResponse::loadResponse(void) {
+	if (status_code_ == 301 || status_code_ == 302)
+		return (body_);
 	getBody();
 	getContentType();
 	getHttpStatusMessages();

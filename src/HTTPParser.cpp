@@ -258,18 +258,44 @@ bool	HTTPParser::validWithConfig(HTTPClient *client) {
 	return (false);
 }
 
-static void	generatePath(std::string &endpoint, const Config *config) {
+bool	HTTPParser::isRedirection(std::string &endpoint, const std::vector<std::string> &redir) {
+	if (redir.size() == 2)
+	{
+		try
+		{
+			if (std::all_of(redir[0].begin(), redir[0].end(), ::isdigit))
+				result_.status_code = std::stoi(redir[0]);
+			else
+				return (false);
+		}
+		catch (...)
+		{
+			return (false);
+		}
+		endpoint = redir[1];
+		result_.body = \
+			"HTTP/1.1 " + redir[0] + " Found\r\nLocation: " + result_.request_target + \
+			"\r\nContent-Type: text/html\r\n\r\n";
+		PARSE_STATE_ = DONE_PARSING;
+		return (true);
+	}
+	return (false);
+}
+
+void	HTTPParser::generatePath(const Config *config) {
 	struct stat				statbuf;
 	std::filesystem::path	full_path;
 
-	for (const std::string &root : config->getRoot(endpoint))
+	if (isRedirection(result_.request_target, config->getRedirect(result_.request_target)))
+		return ;
+	for (const std::string &root : config->getRoot(result_.request_target))
 	{
 		for(const auto &pair : config->getLocations())
 		{
-			full_path = std::filesystem::path(root) / pair.first / endpoint;
+			full_path = std::filesystem::path(root) / pair.first / result_.request_target;
 			if (stat(full_path.c_str(), &statbuf) == 0)
 			{
-				endpoint = full_path.string();
+				result_.request_target = full_path.string();
 				return ;
 			}
 		}
@@ -314,7 +340,7 @@ void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client) {
 			client->setServer(result_.host);
 
 			// generate PATH
-			generatePath(result_.request_target, client->getConfig());
+			generatePath(client->getConfig());
 
 			// Validate with config and results from parsing
 			if (!result_.invalidRequest)
