@@ -275,16 +275,19 @@ static void	generatePath(std::string &endpoint, const Config *config) {
 	std::string	folder_file;
 	struct stat	statbuf;
 
-	for(const auto &pair : config->getLocations())
+	for (const std::string &root : config->getRoot(endpoint))
 	{
-		if (pair.first[pair.first.size() - 1] == '/')
-			folder_file = pair.first + endpoint;
-		else
-			folder_file = pair.first + "/" + endpoint;
-		if (stat(folder_file.c_str(), &statbuf) == 0)
+		for(const auto &pair : config->getLocations())
 		{
-			endpoint = folder_file;
-			return ;
+			if (pair.first[pair.first.size() - 1] == '/')
+				folder_file = root + pair.first + endpoint;
+			else
+				folder_file = root + pair.first + "/" + endpoint;
+			if (stat(folder_file.c_str(), &statbuf) == 0)
+			{
+				endpoint = folder_file;
+				return ;
+			}
 		}
 	}
 }
