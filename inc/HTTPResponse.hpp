@@ -18,6 +18,9 @@
 # include "Config.hpp"
 # include "HTTPClient.hpp"
 
+class HTTPClient;
+class Config;
+
 class HTTPResponse {
 	public:
 		HTTPResponse( HTTPClient *client );
@@ -42,7 +45,7 @@ class HTTPResponse {
 		std::string	handleDir( const std::string &path );
 		std::string	getEndpointPath( std::string endpoint );
 
-		void		checkErrorPages(std::string filename, std::vector<std::string> error_pages);
+		// void		checkErrorPages(std::string filename, std::vector<std::string> error_pages);
 
 		std::vector<char *> env_;
 		std::string			filename_;

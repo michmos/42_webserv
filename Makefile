@@ -6,13 +6,15 @@ CPPFLAGS	=	-Wall -Wextra -Werror -std=c++17
 SRCDIR		=	src
 SRC			=	$(shell find $(SRCDIR) -iname "*.cpp")
 
+INCL        =   -I./inc
+
 OBJDIR		=	.build
 OBJ			=	$(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 all:		$(NAME)
 
 $(NAME):	$(OBJ)
-			@$(CPP) $(OBJ) -o $(NAME)
+			@$(CPP) $(OBJ) -o $(NAME) $(INCL)
 			@printf "$(CREATED)" $@ $(CUR_DIR)
 
 $(OBJDIR)/%.o:	$(SRCDIR)/%.cpp

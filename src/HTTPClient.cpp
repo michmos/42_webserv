@@ -1,11 +1,13 @@
 #include "../inc/HTTPClient.hpp"
 
-HTTPClient::HTTPClient(SharedFd clientFd, SharedFd serverFd, 
-	std::function<void(struct epoll_event)> addToEpoll_cb,
+HTTPClient::HTTPClient(
+	SharedFd clientFd, 
+	SharedFd serverFd, 
+	std::function<void(struct epoll_event, const SharedFd&)>  addToEpoll_cb,
 	std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb
-	) : clientSock_(clientFd), serverSock_(serverFd), getConfig_cb_(getConfig_cb), \
-		responseGenerator_(this) {
-	pipes_.setCallbackFunction(addToEpoll_cb);
+	) : clientSock_(clientFd), serverSock_(serverFd), \
+		responseGenerator_(this), getConfig_cb_(getConfig_cb) {
+	pipes_.setCallbackFunction(addToEpoll_cb, serverFd);
 	STATE_ = RECEIVING;
 	config_ = NULL;
 }
@@ -23,16 +25,7 @@ bool	HTTPClient::isDone(void) {
  * @param host vector string with hostname and if set port
  */
 void	HTTPClient::setServer(std::vector<std::string> host) {
-	Config		conf;
 	std::string hostname = host[0];
-	std::string port = "";
-
-	// DO I still need the PORT?
-	if (config_ == NULL)
-		return ;
-
-	if (host.size() > 1)
-		port = host[1];
 
 	config_ = getConfig_cb_(serverSock_, hostname);
 }
@@ -54,8 +47,8 @@ void	HTTPClient::writeTo(int fd) {
 }
 
 std::string	HTTPClient::readFrom(int fd) {
-	char buff[READSIZE + 1] = { '\0'};
-	size_t	bytes_read;
+	char	buff[READSIZE + 1] = { '\0'};
+	int		bytes_read;
 
 	bytes_read = read(fd, buff, READSIZE);
 	if (bytes_read == -1)
@@ -67,7 +60,7 @@ std::string	HTTPClient::readFrom(int fd) {
  * @brief checks state and processes event. Write or Read action
  * @param event epoll_event of the current event
  */
-void	HTTPClient::handle(epoll_event &event) {
+void	HTTPClient::handle(const epoll_event &event) {
 	std::string	data;
 	HTTPRequest	request;
 	static bool	is_cgi_request = false;
@@ -83,6 +76,8 @@ void	HTTPClient::handle(epoll_event &event) {
 				return ;
 		case RESPONSE:
 			responding(responseGenerator_.isCGI(request_), event.data.fd);
+		case DONE:
+			return ;
 	}
 }
 
@@ -133,4 +128,4 @@ void	HTTPClient::cgiresponse(void) {
 	message_que_.push_back(cgi_->getResponse());
 }
 
-const Config	*HTTPClient::getConfig( void ) { return (config_); }
+const Config	*HTTPClient::getConfig( void ) const { return (config_); }

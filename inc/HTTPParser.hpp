@@ -13,13 +13,15 @@
 # include <sys/stat.h>
 
 # include "HTTPRequest.hpp"
-# include "HTTPClient.hpp"
 
-typedef enum e_parse_state {
+enum e_parse_state {
 	RCV_HEADER,
 	RCV_BODY,
-	DONE
+	DONE_PARSING
 };
+
+class HTTPClient;
+class Config;
 
 class HTTPParser
 {
@@ -42,7 +44,7 @@ class HTTPParser
 		e_parse_state	PARSE_STATE_;
 		
 		bool	isHeadersParsed( void );
-		bool	verifyBodyCompletion( void );
+		void	verifyBodyCompletion( void );
 
 		void	splitHeaderBody( void );
 		void	addIfProcessIsChunked( const std::string &buff );
@@ -55,3 +57,5 @@ class HTTPParser
 		bool	parseHTTPline( const std::string &str );
 		bool	parseRequest( void );
 };
+
+# include "../inc/HTTPClient.hpp"

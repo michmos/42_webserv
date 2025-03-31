@@ -2,7 +2,7 @@
 #include <unordered_map>
 
 Webserv::Webserv(const std::string& confPath) {
-	std::vector configs = ConfigParser("pathToConfig").getConfigs();
+	std::vector<Config> configs = ConfigParser("pathToConfig").getConfigs();
 	std::unordered_map<std::string, SharedFd> sockets;
 
 	for (auto& config : configs) {
@@ -58,7 +58,7 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 	_ep.add(clientSock.get(), EPOLLIN | EPOLLOUT);
 	_clients.emplace(
 		clientSock, 
-		Client(
+		HTTPClient(
 			clientSock,
 			servSock,
 			// function to add an epoll event to epoll instance - used for callback
@@ -103,11 +103,11 @@ void	Webserv::mainLoop() {
 				SharedFd clientSock = sock::accept(fd.get());
 				this->_addClient(clientSock, fd);
 			} else if (_clients.find(fd) != _clients.end()) {
+				_clients.find(fd)->second.handle(ev);
 				//  client socket ready
-				_clients[fd].handle(ev);
 			} else if (_clients.find(ev.data.u32) != _clients.end()) {
+				_clients.find(ev.data.u32)->second.handle(ev);
 				// client pipe ready
-				_clients[ev.data.u32].handle(ev);
 			} else {
 				throw std::runtime_error("mainLoop(): fd not found");
 			}

@@ -15,7 +15,7 @@
 # define WRITE 1
 # define TIMEOUT 10
 
-typedef enum e_cgi_state {
+enum e_cgi_state {
 	START_CGI,
 	SEND_TO_CGI,
 	RCV_FROM_CGI,

@@ -28,22 +28,22 @@ class Config {
 		int	setDirective(std::string key, std::vector<std::string> values);
 
 		// GET RAW DATA
-		const std::unordered_map<std::string, std::vector<std::string>>	&getDirectives();
-		const std::unordered_map<std::string, Location>					&getLocations();
-		const std::unordered_map<std::string, std::vector<std::string>>	&getMimeTypes();
-		const std::unordered_map<std::string, std::vector<std::string>>	getLocDirectives(const std::string locKey);
+		const std::unordered_map<std::string, std::vector<std::string>>	&getDirectives() const ;
+		const std::unordered_map<std::string, Location>					&getLocations()const ;
+		const std::unordered_map<std::string, std::vector<std::string>>	&getMimeTypes() const;
+		const std::unordered_map<std::string, std::vector<std::string>>	getLocDirectives(const std::string locKey) const;
 
 		//	GETTER need for WebServer/Client Class
-		int						getPort();
-		const std::string		getHost();
-		const std::string		getServerName();
+		int						getPort() const;
+		const std::string		getHost() const;
+		const std::string		getServerName() const;
 
-		bool							getAutoindex(const std::string locKey);			// autoindex on;
-		std::uint64_t					getClientBodySize(const std::string locKey);	// client_max_body_size 10M;
-		const std::vector<std::string>	getRedirect(const std::string locKey);			// return 301 http://example.com/newpage;
-		const std::vector<std::string>	getRoot(const std::string locKey);				// root /tmp/www;
-		const std::vector<std::string>	getMethods(const std::string locKey);			// allow_methods  DELETE POST GET;
-		const std::vector<std::string>	getIndex(const std::string locKey);				// index index.html index.php;
+		bool							getAutoindex(const std::string locKey) const;		// autoindex on;
+		std::uint64_t					getClientBodySize(const std::string locKey) const;	// client_max_body_size 10M;
+		const std::vector<std::string>	getRedirect(const std::string locKey) const;		// return 301 http://example.com/newpage;
+		const std::vector<std::string>	getRoot(const std::string locKey) const;			// root /tmp/www;
+		const std::vector<std::string>	getMethods(const std::string locKey) const;			// allow_methods  DELETE POST GET;
+		const std::vector<std::string>	getIndex(const std::string locKey) const;			// index index.html index.php;
 
 		// UTILS
 		void	printConfig();

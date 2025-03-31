@@ -6,8 +6,10 @@ CGIPipes::~CGIPipes(void) {
 	closeAllPipes();
 }
 
-void	CGIPipes::setCallbackFunction(std::function<void(struct epoll_event)> callback) {
+void	CGIPipes::setCallbackFunction(std::function<void(struct epoll_event, const SharedFd&)> callback, \
+	const SharedFd& server_fd) {
 	pipe_callback_ = callback;
+	server_fd_ = server_fd;
 }
 
 std::vector<int>	CGIPipes::getLastPipes(void) { return (pipes_.back()); }
@@ -52,10 +54,10 @@ void	CGIPipes::addPipesToEpoll() {
 
 	event_write.data.fd = pipes[TO_CHILD_WRITE];
 	event_write.events = EPOLLOUT;
-	pipe_callback_(event_write);
+	pipe_callback_(event_write, server_fd_);
 	event_read.data.fd = pipes[FROM_CHILD_READ];
 	event_read.events = EPOLLIN;
-	pipe_callback_(event_read);
+	pipe_callback_(event_read, server_fd_);
 }
 
 /// @brief closes all pipes that are stored in a vector<vector<int>> array

@@ -26,20 +26,19 @@
 # include <string.h>
 # include <sys/epoll.h>
 
+# include "Config.hpp"
 # include "HTTPRequest.hpp"
 # include "HTTPRequestConfig.hpp"
 # include "HTTPResponse.hpp"
-# include "HTTPParser.hpp"
 # include "CGI.hpp"
 # include "Epoll.hpp"
-# include "Server.hpp"
 # include "SharedFd.hpp"
 # include "CGIPipes.hpp"
-# include "Config.hpp"
+# include "HTTPClient.hpp"
+# include "HTTPParser.hpp"
 
 # define READSIZE 100
 # define READY true
-
 
 enum e_state {
 	RECEIVING,
@@ -57,28 +56,29 @@ enum e_get_conf {
 	INDEX
 };
 
+
 class HTTPClient {
 	public:
-		explicit HTTPClient(
+		HTTPClient(
 			SharedFd clientFd,
 			SharedFd serverFd,
-			std::function<void(struct epoll_event)> addToEpoll_cb,
+			std::function<void(struct epoll_event, const SharedFd&)> addToEpoll_cb,
 			std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb
 		);
 		~HTTPClient( void );
 
-		void	handle( epoll_event &event );
+		void	handle( const epoll_event &event );
 		bool	isDone( void );
 		void	setServer(std::vector<std::string> host);
 
 		void		writeTo( int fd );
 		std::string	readFrom( int fd );
 
-		bool	parsing( int fd );
-		bool	cgi( int fd );
-		void	responding( bool cgi_used, int fd );
-		void	cgiresponse( void );
-		const Config	*getConfig( void );
+		bool			parsing( int fd );
+		bool			cgi( int fd );
+		void			responding( bool cgi_used, int fd );
+		void			cgiresponse( void );
+		const Config	*getConfig( void ) const;
 
 	private:
 		e_state						STATE_;

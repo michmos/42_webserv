@@ -37,11 +37,15 @@ enum tokenType {
 };
 
 // TOKENS FOR LEXAR
-struct token { std::string::iterator		itStart;
+struct token {
+	std::string::iterator		itStart;
 	std::string::iterator		itEnd;
 	std::string					value;
 	tokenType					type;
 };
+
+class Config;
+struct Location;
 
 class ConfigParser {
 	private:

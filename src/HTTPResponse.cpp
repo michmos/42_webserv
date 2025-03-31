@@ -160,7 +160,7 @@ static std::string	getAllDirNames(const char *path) {
 	{
 		d = readdir(dir);
 		if (d != NULL)
-			list += d->d_name + '\n';
+			list += d->d_name + std::string("\n");
 		else
 			break ;
 	}
@@ -194,16 +194,27 @@ void	HTTPResponse::createHeader(void) {
 			+ "Content-Length: " + std::to_string(body_.size()) + "\r\n\r\n"; // what if chunked?
 }
 
+/// @brief search through mimetypes to set the right content type based on the extension
 void	HTTPResponse::getContentType( void )
 {
 	std::string	extension;
 	size_t		index(filename_.find_last_of('.'));
 
-	if (index != std::string::npos)
+	if (index == std::string::npos)
+		return ;
+
+	extension = filename_.substr(index + 1);
+	std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+	for (const auto &type : config_->getMimeTypes())
 	{
-		extension = filename_.substr(index);
-		std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
-		// content_type_ = config_.getMimetype(extension) 
+		for(const std::string &mimetype : type.second)
+		{
+			if (mimetype == extension)
+			{
+				content_type_ = type.first;
+				return ;
+			}
+		}
 	}
 }
 

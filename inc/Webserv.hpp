@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Client.hpp"
+#include "HTTPClient.hpp"
 #include "Epoll.hpp"
 #include "SharedFd.hpp"
 #include "Socket.hpp"
@@ -70,6 +70,7 @@
 # define BG_PINK           "\033[48;5;213;30m"
 # define BG_PURPLE         "\033[48;5;129;30m"
 
+class HTTPClient;
 
 class Webserv {
 public:
@@ -82,7 +83,7 @@ public:
 
 private:
 	std::unordered_map<SharedFd, std::vector<Config>>	_servers;
-	std::unordered_map<SharedFd, Client> 				_clients;
+	std::unordered_map<SharedFd, HTTPClient> 			_clients;
 	Epoll												_ep;
 
 	void	_addClient(const SharedFd& clientSock, const SharedFd& servSock);

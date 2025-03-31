@@ -2,9 +2,9 @@
 
 int	main() {
 	try {
-		Server	server(INADDR_ANY, htons(8080));
+		// Server	server(INADDR_ANY, htons(8080));
 		
-		server.runServer();
+		// server.runServer();
 
 	} catch (std::runtime_error &e) {
 		std::cerr << "Runtime error occurred: " << e.what() << std::endl;

@@ -25,14 +25,14 @@ void	HTTPParser::splitHeaderBody(void) {
 }
 
 /// @brief if available, checks if content length is same as size body
-bool	HTTPParser::verifyBodyCompletion(void) {
+void	HTTPParser::verifyBodyCompletion(void) {
 	if (content_length_ > 0)
 	{
 		if (result_.body.size() == content_length_)
-		PARSE_STATE_ = DONE;
+		PARSE_STATE_ = DONE_PARSING;
 	}
 	else
-	PARSE_STATE_ = DONE;
+		PARSE_STATE_ = DONE_PARSING;
 }
 
 /**
@@ -225,7 +225,7 @@ void	HTTPParser::addIfProcessIsChunked(const std::string &buff) {
 		
 		if (chunk_size == 0)
 		{
-			PARSE_STATE_ = DONE;
+			PARSE_STATE_ = DONE_PARSING;
 			return ;
 		}
 		pos = found + 2;
@@ -320,7 +320,7 @@ void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client) {
 			if (!result_.invalidRequest)
 				result_.invalidRequest = isValidHeader(client);
 			if (result_.invalidRequest == true)
-				PARSE_STATE_ = DONE;
+				PARSE_STATE_ = DONE_PARSING;
 			else
 				PARSE_STATE_ = RCV_BODY;
 		}
@@ -337,7 +337,7 @@ void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client) {
 	if (checkBodySizeLimit(result_.body.size(), client->getConfig(), result_.request_target))
 	{
 		result_.status_code = 413;
-		PARSE_STATE_ = DONE;
+		PARSE_STATE_ = DONE_PARSING;
 	}
 	verifyBodyCompletion();
 }
