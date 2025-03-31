@@ -85,7 +85,6 @@ private:
 	std::unordered_map<SharedFd, Client> 				_clients;
 	Epoll												_ep;
 
-	void			addClient(SharedFd& clientSock, SharedFd& servSock);
-	void			delClient(SharedFd& fd);
-	const Config* 	getConfig(const SharedFd& serverSock, const std::string& serverName) const;
+	void	_addClient(const SharedFd& clientSock, const SharedFd& servSock);
+	void	_delClient(const SharedFd& fd);
 };

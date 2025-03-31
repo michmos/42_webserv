@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "SharedFd.hpp"
 #include <sys/types.h>
 #include <sys/epoll.h>
 #include <string.h>
@@ -31,7 +32,8 @@ public:
 	// TODO: maybe add pwait() from epoll_pwait()
 
 private:
-	int								_epFd;
+	SharedFd						_epFd;
 	int								_timeout;
 	std::vector<struct epoll_event>	_events;
 };
+
