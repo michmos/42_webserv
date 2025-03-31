@@ -1,17 +1,22 @@
 #include "../inc/Server.hpp"
 
-int	main() {
-	try {
-		Server	server(INADDR_ANY, htons(8080));
-		
-		server.runServer();
-
-	} catch (std::runtime_error &e) {
-		std::cerr << "Runtime error occurred: " << e.what() << std::endl;
-	} catch (std::invalid_argument &e) {
-		std::cerr << "Invalid argument error occurred: " << e.what() << std::endl;
-	} catch (...) {
-		std::cerr << "Other error occurred" << std::endl;
+int main(int argc, char **argv)
+{
+	if (argc == 1 || argc == 2) {
+		try
+		{
+			std::string	config = (argc == 1 ? DEFAULT_SERVERS_CONFIG : argv[1]);
+			ConfigParser config_parser(config);
+		}
+		catch (std::exception &e) {
+			std::cerr << e.what() << std::endl;
+			return (1);
+		}
+    }
+    else
+	{
+		std::cerr << RED << "ERROR: " << RESET << "Invalid number of arguments" << std::endl;
+		return (1);
 	}
 
 	return (0);

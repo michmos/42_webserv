@@ -19,6 +19,10 @@ enum tokenType {
 	INIT,
 	EOF_TOKEN,
 	WHITE_SPACE,
+	COMMENT,
+	TYPES,
+	HTTP,
+	INCLUDE,
 	SERVER,
 	LOCATION,
 	BLOCK_OPEN,
@@ -41,22 +45,24 @@ struct token { std::string::iterator		itStart;
 
 class ConfigParser {
 	private:
-		std::string					_filepath;
-		std::string					_input;
-		std::vector<Config>			_configs;
-		std::vector<token>			_tokens;
+		std::string													_filepath;
+		std::string													_input;
+		std::string													_inputMime;
+		std::vector<Config>											_configs;
+		std::vector<token>											_tokens;
+		std::vector<token>											_tokensMime;
+		std::unordered_map<std::string, std::vector<std::string>>	_mimeTypes;
 
 		// PARSING
 		token getNextToken(token &lastToken, const std::regex &url, const std::regex &path, const std::regex &op);
 		// UTILS
-		void	moveOneTokenSafly(std::vector<token>::iterator &it);
+		void	moveOneTokenSafly(std::vector<token> &tokens, std::vector<token>::iterator &it);
 		// EXCEPTIONS
 		void	errorToken(token token, std::string msg);
 		void	getTokenPos(token token, int &line, int &col);
-		void	eraseWhitespaceToken();
 
 	public:
-		ConfigParser();
+		ConfigParser() = delete;
 		explicit ConfigParser(const std::string& filepath);
 		~ConfigParser();
 		ConfigParser(const ConfigParser &toCopy);
@@ -70,6 +76,11 @@ class ConfigParser {
 		void	parseTokenToDirective(std::vector<token>::iterator &it, Config &newServer);
 		void	parseTokenToLocation(std::vector<token>::iterator &it, Config &newServer);
 		void	parseTokenToLocDir(std::vector<token>::iterator &it, Location &loc);
+		
+		void	readMimeToInput(const std::string &filepath);
+		void	parseMimeToTokens();
+		token	getNextMimeToken(token &lastToken);
+		std::unordered_map<std::string, std::vector<std::string>>	parseMimeToken();
 
 		void	checkPort();
 		void	checkHost();
@@ -77,10 +88,14 @@ class ConfigParser {
 		void	checkClientBodySize(); // https://nginx.org/en/docs/syntax.html
 
 		// GETTERS
+		std::vector<Config> getConfigs() const { return this->_configs; }
+		
 
 		// UTILS
-		void printInput();
-		void printTokens();
+		void	printInput();
+		void	eraseToken(std::vector<token> &tokens, enum tokenType type);
+		void	printTokens(std::vector<token> &tokens);
+		void	printMimeTypes();
 
 		// EXCEPTIONS
 		class ConfigParserException : public std::exception {

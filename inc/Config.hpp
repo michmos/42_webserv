@@ -1,14 +1,11 @@
 #ifndef SERVERCONFIG_HPP
 #define SERVERCONFIG_HPP
 
-#include <cstdint>
-#include <map>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include "Webserv.hpp"
 
-// LOOK INTO:
-// map can be unordered_map
+// make a static for the mime.types conf
+// make the htpp wrapper maybe??
+// read and store the mime.type map
 struct Location {
 	bool														strict_match;
 	std::unordered_map<std::string, std::vector<std::string>>	directives;
@@ -16,38 +13,37 @@ struct Location {
 
 class Config {
 	private:
-		std::unordered_map<std::string, std::vector<std::string>>	_directives;
-		std::unordered_map<std::string, Location>					_locations;
+		std::unordered_map<std::string, std::vector<std::string>>		_directives;
+		std::unordered_map<std::string, std::vector<std::string>> const	&_mimeTypes;
+		std::unordered_map<std::string, Location>						_locations;
 
 		// UTILS
 	public:
-		Config();
+		Config() = delete;
+		Config(std::unordered_map<std::string, std::vector<std::string>> const &mimeTypes);
 		~Config();
-		Config(const Config &toCopy);
-		Config& operator=(const Config &other);
 
 		// SETTERS
 		int	setLocation(std::string key, Location loc);
 		int	setDirective(std::string key, std::vector<std::string> values);
 
-		// GETTERS
-		std::unordered_map<std::string, std::vector<std::string>>	getDirectives() const;
-		std::unordered_map<std::string, Location>					getLocations() const;
+		// GET RAW DATA
+		const std::unordered_map<std::string, std::vector<std::string>>	&getDirectives();
+		const std::unordered_map<std::string, Location>					&getLocations();
+		const std::unordered_map<std::string, std::vector<std::string>>	&getMimeTypes();
+		const std::unordered_map<std::string, std::vector<std::string>>	getLocDirectives(const std::string locKey);
 
-		std::unordered_map<std::string, std::vector<std::string>> getLocDirectives(const std::string locKey) const;
+		//	GETTER need for WebServer/Client Class
+		int						getPort();
+		const std::string		getHost();
+		const std::string		getServerName();
 
-		//		need for WebServer Class
-		int				getPort();
-		std::string		getHost();
-		std::string		getServerName();
-
-		//		need for Client Class
-		bool						getAutoindex(const std::string locKey) const;		// autoindex on;
-		std::uint64_t				getClientBodySize(const std::string locKey) const;	// client_max_body_size 10M;
-		std::vector<std::string>	getRedirect(const std::string locKey) const;		// return 301 http://example.com/newpage;
-		std::vector<std::string>	getRoot(const std::string locKey) const;			// root /tmp/www;
-		std::vector<std::string>	getMethods(const std::string locKey) const;			// allow_methods  DELETE POST GET;
-		std::vector<std::string>	getIndex(const std::string locKey) const;			// index index.html index.php;
+		bool							getAutoindex(const std::string locKey);			// autoindex on;
+		std::uint64_t					getClientBodySize(const std::string locKey);	// client_max_body_size 10M;
+		const std::vector<std::string>	getRedirect(const std::string locKey);			// return 301 http://example.com/newpage;
+		const std::vector<std::string>	getRoot(const std::string locKey);				// root /tmp/www;
+		const std::vector<std::string>	getMethods(const std::string locKey);			// allow_methods  DELETE POST GET;
+		const std::vector<std::string>	getIndex(const std::string locKey);				// index index.html index.php;
 
 		// UTILS
 		void	printConfig();
