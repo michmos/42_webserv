@@ -1,5 +1,8 @@
 # include "../inc/HTTPResponse.hpp"
 
+// #######################     PUBLIC     ########################
+// ###############################################################
+
 HTTPResponse::HTTPResponse(HTTPClient *client) : client_(client) {
 	header_ = "";
 	body_ = "";
@@ -10,9 +13,7 @@ HTTPResponse::HTTPResponse(HTTPClient *client) : client_(client) {
 
 HTTPResponse::~HTTPResponse(void) { }
 
-void	HTTPResponse::setConfig(void) {
-	config_ = client_->getConfig();
-}
+void	HTTPResponse::setConfig(void) { config_ = client_->getConfig(); }
 
 bool	HTTPResponse::isCGI(const HTTPRequest request) {
 	if (request.invalidRequest)
@@ -23,44 +24,30 @@ bool	HTTPResponse::isCGI(const HTTPRequest request) {
 		return (true);
 }
 
-// void	HTTPResponse::checkErrorPages(std::string filename, std::vector<std::string> error_pages) {
-// 	int	status_code = status_code_;
+static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 && status_code <= 308); }
 
-// 	for (std::string &error_page : config_->getRedirect(filename))
-// 	{
-// 		if ()
-// 	}
-
-// }
-
+/**
+ * @brief generates Response by processing the request Header 
+ * @param request struct that contains all the parsed header info
+ */
 void	HTTPResponse::generateResponse(const HTTPRequest request) {
 	std::string	filename(request.request_target);
 
-	if (request.invalidRequest)
-	{
-		// statuscode check.
-		status_code_ = 400;
-		filename = "custom_404.html"; // change
-	}
-	else if (request.status_code != 200)
-	{
-		// redirect
-		body_ = request.body;
-	}
-	else
+	if (!request.invalidRequest && request.status_code == 200)
 	{
 		filename_ = getEndpointPath(filename);
-		if (filename_.empty())
-		{
-			// check if err_pages
-			filename_ = getEndpointPath("custom_404.html");
-		}
+		if (filename_.empty() && checkErrorPages(filename, request.status_code))
+			filename_ = getEndpointPath(filename);
 	}
+	else if (isRedirectStatusCode(request.status_code)) // redirect
+		header_ = request.body;
+	else if (checkErrorPages(filename, request.status_code))
+		filename_ = getEndpointPath(filename);
 }
 
 std::string	HTTPResponse::loadResponse(void) {
-	if (status_code_ == 301 || status_code_ == 302)
-		return (body_);
+	if (isRedirectStatusCode(status_code_))
+		return (header_);
 	getBody();
 	getContentType();
 	getHttpStatusMessages();
@@ -68,67 +55,8 @@ std::string	HTTPResponse::loadResponse(void) {
 	return (header_ + body_);
 }
 
-
-std::string HTTPResponse::searchThroughIndices(std::vector<std::string> indices, bool autoindex) {
-	if (indices.empty())
-	{
-		if (autoindex)
-			dir_list_ = true;
-		else
-			status_code_ = 404;
-		return ("");
-	}
-
-	std::string	folder_file;
-	for (const std::string &index : indices)
-	{
-		folder_file = checkFolder(index);
-		if (!folder_file.empty() || status_code_ == 403)
-			return (folder_file);
-		status_code_ = 200;
-	}
-	status_code_ = 404;
-	return ("");
-	
-}
-
-std::string	HTTPResponse::handleDir(const std::string &path) {
-	if (config_->getAutoindex(path))
-	{
-		dir_list_ = true;
-		return ("");
-	}
-	else
-		return (searchThroughIndices(config_->getIndex(path), false));
-}
-
-std::string	HTTPResponse::handleAccess(const std::string &path) {
-	if (access(path.c_str(), F_OK) != -1)
-	{
-		if (access(path.c_str(), R_OK) == -1)
-		{
-			std::cerr << "No permission" << std::endl;
-			status_code_ = 403;
-			return "";
-		}
-		return (path);
-	}
-	status_code_ = 404;
-	return ("");
-}
-
-/**
- * @brief checks access for file or dir
- * @param filename string with filenname
- * @return path or empty when an error appears
- */
-std::string	HTTPResponse::checkFolder(std::string path) {
-	struct stat	statbuf;
-
-	if (stat(path.c_str(), &statbuf) == 0 && S_ISDIR(statbuf.st_mode))
-		return (handleDir(path));
-	return (handleAccess(path));
-}
+// ##############     PRIVATE GENERATE RESPONSE     ##############
+// ###############################################################
 
 /**
  * @brief path + file access, corrects index and checks autoindex on/off
@@ -148,8 +76,84 @@ std::string	HTTPResponse::getEndpointPath(std::string endpoint) {
 		else
 			return (searchThroughIndices(config_->getIndex(endpoint), true));
 	}
-	return (checkFolder(endpoint));
+	return (verifyFileOrDirAccess(endpoint));
 }
+
+std::string HTTPResponse::searchThroughIndices(std::vector<std::string> indices, bool autoindex) {
+	if (indices.empty())
+	{
+		if (autoindex)
+			dir_list_ = true;
+		else
+			status_code_ = 404;
+		return ("");
+	}
+
+	std::string	folder_file;
+	for (const std::string &index : indices)
+	{
+		folder_file = verifyFileOrDirAccess(index);
+		if (!folder_file.empty() || status_code_ == 403)
+			return (folder_file);
+		status_code_ = 200;
+	}
+	status_code_ = 404;
+	return ("");
+}
+
+/**
+ * @brief checks access for file or dir
+ * @param filename string with filenname
+ * @return path or empty when an error appears
+ */
+std::string	HTTPResponse::verifyFileOrDirAccess(std::string path) {
+	struct stat	statbuf;
+
+	if (stat(path.c_str(), &statbuf) == 0 && S_ISDIR(statbuf.st_mode))
+		return (handleDir(path));
+	return (handleAccess(path));
+}
+
+std::string	HTTPResponse::handleAccess(const std::string &path) {
+	if (access(path.c_str(), F_OK) != -1)
+	{
+		if (access(path.c_str(), R_OK) == -1)
+		{
+			std::cerr << "No permission" << std::endl;
+			status_code_ = 403;
+			return "";
+		}
+		return (path);
+	}
+	status_code_ = 404;
+	return ("");
+}
+
+/**
+ * @brief checks for auto index and returns if an index is set this one
+ * @param path string path
+ * @return index, path or empty
+ */
+std::string	HTTPResponse::handleDir(const std::string &path) {
+	if (config_->getAutoindex(path))
+	{
+		dir_list_ = true;
+		return ("");
+	}
+	else
+		return (searchThroughIndices(config_->getIndex(path), false));
+}
+
+bool	HTTPResponse::checkErrorPages(std::string &filename, int status_code) {
+	std::string error_page = config_->getErrorPage(status_code);
+	if (error_page.empty())
+		return (false);
+	filename = error_page;
+	return (true);
+}
+
+// ################     PRIVATE LOAD RESPONSE     ################
+// ###############################################################
 
 /**
  * @brief sums up all the directives from the given directory
@@ -166,8 +170,8 @@ static std::string	getAllDirNames(const char *path) {
 	while (1)
 	{
 		d = readdir(dir);
-		if (d != NULL)
-			list += d->d_name + std::string("\n");
+		if (d != nullptr)
+			list += std::string(d->d_name) + std::string("\n");
 		else
 			break ;
 	}
@@ -192,13 +196,6 @@ void	HTTPResponse::getBody(void) {
 	}
 	else
 		body_ = "";
-}
-
-/// @brief combines all parts of HTTP header and adds right values
-void	HTTPResponse::createHeader(void) {
-	header_ = "HTTP/1.1 " + httpStatusMessages_ + "\r\n" \
-			+ "Content-Type: " + content_type_ + "\r\n" \
-			+ "Content-Length: " + std::to_string(body_.size()) + "\r\n\r\n"; // what if chunked?
 }
 
 /// @brief search through mimetypes to set the right content type based on the extension
@@ -251,4 +248,11 @@ void	HTTPResponse::getHttpStatusMessages(void) {
 		if (index != body_.size())
 			body_.replace(index, 30, "Error " + httpStatusMessages_);
 	}
+}
+
+/// @brief combines all parts of HTTP header and adds right values
+void	HTTPResponse::createHeader(void) {
+	header_ = "HTTP/1.1 " + httpStatusMessages_ + "\r\n" \
+			+ "Content-Type: " + content_type_ + "\r\n" \
+			+ "Content-Length: " + std::to_string(body_.size()) + "\r\n\r\n"; // what if chunked?
 }

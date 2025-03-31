@@ -32,20 +32,19 @@ class HTTPResponse {
 		void		setConfig(void);
 
 	private:
-		
-
-		void		getBody( void );
-		void		createHeader( void );
-		void		getContentType( void );
-		void		getHttpStatusMessages( void );
-
-		std::string	checkFolder( std::string filename );
+		// Generate Response
+		std::string	getEndpointPath( std::string endpoint );
 		std::string	searchThroughIndices( std::vector<std::string> indices, bool autoindex );
+		std::string	verifyFileOrDirAccess( std::string filename );
 		std::string	handleAccess( const std::string &path );
 		std::string	handleDir( const std::string &path );
-		std::string	getEndpointPath( std::string endpoint );
-
-		// void		checkErrorPages(std::string filename, std::vector<std::string> error_pages);
+		bool		checkErrorPages( std::string &filename, int status_code );
+		
+		// Load Response
+		void		getBody( void );
+		void		getContentType( void );
+		void		getHttpStatusMessages( void );
+		void		createHeader( void );
 
 		std::vector<char *> env_;
 		std::string			filename_;
