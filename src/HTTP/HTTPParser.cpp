@@ -3,6 +3,10 @@
 HTTPParser::HTTPParser(void) : \
 	content_length_(0), chunked_(false) {
 	result_.status_code = 200;
+	result_.invalidRequest = false;
+	result_.body = "";
+	result_.method = "";
+	result_.request_target = "";
 	PARSE_STATE_ = RCV_HEADER;
 }
 

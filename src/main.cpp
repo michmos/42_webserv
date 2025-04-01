@@ -31,7 +31,7 @@ int main (int argc, char **argv) {
 		std::cerr << "Error occurred: " << e.what() << std::endl;
 	}
 	catch (...) {
-		std::cout << "Error: Something else went wrong" << std::endl;
+		std::cerr << "Error: Something else went wrong" << std::endl;
 	}
 	return (01);
 }

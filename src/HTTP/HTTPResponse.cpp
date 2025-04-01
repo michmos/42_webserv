@@ -32,6 +32,8 @@ static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 &
  */
 void	HTTPResponse::generateResponse(const HTTPRequest request) {
 	std::string	filename(request.request_target);
+	std::cerr << request.method << " " << request.request_target << std::endl;
+	std::cerr << request.invalidRequest << " " << request.status_code << std::endl;
 
 	if (!request.invalidRequest && request.status_code == 200)
 	{
