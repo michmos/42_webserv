@@ -21,6 +21,7 @@ Webserv::Webserv(const std::string& confPath) {
 			serverFd = it->second;
 		}
 
+		_ep.add(serverFd.get(), EPOLLIN);
 		_servers[serverFd].push_back(config);
 	}
 
@@ -104,8 +105,8 @@ void	Webserv::mainLoop() {
 				SharedFd clientSock = sock::accept(fd.get());
 				this->_addClient(clientSock, fd);
 			} else if (_clients.find(fd) != _clients.end()) {
-				_clients.find(fd)->second.handle(ev);
 				//  client socket ready
+				_clients.find(fd)->second.handle(ev);
 			} else if (_clients.find(ev.data.u32) != _clients.end()) {
 				_clients.find(ev.data.u32)->second.handle(ev);
 				// client pipe ready
