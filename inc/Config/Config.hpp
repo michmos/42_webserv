@@ -1,7 +1,14 @@
 #ifndef SERVERCONFIG_HPP
 #define SERVERCONFIG_HPP
 
-#include "Webserv.hpp"
+// #include "../Webserv/Webserv.hpp"
+# include <vector>
+# include <unordered_map>
+# include <iostream>
+# include <regex>
+
+
+class Webserv;
 
 // make a static for the mime.types conf
 // make the htpp wrapper maybe??

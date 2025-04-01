@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "Config.hpp"
+#include "../Config/Config.hpp"
 #include "Socket.hpp"
 
 class Server {

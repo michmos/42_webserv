@@ -26,15 +26,13 @@
 # include <string.h>
 # include <sys/epoll.h>
 
-# include "Config.hpp"
-# include "HTTPRequest.hpp"
-# include "HTTPRequestConfig.hpp"
+# include "../Config/Config.hpp"
+# include "../Webserv/Epoll.hpp"
+# include "../Webserv/SharedFd.hpp"
+# include "../CGI/CGIPipes.hpp"
+# include "../CGI/CGI.hpp"
 # include "HTTPResponse.hpp"
-# include "CGI.hpp"
-# include "Epoll.hpp"
-# include "SharedFd.hpp"
-# include "CGIPipes.hpp"
-# include "HTTPClient.hpp"
+# include "HTTPRequest.hpp"
 # include "HTTPParser.hpp"
 
 # define READSIZE 100
@@ -65,6 +63,7 @@ class HTTPClient {
 			std::function<void(struct epoll_event, const SharedFd&)> addToEpoll_cb,
 			std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb
 		);
+		HTTPClient(const HTTPClient &other);
 		~HTTPClient( void );
 
 		void	handle( const epoll_event &event );

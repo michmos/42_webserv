@@ -1,8 +1,12 @@
-#include "../inc/Webserv.hpp"
-#include <unordered_map>
+#include "../../inc/Webserv/Webserv.hpp"
 
 Webserv::Webserv(const std::string& confPath) {
-	std::vector<Config> configs = ConfigParser("pathToConfig").getConfigs();
+	std::cerr << "Webserver starting ... with config: " << confPath << std::endl;
+
+	std::vector<Config> configs = ConfigParser(confPath).getConfigs();
+
+	std::cerr << "got configs" << std::endl;
+
 	std::unordered_map<std::string, SharedFd> sockets;
 
 	for (auto& config : configs) {
@@ -24,13 +28,14 @@ Webserv::Webserv(const std::string& confPath) {
 
 		_servers[serverFd].push_back(config);
 	}
+	std::cerr << "Webserver has started" << std::endl;
 }
 
 Webserv::~Webserv() {
 }
 
 // used for lambda in Client Constructor - see addClient
-static const Config* const	getConfig(
+static const Config* getConfig (
 	const std::unordered_map<SharedFd, std::vector<Config>>& servers,
 	const SharedFd& socket, 
 	const std::string& servName
@@ -57,21 +62,22 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 	
 	_ep.add(clientSock.get(), EPOLLIN | EPOLLOUT);
 	_clients.emplace(
+		std::make_pair(
 		clientSock, 
 		HTTPClient(
 			clientSock,
 			servSock,
 			// function to add an epoll event to epoll instance - used for callback
-			std::move([this](struct epoll_event ev, const SharedFd& clientSock) {
+			[this](struct epoll_event ev, const SharedFd& clientSock) {
 				// save the client fd to be able to map the pipe fd to the client
 				ev.data.u32 = clientSock.get();
 				_ep.add(ev.data.fd, ev.events);
-			}),
+			},
 			// function to get ptr to config - used for callback
-			std::move([this](const SharedFd& servSock, const std::string& servName) {
+			[this](const SharedFd& servSock, const std::string& servName) {
 				return(getConfig(_servers, servSock, servName));
-			})
-		)
+			}
+		))
 	);
 }
 

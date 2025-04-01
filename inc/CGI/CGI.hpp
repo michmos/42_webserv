@@ -9,10 +9,16 @@
 # include <sys/wait.h>
 # include <sys/epoll.h>
 
-# include "HTTPRequest.hpp"
+# include "../HTTP/HTTPRequest.hpp"
 
+#ifndef READ
 # define READ 0
+#endif
+
+#ifndef WRITE
 # define WRITE 1
+#endif
+
 # define TIMEOUT 10
 
 enum e_cgi_state {

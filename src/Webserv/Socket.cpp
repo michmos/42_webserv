@@ -1,4 +1,4 @@
-#include "../inc/Socket.hpp"
+#include "../../inc/Webserv/Socket.hpp"
 
 Socket::Socket() : _fd(::socket(AF_INET, SOCK_STREAM, 0)) {
 	if (_fd == -1) {

@@ -1,4 +1,5 @@
-#include "../inc/Config.hpp"
+#include "../../inc/Config/Config.hpp"
+#include "../../inc/Config/ConfigParser.hpp"
 
 Config::Config(std::unordered_map<std::string, std::vector<std::string>> const &mimeTypes) : _mimeTypes(mimeTypes) {}
 

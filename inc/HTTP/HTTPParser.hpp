@@ -60,4 +60,4 @@ class HTTPParser
 		bool	parseRequest( void );
 };
 
-# include "../inc/HTTPClient.hpp"
+# include "HTTPClient.hpp"

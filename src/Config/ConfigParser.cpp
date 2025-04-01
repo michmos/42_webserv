@@ -1,4 +1,4 @@
-#include "../inc/ConfigParser.hpp"
+#include "../../inc/Config/ConfigParser.hpp"
 
 void debugConfigPrint(std::vector<Config> &configs) {
 	for (auto &config : configs) {
@@ -42,6 +42,7 @@ ConfigParser::ConfigParser(const std::string& filepath) {
 	parseInputToTokens();
 	// printTokens(this->_tokens);
 	parseTokenToConfig();
+	std::cout << "check1" << std::endl;
 	debugConfigPrint(this->_configs);
 	// _configs[0].getLocDirectives("/api/test/test2");
 }
@@ -280,6 +281,14 @@ token ConfigParser::getNextMimeToken(token &lastToken) {
 	if (newToken.itStart == newToken.itEnd) {
 		newToken.itEnd++;
 	}
+
+	//BUG
+	// if (*newToken.itEnd == '\0')
+	// {
+	// 	std::cout << "EOF" << std::endl;
+	// 	std::cerr << "bug when newToken.itEnd is out of space" << std::endl;
+	// }
+
 	newToken.value = std::string(newToken.itStart, newToken.itEnd);
 	if (newToken.itEnd == this->_inputMime.end()) {
 		newToken.type = EOF_TOKEN;
@@ -305,7 +314,9 @@ void ConfigParser::parseMimeToTokens() {
 	newToken.itEnd = this->_inputMime.begin();
 	while (newToken.type != EOF_TOKEN) {
 		newToken = getNextMimeToken(newToken);
+		std::cout << "check " << std::endl;
 		this->_tokensMime.push_back(newToken);
+		std::cout << "cechk" << std::endl;
 	}
 }
 
@@ -485,18 +496,18 @@ void	ConfigParser::parseTokenToConfig() {
 	for (std::vector<token>::iterator it = this->_tokens.begin(); it != this->_tokens.end(); ++it) {
 		if (it->type == HTTP) {
 			if (inHttp)
-				errorToken(*it, "Unexpected: http");
+			errorToken(*it, "Unexpected: http");
 			inHttp = true;
 			moveOneTokenSafly(this->_tokens, it);
 			if (it->type != BLOCK_OPEN)
-				errorToken(*it, "Expected: {");
+			errorToken(*it, "Expected: {");
 		}
 		else if (it->type == INCLUDE) {
 			if (!inHttp || mimeSet)
-				errorToken(*it, "Unexpected: include");
+			errorToken(*it, "Unexpected: include");
 			moveOneTokenSafly(this->_tokens, it);
 			if (it->type != STRING && it->type != PATH)
-				errorToken(*it, "Expected: STRING or PATH");
+			errorToken(*it, "Expected: STRING or PATH");
 			readMimeToInput(it->value);
 			parseMimeToTokens();
 			this->_mimeTypes = parseMimeToken();

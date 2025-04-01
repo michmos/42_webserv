@@ -1,4 +1,4 @@
-#include "../inc/CGIPipes.hpp"
+#include "../../inc/CGI/CGIPipes.hpp"
 
 CGIPipes::CGIPipes(void) { }
 

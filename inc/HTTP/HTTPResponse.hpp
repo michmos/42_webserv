@@ -13,10 +13,10 @@
 # include <sys/stat.h>
 # include <unistd.h>
 
-# include "CGI.hpp"
+# include "../Config/Config.hpp"
+# include "../CGI/CGI.hpp"
+
 # include "HTTPRequest.hpp"
-# include "Config.hpp"
-# include "HTTPClient.hpp"
 
 class HTTPClient;
 class Config;
@@ -58,3 +58,5 @@ class HTTPResponse {
 		HTTPClient			*client_;
 		const Config		*config_;
 };
+
+# include "HTTPClient.hpp"

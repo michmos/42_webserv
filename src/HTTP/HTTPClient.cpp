@@ -1,4 +1,4 @@
-#include "../inc/HTTPClient.hpp"
+#include "../../inc/HTTP/HTTPClient.hpp"
 
 HTTPClient::HTTPClient(
 	SharedFd clientFd, 
@@ -10,6 +10,12 @@ HTTPClient::HTTPClient(
 	pipes_.setCallbackFunction(addToEpoll_cb, serverFd);
 	STATE_ = RECEIVING;
 	config_ = NULL;
+}
+
+HTTPClient::HTTPClient(const HTTPClient& other) : STATE_(other.STATE_),
+	clientSock_(other.clientSock_), serverSock_(other.serverSock_), \
+	responseGenerator_(other.responseGenerator_), \
+	config_(other.config_), getConfig_cb_(other.getConfig_cb_) {
 }
 
 HTTPClient::~HTTPClient(void) { }
