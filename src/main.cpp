@@ -8,10 +8,8 @@ int	save_main(int argc, char **argv) {
 	else if (argc == 2)
 		path += argv[1];
 	else
-	{
-		std::cerr << "Wrong amount of config files given" << std::endl;
-		return (1);
-	}
+		throw std::invalid_argument("Wrong amount config files given");
+
 	Webserv	server(path);
 	return (0);
 }
@@ -29,9 +27,8 @@ int main (int argc, char **argv) {
 	catch (std::exception &e) {
 		std::cerr << "Error occurred: " << e.what() << std::endl;
 	}
-	catch (...)
-	{
-		std::cout << "something went wrong" << std::endl;
+	catch (...) {
+		std::cout << "Error: Something else went wrong" << std::endl;
 	}
 	return (01);
 }
