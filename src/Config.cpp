@@ -92,31 +92,43 @@ int	Config::getPort() const{
 	std::string strPort;
 	auto it = this->_directives.find("listen");
 	if (it != this->_directives.end()) {
-		if (it->second.size() > 0) {
-			strPort = it->second[0];
+		strPort = it->second[0];
+		size_t pos = strPort.find(':');
+		if (pos != std::string::npos) {
+			strPort = strPort.substr(pos + 1);
+		}
+		if (strPort.find_first_not_of("0123456789") != std::string::npos) {
+			throw Config::ConfigException("Port is not a number!");
+		}
+		if (strPort.empty()) {
+			throw Config::ConfigException("Port is empty!");
 		}
 		port = stoi(strPort);
 	} else {
 		port = DEFAULT_PORT;
 	}
-	// try {
-	// } catch (std::exception &e) {
-	// 	throw Config::ConfigException(e.what());
-	// }
-	// if (port < 0 || port > 65535)
-	// 	throw Config::ConfigException("Port out of range!");
 	return (port);
 }
 
 const std::string	Config::getHost() const{
-	// return ((*(this->_directives.find("host"))).second.front());
 	auto it = this->_directives.find("host");
 	if (it != this->_directives.end()) {
 		if (it->second.size() > 0) {
 			return (it->second[0]);
 		}
+	} 
+	else {
+		auto it = this->_directives.find("listen");
+		if (it != this->_directives.end()) {
+			std::string strHost = it->second[0];
+			size_t pos = strHost.find(':');
+			if (pos != std::string::npos) {
+				strHost = strHost.substr(0, pos);
+				return (strHost);
+			}
+		}
 	}
-	return ("localhost");
+	return ("");
 }
 
 const std::string	Config::getServerName() const{
