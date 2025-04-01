@@ -166,43 +166,41 @@ void	ConfigParser::errorToken(token token, std::string msg) {
 	throw ConfigParser::ConfigParserException("Unexpected token at Ln " + std::to_string(line) + ", Col " + std::to_string(col) + " " + msg);
 }
 
-bool isValidIPv4(const std::string& ip) {
-	std::istringstream ss(ip);
-	std::string token;
-	int count = 0;
+// bool isValidIPv4(const std::string& ip) {
+// 	std::istringstream ss(ip);
+// 	std::string token;
+// 	int count = 0;
 
-	while (std::getline(ss, token, '.')) {
-		++count;
-		if (count > 4)
-			return (false);
-		if (token.empty() || token.length() > 3)
-			return (false);
-		for (char c : token) {
-			if (!isdigit(static_cast<unsigned char>(c)))
-				return (false);
-		}
-		if (token.length() > 1 && token[0] == '0')
-			return (false);
-		int num = std::stoi(token);
-		if (num < 0 || num > 255)
-			return (false);
-	}
-	return (true);
-}
+// 	while (std::getline(ss, token, '.')) {
+// 		++count;
+// 		if (count > 4)
+// 			return (false);
+// 		if (token.empty() || token.length() > 3)
+// 			return (false);
+// 		for (char c : token) {
+// 			if (!isdigit(static_cast<unsigned char>(c)))
+// 				return (false);
+// 		}
+// 		if (token.length() > 1 && token[0] == '0')
+// 			return (false);
+// 		int num = std::stoi(token);
+// 		if (num < 0 || num > 255)
+// 			return (false);
+// 	}
+// 	return (true);
+// }
 
 void	ConfigParser::checkConfig(Config &config) {
 	size_t indexConf = _configs.size() + 1;
 	try {;
 		for (std::vector<Config>::iterator it = this->_configs.begin(); it != this->_configs.end(); ++it) {
-			if (it->getHost() == config.getHost() && it->getPort() == config.getPort())
-				throw ConfigParser::ConfigParserException("Duplicate server block with same host and port.");
+			if (it->getHost() == config.getHost() && it->getPort() == config.getPort() && it->getServerName() == config.getServerName())
+				throw ConfigParser::ConfigParserException("Duplicate server block with same host, port and servername.");
 		}
 		if (config.getPort() < 0 || config.getPort() > 65535)
 			throw ConfigParser::ConfigParserException("Port out of valid range.");
 		if (config.getHost().empty())
 			throw ConfigParser::ConfigParserException("Host is not defined.");
-		else if (!isValidIPv4(config.getHost()))
-			throw ConfigParser::ConfigParserException("Host is not a valid IPv4 address.");
 		if (config.getRoot("/").empty())
 			throw ConfigParser::ConfigParserException("Root is not defined.");
 	} catch (ConfigParser::ConfigParserException &e) {
@@ -281,14 +279,6 @@ token ConfigParser::getNextMimeToken(token &lastToken) {
 	if (newToken.itStart == newToken.itEnd) {
 		newToken.itEnd++;
 	}
-
-	//BUG
-	// if (*newToken.itEnd == '\0')
-	// {
-	// 	std::cout << "EOF" << std::endl;
-	// 	std::cerr << "bug when newToken.itEnd is out of space" << std::endl;
-	// }
-
 	newToken.value = std::string(newToken.itStart, newToken.itEnd);
 	if (newToken.itEnd == this->_inputMime.end()) {
 		newToken.type = EOF_TOKEN;
@@ -321,9 +311,9 @@ void ConfigParser::parseMimeToTokens() {
 void	ConfigParser::getTokenPos(token token, int &line, int &col) {
 	line = 1;
 	col = 1;
-	for (std::string::iterator i = this->_input.begin(); i != this->_input.end() && i != token.itStart; i++) {
+	for (std::string::iterator it = this->_input.begin(); it != this->_input.end() && it != token.itStart; it++) {
 		col++;
-		if (*i == '\n') {
+		if (*it == '\n') {
 			line++;
 			col = 0;
 		}
@@ -412,7 +402,7 @@ void ConfigParser::parseTokenToServer(std::vector<token>::iterator &it) {
 		errorToken(*it, "{");
 	else if (it->type == BLOCK_OPEN)
 		moveOneTokenSafly(this->_tokens, it);
-	Config newServer(this->_mimeTypes);
+	Config newServer;
 	for (;it != this->_tokens.end(); ++it) {
 		if (it->type == STRING)
 			parseTokenToDirective(it, newServer);
@@ -542,4 +532,5 @@ void	ConfigParser::parseTokenToConfig() {
 		parseMimeToTokens();
 		this->_mimeTypes = parseMimeToken();
 	}
+	this->_configs[0].setMimeTypes(this->_mimeTypes);
 }

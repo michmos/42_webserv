@@ -1,5 +1,4 @@
-#ifndef SERVERCONFIG_HPP
-#define SERVERCONFIG_HPP
+#pragma once
 
 // #include "../Webserv/Webserv.hpp"
 # include <vector>
@@ -20,19 +19,18 @@ struct Location {
 
 class Config {
 	private:
-		std::unordered_map<std::string, std::vector<std::string>>		_directives;
-		std::unordered_map<std::string, std::vector<std::string>> const	&_mimeTypes;
-		std::unordered_map<std::string, Location>						_locations;
+		std::unordered_map<std::string, std::vector<std::string>>			_directives;
+		std::unordered_map<std::string, Location>							_locations;
+		static std::unordered_map<std::string, std::vector<std::string>>	_mimeTypes;
 
-		// UTILS
 	public:
-		Config() = delete;
-		Config(std::unordered_map<std::string, std::vector<std::string>> const &mimeTypes);
+		Config();
 		~Config();
 
 		// SETTERS
-		int	setLocation(std::string key, Location loc);
-		int	setDirective(std::string key, std::vector<std::string> values);
+		int		setLocation(std::string key, Location loc);
+		int		setDirective(std::string key, std::vector<std::string> values);
+		void	setMimeTypes(const std::unordered_map<std::string, std::vector<std::string>> &mimeTypes);
 
 		// GET RAW DATA
 		const std::unordered_map<std::string, std::vector<std::string>>	&getDirectives() const ;
@@ -66,5 +64,3 @@ class Config {
 				}
 		};
 };
-
-#endif // SERVERCONFIG_HPP

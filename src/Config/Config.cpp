@@ -1,9 +1,14 @@
 #include "../../inc/Config/Config.hpp"
 #include "../../inc/Config/ConfigParser.hpp"
 
-Config::Config(std::unordered_map<std::string, std::vector<std::string>> const &mimeTypes) : _mimeTypes(mimeTypes) {}
+std::unordered_map<std::string, std::vector<std::string>> Config::_mimeTypes;
 
-Config::~Config() {
+Config::Config() {}
+
+Config::~Config() {}
+
+void	Config::setMimeTypes(const std::unordered_map<std::string, std::vector<std::string>> &mimeTypes) {
+	_mimeTypes = mimeTypes;
 }
 
 int Config::setDirective(const std::string key, std::vector<std::string> values) {
@@ -117,15 +122,14 @@ const std::string	Config::getHost() const{
 		if (it->second.size() > 0) {
 			return (it->second[0]);
 		}
-	} 
+	}
 	else {
 		auto it = this->_directives.find("listen");
 		if (it != this->_directives.end()) {
 			std::string strHost = it->second[0];
 			size_t pos = strHost.find(':');
 			if (pos != std::string::npos) {
-				strHost = strHost.substr(0, pos);
-				return (strHost);
+				return (strHost.substr(0, pos));
 			}
 		}
 	}
@@ -133,7 +137,6 @@ const std::string	Config::getHost() const{
 }
 
 const std::string	Config::getServerName() const{
-	// return ((*(this->_directives.find("server_name"))).second.front());
 	auto it = this->_directives.find("server_name");
 	if (it != this->_directives.end()) {
 		if (it->second.size() > 0) {
@@ -181,7 +184,7 @@ const std::vector<std::string>	Config::getRedirect(const std::string locKey) con
 // root /tmp/www;
 const std::vector<std::string>	Config::getRoot(const std::string locKey) const{
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
-	auto it = dirMap.find("index");
+	auto it = dirMap.find("root");
 	if (it != dirMap.end()) {
 		if (it->second.size() > 0) {
 			return it->second;
