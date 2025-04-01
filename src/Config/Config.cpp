@@ -12,7 +12,7 @@ void	Config::setMimeTypes(const std::unordered_map<std::string, std::vector<std:
 }
 
 int Config::setDirective(const std::string key, std::vector<std::string> values) {
-	if (key != "listen" && _directives.find(key) != _directives.end())
+	if (key != "error_page" && _directives.find(key) != _directives.end())
 		return (-1);
 	for (std::string str: values) {
 		_directives[key].push_back(str);
