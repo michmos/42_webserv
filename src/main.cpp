@@ -1,12 +1,12 @@
 #include "../inc/Webserv/Webserv.hpp"
 
 int	save_main(int argc, char **argv) {
-	std::string path = "configs/";
+	std::string path;
 
 	if (argc == 1)
-		path += "default.conf";
+		path = DEFAULT_CONFIGFILE;
 	else if (argc == 2)
-		path += argv[1];
+		path = argv[1];
 	else
 		throw std::invalid_argument("Wrong amount config files given");
 
