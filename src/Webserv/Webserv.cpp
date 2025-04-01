@@ -1,12 +1,7 @@
 #include "../../inc/Webserv/Webserv.hpp"
 
 Webserv::Webserv(const std::string& confPath) {
-	std::cerr << "Webserver starting ... with config: " << confPath << std::endl;
-
 	std::vector<Config> configs = ConfigParser(confPath).getConfigs();
-
-	std::cerr << "got configs" << std::endl;
-
 	std::unordered_map<std::string, SharedFd> sockets;
 
 	for (auto& config : configs) {
@@ -28,7 +23,7 @@ Webserv::Webserv(const std::string& confPath) {
 
 		_servers[serverFd].push_back(config);
 	}
-	std::cerr << "Webserver has started" << std::endl;
+
 }
 
 Webserv::~Webserv() {

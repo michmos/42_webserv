@@ -376,5 +376,3 @@ void	HTTPParser::clearParser(void) {
 }
 
 const HTTPRequest HTTPParser::getParsedRequest(void) { return (result_); }
-
-std::string HTTPParser::getRawData(void) { return (rawRequest_); }

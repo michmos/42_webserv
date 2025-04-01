@@ -42,8 +42,8 @@ ConfigParser::ConfigParser(const std::string& filepath) {
 	parseInputToTokens();
 	// printTokens(this->_tokens);
 	parseTokenToConfig();
-	std::cout << "check1" << std::endl;
-	debugConfigPrint(this->_configs);
+	// std::cout << "check1" << std::endl;
+	// debugConfigPrint(this->_configs);
 	// _configs[0].getLocDirectives("/api/test/test2");
 }
 
@@ -275,7 +275,7 @@ void ConfigParser::parseInputToTokens() {
 token ConfigParser::getNextMimeToken(token &lastToken) {
 	token newToken;
 	newToken.itStart = lastToken.itEnd;
-	newToken.itEnd = std::find_if(newToken.itStart, this->_input.end(), [](char c) {
+	newToken.itEnd = std::find_if(newToken.itStart, this->_inputMime.end(), [](char c) {
 		return (c == ' ' || c == '\n' || c == '\t' || c == '{' || c == '}' || c == ';' || c == '#');
 	});
 	if (newToken.itStart == newToken.itEnd) {
@@ -314,9 +314,7 @@ void ConfigParser::parseMimeToTokens() {
 	newToken.itEnd = this->_inputMime.begin();
 	while (newToken.type != EOF_TOKEN) {
 		newToken = getNextMimeToken(newToken);
-		std::cout << "check " << std::endl;
 		this->_tokensMime.push_back(newToken);
-		std::cout << "cechk" << std::endl;
 	}
 }
 

@@ -10,7 +10,10 @@ int	save_main(int argc, char **argv) {
 	else
 		throw std::invalid_argument("Wrong amount config files given");
 
-	Webserv	server(path);
+	std::cerr << "Webserver starting ... with config: " << path << std::endl;
+	Webserv	webserver(path);
+	std::cerr << "Webserver has started" << std::endl;
+	webserver.mainLoop();
 	return (0);
 }
 

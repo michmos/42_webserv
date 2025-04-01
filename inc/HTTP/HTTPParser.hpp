@@ -31,9 +31,7 @@ class HTTPParser
 
 		void				clearParser( void );
 		void				addBufferToParser( std::string &buff, HTTPClient *client );
-		std::string 		getRawData( void );
 		const HTTPRequest	getParsedRequest( void );
-		bool				isValidHeader( HTTPClient *client );
 
 	private:
 		HTTPRequest		result_;
@@ -58,6 +56,7 @@ class HTTPParser
 		void	parseExtraHeaderInformation( const std::string &str );
 		bool	parseHTTPline( const std::string &str );
 		bool	parseRequest( void );
+		bool	isValidHeader( HTTPClient *client );
 };
 
 # include "HTTPClient.hpp"
