@@ -75,13 +75,15 @@ void	HTTPClient::handle(const epoll_event &event) {
 		case RECEIVING:
 			data = readFrom(event.data.fd);
 			parser_.addBufferToParser(data, this);
-			if (parsing(event.data.fd) != READY)
-				return ;
+			if (!parser_.isDone()) {
+				return;
+			}
+			is_cgi_request = parsing(event.data.fd); // TODO: rename
 		case PROCESS_CGI:
 			if (is_cgi_request && cgi(event.data.fd) != READY)
 				return ;
 		case RESPONSE:
-			responding(responseGenerator_.isCGI(request_), event.data.fd);
+			responding(is_cgi_request, event.data.fd);
 		case DONE:
 			return ;
 	}

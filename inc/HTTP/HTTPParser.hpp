@@ -33,6 +33,10 @@ class HTTPParser
 		void				addBufferToParser( std::string &buff, HTTPClient *client );
 		const HTTPRequest	getParsedRequest( void );
 
+		inline bool isDone() {
+			return (PARSE_STATE_ == DONE_PARSING);
+		}
+
 	private:
 		HTTPRequest		result_;
 		std::string		rawRequest_;
