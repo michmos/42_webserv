@@ -11,7 +11,6 @@
 #include "../HTTP/HTTPClient.hpp"
 #include "Epoll.hpp"
 #include "SharedFd.hpp"
-#include "sock.hpp"
 #include "Colors.hpp"
 
 // C libs
@@ -36,7 +35,7 @@ public:
 	Webserv& operator=(const Webserv& other) = delete;
 	~Webserv();
 
-	void	mainLoop();
+	void	eventLoop();
 
 private:
 	std::unordered_map<SharedFd, std::vector<Config>>	_servers;

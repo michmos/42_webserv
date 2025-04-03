@@ -22,7 +22,7 @@ int	save_main(int argc, char **argv) {
 	std::cerr << "Webserver starting ... with config: " << path << std::endl;
 	Webserv	webserver(path);
 	std::cerr << "Webserver has started" << std::endl;
-	webserver.mainLoop();
+	webserver.eventLoop();
 	return (0);
 }
 

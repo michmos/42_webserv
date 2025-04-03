@@ -32,7 +32,7 @@ static int	createAndBindSock(struct addrinfo* info) {
 	return (fd);
 }
 
-int	resolveSocket(const std::string& host, const std::string& port) {
+static int	resolveSocket(const std::string& host, const std::string& port) {
 	static std::vector<std::pair<struct sockaddr_storage, int>> sockets;
 	static struct addrinfo hints = {
 		// AI_PASSIVE: if !host, use wildcard address
@@ -42,6 +42,10 @@ int	resolveSocket(const std::string& host, const std::string& port) {
 		.ai_family = AF_UNSPEC,
 		.ai_socktype = SOCK_STREAM,
 		.ai_protocol = 0,
+		.ai_addrlen =0,
+		.ai_addr = nullptr,
+		.ai_canonname = nullptr,
+		.ai_next = nullptr
 	};
 
 	// get addrinfo list
@@ -153,7 +157,7 @@ void	Webserv::_delClient(const SharedFd& clientSock) {
 	_clients.erase(it);
 }
 
-void	Webserv::mainLoop() {
+void	Webserv::eventLoop() {
 	std::signal(2, signalhandler);
 	
 	while (keepalive)
@@ -169,16 +173,18 @@ void	Webserv::mainLoop() {
 			SharedFd fd = ev.data.fd;
 			if (_servers.find(fd) != _servers.end()) {
 				// server socket ready
-				SharedFd clientSock = sock::accept(fd.get());
+				SharedFd clientSock = accept(fd.get(), nullptr, nullptr);
+				if (clientSock == -1)
+					throw std::runtime_error(std::string("accept(): ") + strerror(errno));
 				this->_addClient(clientSock, fd);
 			} else if (_clients.find(fd) != _clients.end()) {
 				//  client socket ready
 				_clients.find(fd)->second.handle(ev);
 			} else if (_clients.find(ev.data.u32) != _clients.end()) {
-				_clients.find(ev.data.u32)->second.handle(ev);
 				// client pipe ready
+				_clients.find(ev.data.u32)->second.handle(ev);
 			} else {
-				throw std::runtime_error("mainLoop(): fd not found");
+				throw std::runtime_error("eventLoop(): fd not found");
 			}
 		}
 	}
