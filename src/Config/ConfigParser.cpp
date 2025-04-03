@@ -40,14 +40,10 @@ ConfigParser::ConfigParser(const std::string& filepath) {
 	this->_filepath = filepath;
 	readConfigToInput();
 	parseInputToTokens();
-	// # ifdef DEBUG
-		printTokens(this->_tokens);
-	// # endif
+	// printTokens(this->_tokens);
 	parseTokenToConfig();
 	this->_configs[0].setMimeTypes(this->_mimeTypes);
-	// # ifdef DEBUG
-		debugConfigPrint(this->_configs);
-	// # endif
+	// debugConfigPrint(this->_configs);
 }
 
 ConfigParser::~ConfigParser() {
@@ -200,7 +196,7 @@ void	ConfigParser::checkConfig(Config &config) {
 			if (it->getHost() == config.getHost() && it->getPort() == config.getPort() && it->getServerName() == config.getServerName())
 				throw ConfigParser::ConfigParserException("Duplicate server block with same host, port and servername.");
 		}
-		if (config.getPort() < 0 || config.getPort() > 65535)
+		if (config.getPort() <= 0 || config.getPort() > 65535)
 			throw ConfigParser::ConfigParserException("Port out of valid range.");
 		if (config.getHost().empty())
 			throw ConfigParser::ConfigParserException("Host is not defined.");
