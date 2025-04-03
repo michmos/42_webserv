@@ -342,8 +342,8 @@ void	ConfigParser::moveOneTokenSafly(std::vector<token> &tokens, std::vector<tok
 	// TODO: can be ored || instead no?
 	if (it == tokens.end())
 		errorToken(*it, "Unexpected EOF!");
-	else if (it->type == EOF_TOKEN)
-		errorToken(*it, "Unexpected EOF!");
+	// else if (it->type == EOF_TOKEN)
+	// 	errorToken(*it, "Unexpected EOF!");
 }
 
 void ConfigParser::parseTokenToLocDir(std::vector<token>::iterator &it, Location &loc) {
@@ -522,6 +522,9 @@ void	ConfigParser::parseTokenToConfig() {
 				errorToken(*it, "Unexpected: }");
 			}
 			inHttp = false;
+			// TODO: this function throws an exception if EOF token found after
+			// incrementing iterator but in next line you expect EOF token
+			// - contradicts each other doesn't it?
 			moveOneTokenSafly(this->_tokens, it);
 			if (it->type != EOF_TOKEN) {
 				errorToken(*it, "Expected: EOF");
