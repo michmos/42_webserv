@@ -48,7 +48,7 @@ int	resolveSocket(const std::string& host, const std::string& port) {
 	struct addrinfo *results;
 	int err_code = getaddrinfo(host.c_str(), port.c_str(), &hints, &results);
 	if (err_code != 0)
-		throw std::runtime_error("Socket could not be created for host: " + host + "and port: " 
+		throw std::runtime_error("Socket could not be created for host: " + host + " and port: " 
 						   + port + " : " + gai_strerror(err_code));
 
 	// try getaddrinfo results
@@ -71,8 +71,8 @@ int	resolveSocket(const std::string& host, const std::string& port) {
 	}
 	freeaddrinfo(results);
 	if (res == -1) {
-		throw std::runtime_error("Socket could not be created for host: " + host + "and port: "
-						   + port);
+		throw std::runtime_error("Socket could not be created for host: " + host + " and port: "
+						   + port + ": " + std::string(strerror(errno)));
 	}
 	if(listen(res, 5) == -1) {  // TODO: replace random number
 		throw std::runtime_error("listen(): " + std::string(strerror(errno)));
@@ -81,12 +81,15 @@ int	resolveSocket(const std::string& host, const std::string& port) {
 }
 
 Webserv::Webserv(const std::string& confPath) {
-	std::unordered_map<std::string, SharedFd> sockets;
+	std::unordered_set<int>	sockets;
 
-	for (auto& config : configs) {
+	for (auto& config : ConfigParser(confPath).getConfigs()) {
 		SharedFd serverFd = resolveSocket(config.getHost(), std::to_string(config.getPort()));
 
-		_ep.add(serverFd.get(), EPOLLIN);
+		if (sockets.find(serverFd.get()) == sockets.end()) {
+			sockets.insert(serverFd.get());
+			_ep.add(serverFd.get(), EPOLLIN);
+		}
 		_servers[serverFd].push_back(config);
 	}
 }

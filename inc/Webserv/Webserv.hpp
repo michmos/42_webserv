@@ -4,6 +4,7 @@
 #include <atomic>
 #include <csignal>
 #include <netdb.h>
+#include <unordered_set>
 
 #include "../Config/ConfigParser.hpp"
 #include "../Config/Config.hpp"
