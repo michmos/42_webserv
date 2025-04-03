@@ -4,6 +4,12 @@ Socket::Socket() : _fd(::socket(AF_INET, SOCK_STREAM, 0)) {
 	if (_fd == -1) {
 		throw std::runtime_error(std::string("socket(): ") + strerror(errno));
 	}
+	// REMOVE!
+	int opt = 1;
+	if (setsockopt(_fd.get(), SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) != 0) {
+		std::cerr << "Setsockopt failed\n";
+		throw std::runtime_error(std::string("socket(): ") + strerror(errno));
+	}
 }
 
 Socket::Socket(int sockFd) : _fd(sockFd) {
@@ -33,8 +39,14 @@ Socket& Socket::operator=(const Socket& other) {
 }
 
 Socket::~Socket() {
+	// REMOVE!!!
+	try {
+		close(_fd.get());
+	}
+	catch (...) {
+		;
+	}
 }
-
 
 void	Socket::bind(in_addr_t ipv4Addr, in_port_t port) {
 	struct sockaddr_in addr;

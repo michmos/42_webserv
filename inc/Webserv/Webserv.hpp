@@ -1,6 +1,8 @@
 #pragma once
 
 #include <unordered_map>
+#include <atomic>
+#include <csignal>
 
 #include "../Config/ConfigParser.hpp"
 #include "../Config/Config.hpp"

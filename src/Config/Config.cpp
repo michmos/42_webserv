@@ -219,9 +219,7 @@ const std::vector<std::string>	Config::getIndex(const std::string locKey) const{
 
 // autoindex on;
 bool	Config::getAutoindex(const std::string locKey) const{
-	std::cout << "getAutoindex" << std::endl;
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
-	std::cout << "check in autoindex" << std::endl;
 	auto it = dirMap.find("autoindex");
 	if (it != dirMap.end()) {
 		if (it->second.size() > 0) {

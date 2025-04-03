@@ -1,5 +1,13 @@
 #include "../inc/Webserv/Webserv.hpp"
 
+std::atomic<bool> keep_alive(true);
+
+void	signal_handler(int signum)
+{
+	if (signum == 13 || signum == SIGINT)
+		keep_alive = false;
+}
+
 int	save_main(int argc, char **argv) {
 	std::string path;
 
@@ -9,6 +17,8 @@ int	save_main(int argc, char **argv) {
 		path = argv[1];
 	else
 		throw std::invalid_argument("Wrong amount config files given");
+
+	std::signal(SIGINT, signal_handler);
 
 	std::cerr << "Webserver starting ... with config: " << path << std::endl;
 	Webserv	webserver(path);

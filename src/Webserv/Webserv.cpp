@@ -1,5 +1,13 @@
 #include "../../inc/Webserv/Webserv.hpp"
 
+std::atomic<bool> keepalive(true);
+
+void	signalhandler(int signum)
+{
+	if (signum == 13 || signum == 2)
+		keepalive = false;
+}
+
 Webserv::Webserv(const std::string& confPath) {
 	_configs = ConfigParser(confPath).getConfigs();
 	std::unordered_map<std::string, SharedFd> sockets;
@@ -87,9 +95,11 @@ void	Webserv::_delClient(const SharedFd& clientSock) {
 	_clients.erase(it);
 }
 
-
 void	Webserv::mainLoop() {
-	while (true) {
+	std::signal(2, signalhandler);
+	
+	while (keepalive)
+	{
 		const auto& events = _ep.wait();
 		for (const auto& ev : events) {
 			// #ifdef DEBUG
@@ -114,4 +124,5 @@ void	Webserv::mainLoop() {
 			}
 		}
 	}
+	std::cerr << "Webserver is shutting down" << std::endl;
 }

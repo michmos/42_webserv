@@ -49,6 +49,7 @@ void	HTTPResponse::generateResponse(const HTTPRequest request) {
 }
 
 std::string	HTTPResponse::loadResponse(void) {
+	std::cerr << "load response" << std::endl;
 	if (isRedirectStatusCode(status_code_))
 		return (header_);
 	getBody();
@@ -73,7 +74,6 @@ std::string	HTTPResponse::getEndpointPath(std::string endpoint) {
 	{
 		if (config_->getAutoindex(endpoint) == false)
 		{
-			// std::cout << "autoindex = false" << std::endl;
 			status_code_ = 403;
 			return ("");
 		}
@@ -96,11 +96,16 @@ std::string HTTPResponse::searchThroughIndices(std::vector<std::string> indices,
 	std::string	folder_file;
 	for (const std::string &index : indices)
 	{
-		folder_file = verifyFileOrDirAccess(index);
-		if (!folder_file.empty() || status_code_ == 403)
-			return (folder_file);
-		status_code_ = 200;
+		for (const std::string &root : config_->getRoot(index))
+		{
+			std::cerr << "index: " << index << std::endl;
+			folder_file = verifyFileOrDirAccess(root + index);
+			if (!folder_file.empty() || status_code_ == 403)
+				return (folder_file);
+			status_code_ = 200;
+		}
 	}
+	std::cerr << "here 404?" << std::endl;
 	status_code_ = 404;
 	return ("");
 }
@@ -115,6 +120,7 @@ std::string	HTTPResponse::verifyFileOrDirAccess(std::string path) {
 
 	if (stat(path.c_str(), &statbuf) == 0 && S_ISDIR(statbuf.st_mode))
 		return (handleDir(path));
+	std::cerr << "handle access" << std::endl;
 	return (handleAccess(path));
 }
 
@@ -195,7 +201,6 @@ void	HTTPResponse::getBody(void) {
 		buffer.clear();
 		if (!myfile)
 			throw std::runtime_error("Failed to open file: " + filename_);
-		buffer << myfile.rdbuf();
 		body_.assign((std::istreambuf_iterator<char>(myfile)), std::istreambuf_iterator<char>());
 	}
 	else

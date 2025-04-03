@@ -225,7 +225,6 @@ void	HTTPParser::addIfProcessIsChunked(const std::string &buff) {
 	while ((found = raw_body.find("\r\n", pos)) != std::string::npos)
 	{
 		chunk_size_str = raw_body.substr(pos, found - pos);
-		std::cerr << "stoi addIfProcessIsChunked" << std::endl;
 		chunk_size = std::stoi(chunk_size_str, nullptr, 16);
 		
 		if (chunk_size == 0)
@@ -287,20 +286,39 @@ bool	HTTPParser::isRedirection(std::string &endpoint, const std::vector<std::str
 	return (false);
 }
 
+static std::string	addPathsSave(std::string root, std::string folders, std::string target) {
+	std::string	full_path = "";
+	if (root.back() == '/')
+		root.pop_back();
+	if (folders.front() != '/')
+		full_path = root + '/' + folders;
+	else
+		full_path = root + folders;
+	if (full_path.back() == '/')
+		full_path.pop_back();
+	if (target.front() != '/')
+		full_path += '/' + target;
+	else
+		full_path += target;
+	return (full_path);
+}
+
 void	HTTPParser::generatePath(const Config *config) {
-	struct stat				statbuf;
-	std::filesystem::path	full_path;
+	struct stat	statbuf;
+	std::string	full_path;
 
 	if (isRedirection(result_.request_target, config->getRedirect(result_.request_target)))
+		return ;
+	else if (result_.request_target == "/")
 		return ;
 	for (const std::string &root : config->getRoot(result_.request_target))
 	{
 		for(const auto &pair : config->getLocations())
 		{
-			full_path = std::filesystem::path(root) / pair.first / result_.request_target;
+			full_path = addPathsSave(root, pair.first, result_.request_target);
 			if (stat(full_path.c_str(), &statbuf) == 0)
 			{
-				result_.request_target = full_path.string();
+				result_.request_target = full_path;
 				return ;
 			}
 		}
