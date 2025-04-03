@@ -9,10 +9,9 @@ void	signalhandler(int signum)
 }
 
 Webserv::Webserv(const std::string& confPath) {
-	_configs = ConfigParser(confPath).getConfigs();
 	std::unordered_map<std::string, SharedFd> sockets;
 
-	for (auto& config : _configs) {
+	for (auto& config : ConfigParser(confPath).getConfigs()) {
 		SharedFd	serverFd;
 
 		std::string key = config.getHost() + std::to_string(config.getPort());

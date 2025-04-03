@@ -27,7 +27,7 @@
 
 class CGIPipes {
 	private:
-		std::vector<std::vector<int>>								pipes_;
+		std::vector<int>											pipes_;
 		std::function<void(struct epoll_event, const SharedFd&)>	pipe_callback_;
 		SharedFd													server_fd_;
 
@@ -41,5 +41,5 @@ class CGIPipes {
 		void				addNewPipes( void );
 		void				addPipesToEpoll( void );
 		void				closeAllPipes( void );
-		std::vector<int>	getLastPipes( void );
+		std::vector<int>	getPipes( void );
 };

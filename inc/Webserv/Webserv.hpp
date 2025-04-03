@@ -37,7 +37,6 @@ private:
 	std::unordered_map<SharedFd, std::vector<Config>>	_servers;
 	std::unordered_map<SharedFd, HTTPClient> 			_clients;
 	Epoll												_ep;
-	std::vector<Config> 								_configs;
 
 	void	_addClient(const SharedFd& clientSock, const SharedFd& servSock);
 	void	_delClient(const SharedFd& fd);

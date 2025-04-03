@@ -121,9 +121,12 @@ void	HTTPClient::responding(bool cgi_used, int fd) {
 bool	HTTPClient::cgi(int fd) {
 	std::vector<std::string>	env_strings;
 
-	cgi_ = std::make_unique<CGI>(request_.body, pipes_.getLastPipes());
 	pipes_.addNewPipes();
+	cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes());
+	std::cout << "IT is a cgi!" << std::endl;
+	std::cout << "realy?" << std::endl;
 	cgi_->handle_cgi(request_, fd);
+	std::cout << "handled!" << std::endl;
 	return (cgi_->isReady());
 }
 
