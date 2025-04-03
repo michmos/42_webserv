@@ -225,6 +225,7 @@ void	HTTPParser::addIfProcessIsChunked(const std::string &buff) {
 	while ((found = raw_body.find("\r\n", pos)) != std::string::npos)
 	{
 		chunk_size_str = raw_body.substr(pos, found - pos);
+		std::cerr << "stoi addIfProcessIsChunked" << std::endl;
 		chunk_size = std::stoi(chunk_size_str, nullptr, 16);
 		
 		if (chunk_size == 0)

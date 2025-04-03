@@ -23,13 +23,13 @@ class Config;
 
 class HTTPResponse {
 	public:
-		HTTPResponse( HTTPClient *client );
+		HTTPResponse( void );
 		~HTTPResponse( void );
 
 		void		generateResponse( const HTTPRequest request );
 		std::string loadResponse( void );
 		bool		isCGI(const HTTPRequest request);
-		void		setConfig(void);
+		void		setConfig( const Config *conf ) ;
 
 	private:
 		// Generate Response
@@ -55,7 +55,6 @@ class HTTPResponse {
 		std::string			response_;
 		int					status_code_;
 		bool				dir_list_;
-		HTTPClient			*client_;
 		const Config		*config_;
 };
 

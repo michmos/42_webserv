@@ -3,17 +3,16 @@
 // #######################     PUBLIC     ########################
 // ###############################################################
 
-HTTPResponse::HTTPResponse(HTTPClient *client) : client_(client) {
+HTTPResponse::HTTPResponse(void) {
 	header_ = "";
 	body_ = "";
 	content_type_ = "application/octet-stream";
 	status_code_ = 200;
 	response_ = "";
+	config_ = NULL;
 }
 
 HTTPResponse::~HTTPResponse(void) { }
-
-void	HTTPResponse::setConfig(void) { config_ = client_->getConfig(); }
 
 bool	HTTPResponse::isCGI(const HTTPRequest request) {
 	if (request.invalidRequest)
@@ -23,6 +22,8 @@ bool	HTTPResponse::isCGI(const HTTPRequest request) {
 	else
 		return (true);
 }
+
+void	HTTPResponse::setConfig(const Config *conf) { config_ = conf; }
 
 static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 && status_code <= 308); }
 
@@ -72,6 +73,7 @@ std::string	HTTPResponse::getEndpointPath(std::string endpoint) {
 	{
 		if (config_->getAutoindex(endpoint) == false)
 		{
+			// std::cout << "autoindex = false" << std::endl;
 			status_code_ = 403;
 			return ("");
 		}

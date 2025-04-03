@@ -6,7 +6,7 @@ HTTPClient::HTTPClient(
 	std::function<void(struct epoll_event, const SharedFd&)>  addToEpoll_cb,
 	std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb
 	) : clientSock_(clientFd), serverSock_(serverFd), \
-		responseGenerator_(this), getConfig_cb_(getConfig_cb) {
+		responseGenerator_(), getConfig_cb_(getConfig_cb) {
 	pipes_.setCallbackFunction(addToEpoll_cb, serverFd);
 	STATE_ = RECEIVING;
 	config_ = NULL;
@@ -31,9 +31,7 @@ bool	HTTPClient::isDone(void) {
  * @param host vector string with hostname and if set port
  */
 void	HTTPClient::setServer(std::vector<std::string> host) {
-	std::string hostname = host[0];
-
-	config_ = getConfig_cb_(serverSock_, hostname);
+	config_ = getConfig_cb_(serverSock_, host[0]);
 }
 
 void	HTTPClient::writeTo(int fd) {
@@ -92,6 +90,7 @@ void	HTTPClient::handle(const epoll_event &event) {
 /// @brief parse the HTTP request header and checks if it is a cgi target
 bool	HTTPClient::parsing(int fd) {
 	request_ = parser_.getParsedRequest();
+	responseGenerator_.setConfig(config_);
 	if (!responseGenerator_.isCGI(request_))
 	{
 		STATE_ = RESPONSE;
@@ -111,7 +110,6 @@ void	HTTPClient::responding(bool cgi_used, int fd) {
 		cgiresponse();
 	else
 	{
-		responseGenerator_.setConfig();
 		responseGenerator_.generateResponse(request_);
 		message_que_.push_back(responseGenerator_.loadResponse());
 	}

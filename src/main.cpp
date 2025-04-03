@@ -18,7 +18,8 @@ int	save_main(int argc, char **argv) {
 }
 
 int main (int argc, char **argv) {
-	try {
+	try
+	{
 		return (save_main(argc, argv));
 	}
 	catch (std::runtime_error &e) {

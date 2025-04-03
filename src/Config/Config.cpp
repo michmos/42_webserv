@@ -238,7 +238,7 @@ bool	Config::getAutoindex(const std::string locKey) const{
 const std::string	Config::getErrorPage(int errorCode) const {
 	auto it = this->_directives.find("error_page");
 	if (it != this->_directives.end()) {
-		for (size_t i = 0; i < it->second.size(); i++) {
+		for (size_t i = 0; i < it->second.size(); i += 2) {
 			if (std::stoi(it->second[i]) == errorCode) {
 				return (it->second[i + 1]);
 			}

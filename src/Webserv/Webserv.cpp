@@ -1,10 +1,10 @@
 #include "../../inc/Webserv/Webserv.hpp"
 
 Webserv::Webserv(const std::string& confPath) {
-	std::vector<Config> configs = ConfigParser(confPath).getConfigs();
+	_configs = ConfigParser(confPath).getConfigs();
 	std::unordered_map<std::string, SharedFd> sockets;
 
-	for (auto& config : configs) {
+	for (auto& config : _configs) {
 		SharedFd	serverFd;
 
 		std::string key = config.getHost() + std::to_string(config.getPort());
@@ -98,7 +98,6 @@ void	Webserv::mainLoop() {
 			// 	<< ((ev.events & EPOLLOUT) ? "EPOLLOUT " : " ")
 			// 	<< ((ev.events & (EPOLLHUP | EPOLLERR)) ? "EPOLLHUP | EPOLLERR" : "") << std::endl;
 			// #endif
-
 			SharedFd fd = ev.data.fd;
 			if (_servers.find(fd) != _servers.end()) {
 				// server socket ready
