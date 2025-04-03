@@ -176,10 +176,14 @@ void	Webserv::eventLoop() {
 				SharedFd clientSock = accept(fd.get(), nullptr, nullptr);
 				if (clientSock == -1)
 					throw std::runtime_error(std::string("accept(): ") + strerror(errno));
-				this->_addClient(clientSock, fd);
+				_addClient(clientSock, fd);
 			} else if (_clients.find(fd) != _clients.end()) {
 				//  client socket ready
-				_clients.find(fd)->second.handle(ev);
+				auto& client = _clients.find(fd)->second;
+				client.handle(ev);
+				// TODO: add logic to remove pipes when client is deleted - e.g. through callback invoked from client destructor
+				if (client.isDone())
+					_delClient(fd);
 			} else if (_clients.find(ev.data.u32) != _clients.end()) {
 				// client pipe ready
 				_clients.find(ev.data.u32)->second.handle(ev);
