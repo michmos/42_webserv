@@ -339,6 +339,7 @@ void ConfigParser::parseTokenToDirective(std::vector<token>::iterator &it, Confi
 
 void	ConfigParser::moveOneTokenSafly(std::vector<token> &tokens, std::vector<token>::iterator &it) {
 	it++;
+	// TODO: can be ored || instead no?
 	if (it == tokens.end())
 		errorToken(*it, "Unexpected EOF!");
 	else if (it->type == EOF_TOKEN)
@@ -483,40 +484,48 @@ void	ConfigParser::parseTokenToConfig() {
 	bool mimeSet = false;
 	for (std::vector<token>::iterator it = this->_tokens.begin(); it != this->_tokens.end(); ++it) {
 		if (it->type == HTTP) {
-			if (inHttp)
-			errorToken(*it, "Unexpected: http");
+			if (inHttp) {
+				errorToken(*it, "Unexpected: http");
+			}
 			inHttp = true;
 			moveOneTokenSafly(this->_tokens, it);
-			if (it->type != BLOCK_OPEN)
-			errorToken(*it, "Expected: {");
+			if (it->type != BLOCK_OPEN) {
+				errorToken(*it, "Expected: {");
+			}
 		}
 		else if (it->type == INCLUDE) {
-			if (!inHttp || mimeSet)
-			errorToken(*it, "Unexpected: include");
+			if (!inHttp || mimeSet) {
+				errorToken(*it, "Unexpected: include");
+			}
 			moveOneTokenSafly(this->_tokens, it);
-			if (it->type != STRING && it->type != PATH)
-			errorToken(*it, "Expected: STRING or PATH");
+			if (it->type != STRING && it->type != PATH) {
+				errorToken(*it, "Expected: STRING or PATH");
+			}
 			readMimeToInput(it->value);
 			parseMimeToTokens();
 			this->_mimeTypes = parseMimeToken();
 			mimeSet = true;
 			moveOneTokenSafly(this->_tokens, it);
-			if (it->type != SEMICOLON)
+			if (it->type != SEMICOLON) {
 				errorToken(*it, "Expected: ;");
+			}
 		}
 		else if (it->type == SERVER) {
-			if (!inHttp)
+			if (!inHttp) {
 				errorToken(*it, "Unexpected: server");
+			}
 			parseTokenToServer(it);
 			it--;
 		}
 		else if (it->type == BLOCK_CLOSE) {
-			if (!inHttp)
+			if (!inHttp) {
 				errorToken(*it, "Unexpected: }");
+			}
 			inHttp = false;
 			moveOneTokenSafly(this->_tokens, it);
-			if (it->type != EOF_TOKEN)
+			if (it->type != EOF_TOKEN) {
 				errorToken(*it, "Expected: EOF");
+			}
 		}
 		else if (it->type == EOF_TOKEN) {
 			break;
