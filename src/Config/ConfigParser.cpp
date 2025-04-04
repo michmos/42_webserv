@@ -481,43 +481,49 @@ void	ConfigParser::parseTokenToConfig() {
 	bool mimeSet = false;
 	for (std::vector<token>::iterator it = this->_tokens.begin(); it != this->_tokens.end(); ++it) {
 		if (it->type == HTTP) {
-			if (inHttp)
-			errorToken(*it, "Unexpected: http");
+			if (inHttp) {
+				errorToken(*it, "Unexpected: http");
+			}
 			inHttp = true;
 			moveOneTokenSafly(this->_tokens, it);
-			if (it->type != BLOCK_OPEN)
-			errorToken(*it, "Expected: {");
+			if (it->type != BLOCK_OPEN) {
+				errorToken(*it, "Expected: {");
+			}
 		}
 		else if (it->type == INCLUDE) {
-			if (!inHttp || mimeSet)
-			errorToken(*it, "Unexpected: include");
+			if (!inHttp || mimeSet) {
+				errorToken(*it, "Unexpected: include");
+			}
 			moveOneTokenSafly(this->_tokens, it);
-			if (it->type != STRING && it->type != PATH)
-			errorToken(*it, "Expected: STRING or PATH");
+			if (it->type != STRING && it->type != PATH) {
+				errorToken(*it, "Expected: STRING or PATH");
+			}
 			readMimeToInput(it->value);
 			parseMimeToTokens();
 			this->_mimeTypes = parseMimeToken();
 			mimeSet = true;
 			moveOneTokenSafly(this->_tokens, it);
-			if (it->type != SEMICOLON)
+			if (it->type != SEMICOLON) {
 				errorToken(*it, "Expected: ;");
+			}
 		}
 		else if (it->type == SERVER) {
-			if (!inHttp)
+			if (!inHttp) {
 				errorToken(*it, "Unexpected: server");
+			}
 			parseTokenToServer(it);
 			it--;
 		}
-		else if (it->type == BLOCK_CLOSE) {
-			if (!inHttp)
-				errorToken(*it, "Unexpected: }");
-			inHttp = false;
+		else if (!inHttp && it->type == BLOCK_CLOSE) {
 			moveOneTokenSafly(this->_tokens, it);
-			if (it->type != EOF_TOKEN)
-				errorToken(*it, "Expected: EOF");
 		}
-		else if (it->type == EOF_TOKEN) {
-			break;
+		else if (inHttp && it->type == BLOCK_CLOSE) {
+			inHttp = false;
+			it++;
+			if (it->type != EOF_TOKEN) {
+				errorToken(*it, "Expected: EOF");
+			}
+			break ;
 		}
 		else {
 			errorToken(*it, "Unexpected token");
@@ -531,121 +537,3 @@ void	ConfigParser::parseTokenToConfig() {
 		this->_mimeTypes = parseMimeToken();
 	}
 }
-
-// void	ConfigParser::eraseToken(std::vector<token> &tokens, enum tokenType type) {
-// 	for (std::vector<token>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
-// 		if (it->type == type) {
-// 			tokens.erase(it);
-// 			it--;
-// 		}
-// 	}
-// }
-
-// void	ConfigParser::printMimeTypes() {
-// 	std::cout << BOLD << BG_LIGHT_GRAY << BLACK << "\n CONFIG PRINT - MIME TYPES:" << RESET << std::endl;
-// 	for (auto it = this->_mimeTypes.begin(); it != this->_mimeTypes.end(); it++) {
-// 		std::cout << "\t" << it->first << " : ";
-// 		for (const std::string &str : it->second)
-// 			std::cout << str << " ";
-// 		std::cout << "\n";
-// 	}
-// }
-
-// std::unordered_map<std::string, std::vector<std::string>>	ConfigParser::parseMimeToken() {
-// 	eraseToken(this->_tokensMime, WHITE_SPACE);
-// 	std::unordered_map<std::string, std::vector<std::string>>	mapReturn;
-// 	for (std::vector<token>::iterator it = this->_tokensMime.begin(); it != this->_tokensMime.end(); it++) {
-// 		if (it == this->_tokensMime.begin()) {
-// 			if (it->type != TYPES)
-// 				throw ConfigParser::ConfigParserException("Unexpected token in http. Expected: TYPES");
-// 			moveOneTokenSafly(this->_tokensMime, it);
-// 			if (it->type != BLOCK_OPEN)
-// 				throw ConfigParser::ConfigParserException("Unexpected token in http. Expected: BLOCK_OPEN");
-// 		}
-// 		else if (it->type == STRING) {
-// 			std::string key = it->value;
-// 			moveOneTokenSafly(this->_tokensMime, it);
-// 			for (; it != this->_tokensMime.end(); ++it) {
-// 				if (it->type == SEMICOLON) {
-// 					break ;
-// 				}
-// 				else if (it->type != STRING) {
-// 					throw ConfigParser::ConfigParserException("Unexpected token in http. Expected: STRING1");
-// 				}
-// 				mapReturn[key].push_back(it->value);
-// 			}
-// 		}
-// 		else if (it->type == BLOCK_CLOSE) {
-// 			break ;
-// 		}
-// 		else {
-// 			std::cout << it->type << std::endl;
-// 			throw ConfigParser::ConfigParserException("Unexpected token in http. Expected: STRING2");
-// 		}
-// 	}
-// 	return (mapReturn);
-// }
-
-// void	ConfigParser::parseTokenToConfig() {
-// 	eraseToken(this->_tokens, WHITE_SPACE);
-// 	eraseToken(this->_tokens, COMMENT);
-// 	bool inHttp = false;
-// 	bool mimeSet = false;
-// 	for (std::vector<token>::iterator it = this->_tokens.begin(); it != this->_tokens.end(); ++it) {
-// 		if (it->type == HTTP) {
-// 			if (inHttp) {
-// 				errorToken(*it, "Unexpected: http");
-// 			}
-// 			inHttp = true;
-// 			moveOneTokenSafly(this->_tokens, it);
-// 			if (it->type != BLOCK_OPEN) {
-// 				errorToken(*it, "Expected: {");
-// 			}
-// 		}
-// 		else if (it->type == INCLUDE) {
-// 			if (!inHttp || mimeSet) {
-// 				errorToken(*it, "Unexpected: include");
-// 			}
-// 			moveOneTokenSafly(this->_tokens, it);
-// 			if (it->type != STRING && it->type != PATH) {
-// 				errorToken(*it, "Expected: STRING or PATH");
-// 			}
-// 			readMimeToInput(it->value);
-// 			parseMimeToTokens();
-// 			this->_mimeTypes = parseMimeToken();
-// 			mimeSet = true;
-// 			moveOneTokenSafly(this->_tokens, it);
-// 			if (it->type != SEMICOLON) {
-// 				errorToken(*it, "Expected: ;");
-// 			}
-// 		}
-// 		else if (it->type == SERVER) {
-// 			if (!inHttp) {
-// 				errorToken(*it, "Unexpected: server");
-// 			}
-// 			parseTokenToServer(it);
-// 			it--;
-// 		}
-// 		else if (!inHttp && it->type == BLOCK_CLOSE) {
-// 			moveOneTokenSafly(this->_tokens, it);
-// 		}
-// 		else if (inHttp && it->type == BLOCK_CLOSE) {
-// 			inHttp = false;
-// 			it++;
-// 			if (it->type != EOF_TOKEN) {
-// 				errorToken(*it, "Expected: EOF");
-// 			}
-// 			break ;
-// 		}
-// 		else {
-// 			errorToken(*it, "Unexpected token");
-// 		}
-// 	}
-// 	if (this->_configs.empty())
-// 		throw ConfigParser::ConfigParserException("Missing any Server config in .conf file.");
-// 	if (!mimeSet) {
-// 		readMimeToInput(DEFAULT_MIME_TYPES);
-// 		parseMimeToTokens();
-// 		this->_mimeTypes = parseMimeToken();
-// 	}
-// }

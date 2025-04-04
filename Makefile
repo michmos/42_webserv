@@ -1,7 +1,7 @@
 NAME		:=	webserv
 RM			:=	rm -rf
 CPP			:=	c++
-CPPFLAGS	:=	-Wall -Wextra -Werror -std=c++17 -g
+CPPFLAGS	:=	-Wall -Wextra -Werror -std=c++17
 DEBUG 		?= 0
 ifeq ($(DEBUG), 1)
 CPP			:= g++
