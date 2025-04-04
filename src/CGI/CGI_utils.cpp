@@ -15,18 +15,21 @@ void	CGI::throwExceptionExit(const char *msg) {
 
 /// @brief closes pipe_from_child and pipe_to_child 
 void	CGI::closeAllPipes(void) {
-	if (pipe_from_child_[WRITE] != -1)
-		close(pipe_from_child_[WRITE]);
-	if (pipe_from_child_[READ] != -1)
-		close(pipe_from_child_[READ]);
-	if (pipe_to_child_[WRITE] != -1)
-		close(pipe_to_child_[WRITE]);
-	if (pipe_to_child_[READ] != -1)
-		close(pipe_to_child_[READ]);
+	std::cerr << "close pipes: " << pipe_from_CGI_[WRITE] << " and " << pipe_from_CGI_[READ] << std::endl;
+	std::cerr << "close pipes: " << pipe_to_CGI_[WRITE] << " and " << pipe_to_CGI_[READ] << std::endl;
+	if (pipe_from_CGI_[WRITE] != -1)
+		close(pipe_from_CGI_[WRITE]);
+	if (pipe_from_CGI_[READ] != -1)
+		close(pipe_from_CGI_[READ]);
+	if (pipe_to_CGI_[WRITE] != -1)
+		close(pipe_to_CGI_[WRITE]);
+	if (pipe_to_CGI_[READ] != -1)
+		close(pipe_to_CGI_[READ]);
 }
 
 /// @brief closes pipes and set them to -1
 void	CGI::closeTwoPipes(int &pipe1, int &pipe2) {
+	std::cerr << "close pipes: " << pipe1 << " and " << pipe2 << std::endl;
 	if (pipe1 != -1)
 	{
 		close(pipe1);

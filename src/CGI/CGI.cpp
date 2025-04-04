@@ -4,10 +4,10 @@
 // ###############################################################
 
 CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post_data) {
-	pipe_from_child_[READ] = pipes[0];
-	pipe_from_child_[WRITE] = pipes[1];
-	pipe_to_child_[READ] = pipes[2];
-	pipe_to_child_[WRITE] = pipes[3];
+	pipe_from_CGI_[READ] = pipes[0];
+	pipe_from_CGI_[WRITE] = pipes[1];
+	pipe_to_CGI_[READ] = pipes[2];
+	pipe_to_CGI_[WRITE] = pipes[3];
 	CGI_STATE_ = START_CGI;
 }
 
@@ -35,6 +35,8 @@ void	CGI::handle_cgi(HTTPRequest &request, int fd) {
 			CGI_STATE_ = RCV_FROM_CGI;
 			return ;
 		case RCV_FROM_CGI:
+			if (fd != pipe_from_CGI_[READ]) // or what is timeout??
+				return ;
 			if (getResponseFromCGI(fd) == false)
 				return ;
 			CGI_STATE_ = CRT_RSPNS_CGI;
@@ -138,11 +140,14 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 		throwException("Fork failed");
 	else if (pid_ == 0) 
 	{
-		closeTwoPipes(pipe_to_child_[WRITE], pipe_from_child_[READ]);
-		if (dup2(pipe_to_child_[READ], STDIN_FILENO) < 0)
+		std::cerr << "IN CHILD: ";
+		closeTwoPipes(pipe_to_CGI_[WRITE], pipe_from_CGI_[READ]);
+		if (dup2(pipe_to_CGI_[READ], STDIN_FILENO) < 0)
 			throwExceptionExit("dub2 failed");
-		if (dup2(pipe_from_child_[1], STDOUT_FILENO) < 0)
+		if (dup2(pipe_from_CGI_[WRITE], STDOUT_FILENO) < 0)
 			throwExceptionExit("dub2 failed");
+		std::cerr << "IN CHILD AFTER DUB: ";
+		closeTwoPipes(pipe_to_CGI_[READ], pipe_from_CGI_[WRITE]);
 
 		std::vector<char*>	argv_vector;
 		std::vector<char*>	env_c_vector;
@@ -153,11 +158,12 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 		if (execve(executable.c_str(), argv_vector.data(), env_c_vector.data()) == -1)
 		{
 			std::cerr << "Error: Execve failed: " << std::strerror(errno) << std::endl;
-			closeTwoPipes(pipe_to_child_[READ], pipe_from_child_[WRITE]);
+			closeTwoPipes(pipe_to_CGI_[READ], pipe_from_CGI_[WRITE]);
 		}
 		exit(1);
 	}
-	closeTwoPipes(pipe_to_child_[READ], pipe_from_child_[WRITE]);
+	std::cerr << "IN PARENT: ";
+	closeTwoPipes(pipe_to_CGI_[READ], pipe_from_CGI_[WRITE]);
 	watchDog();
 }
 
@@ -189,6 +195,7 @@ void	CGI::watchDog(void) {
 		}
 		if (timeout)
 			kill(pid_, SIGKILL);
+		std::cerr << "IN WACHDOG: ";
 		closeAllPipes();
 		exit(0);
 	}
@@ -204,16 +211,22 @@ void	CGI::watchDog(void) {
 void	CGI::sendDataToStdin(int fd) {
 	ssize_t	readBytes;
 
-	readBytes = write(fd, post_data_.c_str(), post_data_.size());
-	if (readBytes != (ssize_t)post_data_.size())
+	if (!post_data_.empty())
 	{
-		if (readBytes == -1)
-			std::cerr << "Error write: " << std::strerror(errno) << std::endl;
-		else
-			std::cerr << "Error write: not written right amount" << std::endl;
+		assert(fd == pipe_to_CGI_[WRITE]);
+		readBytes = write(pipe_to_CGI_[WRITE], post_data_.c_str(), post_data_.size());
+		if (readBytes != (ssize_t)post_data_.size())
+		{
+			if (readBytes == -1)
+				std::cerr << "Error write: " << std::strerror(errno) << std::endl;
+			else
+				std::cerr << "Error write: not written right amount" << std::endl;
+		}
 	}
-	close(fd);
-	pipe_to_child_[WRITE] = -1;
+	std::cerr << "ERROR ??? fd: " << fd << " must be: " << pipe_to_CGI_[WRITE] << std::endl;
+	std::cerr << "AFTER SEND DATA close: " << pipe_to_CGI_[WRITE]<< std::endl;
+	close(pipe_to_CGI_[WRITE]);
+	pipe_to_CGI_[WRITE] = -1;
 }
 
 /**
@@ -253,7 +266,8 @@ bool	CGI::getResponseFromCGI(int fd) {
 	if (WIFEXITED(status_))
 	{
 		int return_value = WEXITSTATUS(status_);
-		response_ = receiveBuffer(fd);
+		assert(fd == pipe_from_CGI_[READ]);
+		response_ = receiveBuffer(pipe_from_CGI_[READ]);
 		if (response_.empty())
 			return (false);
 		if (return_value != 0) {
@@ -275,7 +289,7 @@ bool	CGI::getResponseFromCGI(int fd) {
 std::string	CGI::receiveBuffer(int fd) {
 	char	buffer[1024];
 	
-	std::cerr << "READ from " << fd << std::endl;
+	// std::cerr << "READ from " << fd << std::endl;
 	ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);
 
 	if (bytesRead > 0)
@@ -284,7 +298,7 @@ std::string	CGI::receiveBuffer(int fd) {
 	{
 		if (bytesRead == -1)
 		{
-			std::cerr << "Error read: " << std::strerror(errno) << std::endl;
+			std::cerr << "Error read: " << std::strerror(errno);
 			return (""); // again?
 		}
 		else
@@ -293,7 +307,7 @@ std::string	CGI::receiveBuffer(int fd) {
 			"<head><title>Server Error</title></head><body><h1>Something went wrong</h1></body></html>";
 	}
 	close(fd);
-	pipe_from_child_[READ] = -1;
+	pipe_from_CGI_[READ] = -1;
 	return (buffer);
 }
 

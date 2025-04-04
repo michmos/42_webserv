@@ -4,6 +4,7 @@
 # include <cstring>
 # include <vector>
 # include <regex>
+# include <cassert>
 
 # include <unistd.h>
 # include <sys/wait.h>
@@ -31,8 +32,8 @@ enum e_cgi_state {
 class CGI {
 	private:
 		std::string 		path_;
-		int					pipe_to_child_[2];
-		int					pipe_from_child_[2];
+		int					pipe_to_CGI_[2];
+		int					pipe_from_CGI_[2];
 		pid_t				pid_;
 		int					status_;
 		std::string 		response_;

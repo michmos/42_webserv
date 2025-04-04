@@ -17,12 +17,12 @@
 # define READ 1
 #endif
 
-#ifndef FROM_CHILD_READ
-# define FROM_CHILD_READ 0
+#ifndef FROM_CGI_READ
+# define FROM_CGI_READ 0
 #endif
 
-#ifndef TO_CHILD_WRITE
-# define TO_CHILD_WRITE 3
+#ifndef TO_CGI_WRITE
+# define TO_CGI_WRITE 3
 #endif
 
 class CGIPipes {

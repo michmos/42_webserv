@@ -9,6 +9,7 @@ class CGI:
 		self.status_code = 200
 		self.header = ""
 		self.body = ""
+		print("CGI is started", file=sys.stderr)
 		
 	def get_status_code( self ) -> int:
 		return self.status_code
@@ -44,6 +45,7 @@ class CGI:
 			+ "Content-Length: " + str(len(self.body)) + "\r\n\r\n"
 	
 	def write_to_stdout( self, response:str ) -> None:
+		print("response CGI:", response, file=sys.stderr)
 		sys.stdout.write(response)
 		sys.stdout.flush()
 

@@ -38,6 +38,7 @@ void debugConfigPrint(std::vector<Config> &configs) {
 
 ConfigParser::ConfigParser(const std::string& filepath) {
 	this->_filepath = filepath;
+	std::cout << filepath << std::endl;
 	readConfigToInput();
 	parseInputToTokens();
 	// printTokens(this->_tokens);
