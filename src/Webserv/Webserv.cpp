@@ -1,5 +1,6 @@
 
 #include "../../inc/Webserv/Webserv.hpp"
+#include <sys/epoll.h>
 
 std::atomic<bool> keepalive(true);
 
@@ -178,6 +179,33 @@ void	Webserv::_delClient(const SharedFd& clientSock) {
 // 		}
 // 	}
 // }
+
+void	Webserv::_handleServerReady(SharedFd fd) {
+	SharedFd clientSock = accept(fd.get(), nullptr, nullptr);
+	if (clientSock == -1)
+		throw std::runtime_error(std::string("accept(): ") + strerror(errno));
+	_addClient(clientSock, fd);
+}
+
+void	Webserv::_handleClientReady(const struct epoll_event& ev) {
+	SharedFd fd = ev.data.fd;
+	auto it = _clients.find(fd);
+	if (it == _clients.end()) {
+		// check whether client pipe is ready
+		fd = ev.data.u32;
+		it = _clients.find(fd);
+		if (it == _clients.end()) {
+			throw std::runtime_error("_handleClientReady(): unvalid fd");
+		}
+	}
+
+	auto& client = it->second;
+	client.handle(ev);
+	// TODO: add logic to remove pipes when client is deleted - e.g. through callback invoked from client destructor
+	if (client.isDone()) {
+		_delClient(fd);
+	}
+}
 
 void	Webserv::eventLoop() {
 	std::signal(2, signalhandler);
