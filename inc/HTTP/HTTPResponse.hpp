@@ -33,12 +33,8 @@ class HTTPResponse {
 
 	private:
 		// Generate Response
-		std::string	getEndpointPath( std::string endpoint );
-		std::string	searchThroughIndices( std::vector<std::string> indices, bool autoindex );
-		std::string	verifyFileOrDirAccess( std::string filename );
-		std::string	handleAccess( const std::string &path );
-		std::string	handleDir( const std::string &path );
-		bool		checkErrorPages( std::string &filename, int status_code );
+		std::string	searchErorPage( const std::vector<std::string> &dir, const std::string &errorpage );
+		bool		isCustomErrorPages( std::string &filename, int status_code );
 		
 		// Load Response
 		void		getBody( void );

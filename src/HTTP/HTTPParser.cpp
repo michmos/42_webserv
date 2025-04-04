@@ -240,14 +240,6 @@ void	HTTPParser::addIfProcessIsChunked(const std::string &buff) {
 	}
 }
 
-bool	isBiggerMaxBodyLength(size_t content_length, uint64_t max_size)
-{
-	if (content_length > max_size)
-		return (true);
-	else
-		return (false);
-}
-
 bool	HTTPParser::validWithConfig(HTTPClient *client) {
 	const Config				*config = client->getConfig();
 	std::vector<std::string>	allow_method;
@@ -286,50 +278,143 @@ bool	HTTPParser::isRedirection(std::string &endpoint, const std::vector<std::str
 	return (false);
 }
 
-static std::string	addPathsSave(std::string root, std::string folders, std::string target) {
+static std::string	addDir_Folder(std::string path, std::string folder) {
 	std::string	full_path = "";
-	if (root.back() == '/')
-		root.pop_back();
-	if (folders.front() != '/')
-		full_path = root + '/' + folders;
+	if (path.back() == '/')
+		path.pop_back();
+	if (folder.front() != '/')
+		full_path = path + '/' + folder;
 	else
-		full_path = root + folders;
+		full_path = path + folder;
 	if (full_path.back() == '/')
 		full_path.pop_back();
-	if (target.front() != '/')
-		full_path += '/' + target;
-	else
-		full_path += target;
 	return (full_path);
 }
 
-void	HTTPParser::generatePath(const Config *config) {
-	struct stat	statbuf;
-	std::string	full_path;
+static bool	folderExists(const std::string &path, const std::string &dir, std::string &fullpath) {
+	struct stat statbuf;
 
-	if (isRedirection(result_.request_target, config->getRedirect(result_.request_target)))
+	fullpath = addDir_Folder(path, dir);
+	if (stat(fullpath.c_str(), &statbuf) == 0 && S_ISDIR(statbuf.st_mode))
+		return (true);
+	return (false);
+}
+
+static void	getSubdirRecursive(const std::string &path, std::vector<std::string> &subdirs) {
+	struct dirent 	*d;
+	DIR 			*dir;
+	std::string		fullpath;
+
+	dir = opendir(path.c_str());
+	if (!dir)
 		return ;
-	else if (result_.request_target == "/")
-		return ;
-	for (const std::string &root : config->getRoot(result_.request_target))
+	while (true)
 	{
-		for(const auto &pair : config->getLocations())
+		d = readdir(dir);
+		if (d == nullptr)
+			break ;
+		else if (d->d_name[0] == '.')
+			continue ;
+		else if (folderExists(path, std::string(d->d_name), fullpath))
 		{
-			full_path = addPathsSave(root, pair.first, result_.request_target);
-			if (stat(full_path.c_str(), &statbuf) == 0)
-			{
-				result_.request_target = full_path;
+			subdirs.push_back(fullpath);
+			getSubdirRecursive(fullpath, subdirs);
+		}
+	}
+	closedir(dir);
+}
+
+static bool	isAccesseble(const std::string &path, int &status_code) {
+	if (access(path.c_str(), F_OK) != -1)
+	{
+		if (access(path.c_str(), R_OK) == -1)
+		{
+			std::cerr << "No permission" << std::endl;
+			status_code = 403;
+			return (false);
+		}
+		status_code = 200;
+		return (true);
+	}
+	status_code = 404;
+	return (false);
+}
+
+void	HTTPParser::handleRootDir(const Config *config) {
+	if (config->getAutoindex("/") == false) // AUTOINDEX OFF, so '/' returns 403 
+	{
+		result_.status_code = 403;
+		return ;
+	}
+
+	const std::vector<std::string> indices = config->getIndex("/");
+	result_.dir_list = false;
+	if (indices.empty()) // if no indices givens body = list of dir
+	{
+		result_.dir_list = true;
+		return ;
+	}
+
+	std::string	folder_file;
+	struct stat	statbuf;
+	for (const std::string &index : indices)
+	{
+		for (const std::string &dir : result_.subdir)
+		{
+			if (stat((dir + index).c_str(), &statbuf) == 0)
+			{ 
+				if (S_ISDIR(statbuf.st_mode))
+					result_.dir_list = true;
+				else if (isAccesseble(dir + index, result_.status_code))
+					result_.request_target = dir + index;
 				return ;
 			}
 		}
 	}
+	result_.status_code = 404;
+	return ;
+}
+
+static const std::vector<std::string>	getSubdirectories(const std::vector<std::string> &roots) {
+	std::vector<std::string>	subdir;
+	
+	for (const std::string &root: roots)
+		getSubdirRecursive(root, subdir);
+	return (subdir);
+}
+
+/**
+ * @brief checks for paths (redir, root, access)
+ * @param config pointer to Config 
+ */
+void	HTTPParser::generatePath(const Config *config) {
+	struct stat	statbuf;
+	std::string	full_path;
+
+	result_.subdir = getSubdirectories(config->getRoot(result_.request_target));
+	if (isRedirection(result_.request_target, config->getRedirect(result_.request_target)))
+		return ;
+	else if (result_.request_target == "/")
+		return (handleRootDir(config));
+	for (const std::string &folder : result_.subdir)
+	{
+		full_path = addDir_Folder(folder, result_.request_target);
+		if (stat(full_path.c_str(), &statbuf) == 0)
+		{
+			result_.request_target = full_path;
+			return ;
+		}
+	}
+}
+
+static bool	isBiggerMaxBodyLength(size_t content_length, uint64_t max_size) {
+	return (content_length > max_size)
 }
 
 bool	HTTPParser::checkBodySizeLimit(size_t body_size, const Config *config, std::string path) {
 	size_t			length;
 	std::uint64_t	max_content_length = config->getClientBodySize(path);
 
-	// MAX CLIENT CHECK
 	if (max_content_length != 0)
 		length = max_content_length;
 	else

@@ -36,16 +36,14 @@ void	HTTPResponse::generateResponse(const HTTPRequest request) {
 	std::cerr << request.method << " " << request.request_target << std::endl;
 	std::cerr << request.invalidRequest << " " << request.status_code << std::endl;
 
+	if (request.dir_list)
+		;
 	if (!request.invalidRequest && request.status_code == 200)
-	{
-		filename_ = getEndpointPath(filename);
-		if (filename_.empty() && checkErrorPages(filename, request.status_code))
-			filename_ = getEndpointPath(filename);
-	}
+			filename_ = request.request_target;
 	else if (isRedirectStatusCode(request.status_code)) // redirect
 		header_ = request.body;
-	else if (checkErrorPages(filename, request.status_code))
-		filename_ = getEndpointPath(filename);
+	else if (isCustomErrorPages(filename, request.status_code))
+		filename_ = searchErorPage(request.subdir, filename);
 }
 
 std::string	HTTPResponse::loadResponse(void) {
@@ -63,98 +61,37 @@ std::string	HTTPResponse::loadResponse(void) {
 // ###############################################################
 
 /**
- * @brief path + file access, corrects index and checks autoindex on/off
- * @param endpoint string with request target
- * @return folder + endpoint to read from
+ * @brief search for the fullpath for the custom errorpage
+ * @param dir vector<string> with all the subdirectories
+ * @param errorpage string with the filename of the errorpage
+ * @return fullpath if found, else empty
  */
-std::string	HTTPResponse::getEndpointPath(std::string endpoint) {
-	dir_list_ = false;
-
-	if (endpoint == "/")
-	{
-		if (config_->getAutoindex(endpoint) == false)
-		{
-			status_code_ = 403;
-			return ("");
-		}
-		else
-			return (searchThroughIndices(config_->getIndex(endpoint), true));
-	}
-	return (verifyFileOrDirAccess(endpoint));
-}
-
-std::string HTTPResponse::searchThroughIndices(std::vector<std::string> indices, bool autoindex) {
-	if (indices.empty())
-	{
-		if (autoindex)
-			dir_list_ = true;
-		else
-			status_code_ = 404;
-		return ("");
-	}
-
-	std::string	folder_file;
-	for (const std::string &index : indices)
-	{
-		for (const std::string &root : config_->getRoot(index))
-		{
-			std::cerr << "index: " << index << std::endl;
-			folder_file = verifyFileOrDirAccess(root + index);
-			if (!folder_file.empty() || status_code_ == 403)
-				return (folder_file);
-			status_code_ = 200;
-		}
-	}
-	std::cerr << "here 404?" << std::endl;
-	status_code_ = 404;
-	return ("");
-}
-
-/**
- * @brief checks access for file or dir
- * @param filename string with filenname
- * @return path or empty when an error appears
- */
-std::string	HTTPResponse::verifyFileOrDirAccess(std::string path) {
+std::string	HTTPResponse::searchErorPage(const std::vector<std::string> &dir, const std::string &errorpage) {
 	struct stat	statbuf;
 
-	if (stat(path.c_str(), &statbuf) == 0 && S_ISDIR(statbuf.st_mode))
-		return (handleDir(path));
-	std::cerr << "handle access" << std::endl;
-	return (handleAccess(path));
-}
-
-std::string	HTTPResponse::handleAccess(const std::string &path) {
-	if (access(path.c_str(), F_OK) != -1)
+	for (const std::string &path : dir)
 	{
-		if (access(path.c_str(), R_OK) == -1)
+		std::string fullpath = path + errorpage;
+		if (stat(fullpath.c_str(), &statbuf) == 0)
 		{
-			std::cerr << "No permission" << std::endl;
-			status_code_ = 403;
-			return "";
+			if (access(fullpath.c_str(), F_OK) != -1)
+			{
+				if (access(fullpath.c_str(), R_OK) == -1)
+				{
+					std::cerr << "No permission" << std::endl;
+					status_code_ = 403;
+					return "";
+				}
+				return (fullpath);
+			}
+			break ;
 		}
-		return (path);
 	}
 	status_code_ = 404;
 	return ("");
 }
 
-/**
- * @brief checks for auto index and returns if an index is set this one
- * @param path string path
- * @return index, path or empty
- */
-std::string	HTTPResponse::handleDir(const std::string &path) {
-	if (config_->getAutoindex(path))
-	{
-		dir_list_ = true;
-		return ("");
-	}
-	else
-		return (searchThroughIndices(config_->getIndex(path), false));
-}
-
-bool	HTTPResponse::checkErrorPages(std::string &filename, int status_code) {
+bool	HTTPResponse::isCustomErrorPages(std::string &filename, int status_code) {
 	std::string error_page = config_->getErrorPage(status_code);
 	if (error_page.empty())
 		return (false);

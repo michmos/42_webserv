@@ -54,6 +54,8 @@ class HTTPParser
 		bool	checkBodySizeLimit( size_t body_size, const Config *config, std::string path );
 		void	generatePath(const Config *config);
 		bool	isRedirection(std::string &endpoint, const std::vector<std::string> &redir);
+		void	handleRootDir( const Config *config );
+		std::string searchThroughIndices(std::vector<std::string> indices, bool autoindex);
 
 		// Parsing header
 		bool	tryParseContentLength( std::string str );
