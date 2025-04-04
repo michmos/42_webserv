@@ -344,6 +344,7 @@ void	HTTPParser::handleRootDir(const Config *config) {
 	if (config->getAutoindex("/") == false) // AUTOINDEX OFF, so '/' returns 403 
 	{
 		result_.status_code = 403;
+		std::cerr << "auto index off, request / so statuscode 403\n";
 		return ;
 	}
 
@@ -352,6 +353,7 @@ void	HTTPParser::handleRootDir(const Config *config) {
 	if (indices.empty()) // if no indices givens body = list of dir
 	{
 		result_.dir_list = true;
+		std::cerr << "no indices given so printing dir\n";
 		return ;
 	}
 
@@ -361,16 +363,18 @@ void	HTTPParser::handleRootDir(const Config *config) {
 	{
 		for (const std::string &dir : result_.subdir)
 		{
-			if (stat((dir + index).c_str(), &statbuf) == 0)
+			std::string fullpath = addDir_Folder(dir, index);
+			if (stat((fullpath).c_str(), &statbuf) == 0)
 			{ 
 				if (S_ISDIR(statbuf.st_mode))
 					result_.dir_list = true;
-				else if (isAccesseble(dir + index, result_.status_code))
-					result_.request_target = dir + index;
+				else if (isAccesseble(fullpath, result_.status_code))
+					result_.request_target = fullpath;
 				return ;
 			}
 		}
 	}
+	std::cerr << "no good index found in root so 404" << std::endl;
 	result_.status_code = 404;
 	return ;
 }
@@ -379,7 +383,10 @@ static const std::vector<std::string>	getSubdirectories(const std::vector<std::s
 	std::vector<std::string>	subdir;
 	
 	for (const std::string &root: roots)
+	{
+		subdir.push_back(root);
 		getSubdirRecursive(root, subdir);
+	}
 	return (subdir);
 }
 
@@ -408,7 +415,7 @@ void	HTTPParser::generatePath(const Config *config) {
 }
 
 static bool	isBiggerMaxBodyLength(size_t content_length, uint64_t max_size) {
-	return (content_length > max_size)
+	return (content_length > max_size);
 }
 
 bool	HTTPParser::checkBodySizeLimit(size_t body_size, const Config *config, std::string path) {
