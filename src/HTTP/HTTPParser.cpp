@@ -7,6 +7,7 @@ HTTPParser::HTTPParser(void) : \
 	result_.body = "";
 	result_.method = "";
 	result_.request_target = "";
+	result_.dir_list = false;
 	PARSE_STATE_ = RCV_HEADER;
 }
 

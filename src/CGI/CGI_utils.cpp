@@ -54,9 +54,6 @@ void	CGI::createEnvCharPtrVector(std::vector<char*> &env_c_vector, std::vector<s
 	env_vector.push_back(const_cast<char*>("GATEWAY=CGI/1.1"));
 	env_vector.push_back(const_cast<char*>("SERVER_PROTOCOL=HTTP/1.1"));
 	for (auto& str : env_vector)
-	{
-		std::cerr << "env: " << str << std::endl;
 		env_c_vector.push_back(const_cast<char*>(str.c_str()));
-	}
 	env_c_vector.push_back(NULL);
 }

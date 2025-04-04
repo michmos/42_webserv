@@ -49,7 +49,7 @@ class CGI {
 		void				sendDataToStdin( int fd );
 
 		// RCV_FROM_CGI
-		void				getResponseFromCGI( int fd );
+		bool				getResponseFromCGI( int fd );
 		std::string			receiveBuffer( int fd );
 		int					getStatusCodeFromResponse( void );
 

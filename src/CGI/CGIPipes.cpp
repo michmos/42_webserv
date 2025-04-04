@@ -7,9 +7,9 @@ CGIPipes::CGIPipes(void) {
 CGIPipes::~CGIPipes(void) { closeAllPipes(); }
 
 void	CGIPipes::setCallbackFunction(std::function<void(struct epoll_event, const SharedFd&)> callback, \
-	const SharedFd& server_fd) {
+	const SharedFd& client_fd) {
 	pipe_callback_ = callback;
-	server_fd_ = server_fd;
+	client_fd_ = client_fd;
 }
 
 std::vector<int>	CGIPipes::getPipes(void) { return (pipes_); }
@@ -42,20 +42,23 @@ void	CGIPipes::addNewPipes(void) {
 	pipes_[2] = pipe_to_child[READ];
 	pipes_[3] = pipe_to_child[WRITE];
 	addPipesToEpoll();
-	std::cerr << "add new pipes5" << std::endl;
 }
 
 /// @brief takes the last pipe and exectutes the pipe_callback function
-void	CGIPipes::addPipesToEpoll() {
+void	CGIPipes::addPipesToEpoll(void) {
 	epoll_event			event_write;
 	epoll_event 		event_read;
 
+	event_write.data.u32 = client_fd_.get();
 	event_write.data.fd = pipes_[TO_CHILD_WRITE];
 	event_write.events = EPOLLOUT;
-	pipe_callback_(event_write, server_fd_);
+	std::cerr << "add pipes: " << event_write.data.fd << std::endl;
+	pipe_callback_(event_write, client_fd_);
+	event_read.data.u32 = client_fd_.get();
 	event_read.data.fd = pipes_[FROM_CHILD_READ];
 	event_read.events = EPOLLIN;
-	pipe_callback_(event_read, server_fd_);
+	std::cerr << "add pipes: " << event_read.data.fd << std::endl;
+	pipe_callback_(event_read, client_fd_);
 }
 
 /// @brief closes all pipes that are stored in a vector<vector<int>> array

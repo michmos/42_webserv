@@ -75,7 +75,7 @@ class HTTPClient {
 
 		bool			parsing( int fd );
 		bool			cgi( int fd );
-		void			responding( bool cgi_used, int fd );
+		void			responding( bool cgi_used, const epoll_event &ev );
 		void			cgiresponse( void );
 		const Config	*getConfig( void ) const;
 
@@ -92,6 +92,6 @@ class HTTPClient {
 		HTTPResponse				responseGenerator_;
 		const Config				*config_;
 
-		std::function<void(const std::string& serverName)> _setConfig_cb;
+		std::function<void(struct epoll_event, const SharedFd&)> addToEpoll_cb_;
 		std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb_;
 };

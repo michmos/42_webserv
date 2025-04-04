@@ -29,7 +29,7 @@ class CGIPipes {
 	private:
 		std::vector<int>											pipes_;
 		std::function<void(struct epoll_event, const SharedFd&)>	pipe_callback_;
-		SharedFd													server_fd_;
+		SharedFd													client_fd_;
 
 	public:
 		CGIPipes( void );

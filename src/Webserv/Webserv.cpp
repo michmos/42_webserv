@@ -136,7 +136,10 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 			// function to add an epoll event to epoll instance - used for callback
 			[this](struct epoll_event ev, const SharedFd& clientSock) {
 				// save the client fd to be able to map the pipe fd to the client
-				ev.data.u32 = clientSock.get();
+				std::cerr << "in callback: " << ev.data.fd << std::endl;
+				// ev.data.u32 = clientSock.get();
+				(void) clientSock;
+				// ev.data.u32 = ev.data.fd;
 				_ep.add(ev.data.fd, ev.events);
 			},
 			// function to get ptr to config - used for callback
@@ -186,6 +189,7 @@ void	Webserv::eventLoop() {
 					_delClient(fd);
 			} else if (_clients.find(ev.data.u32) != _clients.end()) {
 				// client pipe ready
+				std::cerr << "client:" << ev.data.u32 << " .. " << ev.data.fd << std::endl;
 				_clients.find(ev.data.u32)->second.handle(ev);
 			} else {
 				throw std::runtime_error("eventLoop(): fd not found");

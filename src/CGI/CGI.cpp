@@ -24,8 +24,8 @@ void	CGI::handle_cgi(HTTPRequest &request, int fd) {
 		case START_CGI:
 			if (request.method == "DELETE")
 				request.request_target = "data/www/cgi-bin/nph_CGI_delete.py";
-			else
-				request.request_target = "data/www/cgi-bin" + request.request_target;
+			// else
+			// 	request.request_target = "data/www/cgi-bin" + request.request_target;
 			createEnv(env_strings, request);
 			forkCGI(request.request_target, env_strings);
 			CGI_STATE_ = SEND_TO_CGI;
@@ -35,7 +35,8 @@ void	CGI::handle_cgi(HTTPRequest &request, int fd) {
 			CGI_STATE_ = RCV_FROM_CGI;
 			return ;
 		case RCV_FROM_CGI:
-			getResponseFromCGI(fd);
+			if (getResponseFromCGI(fd) == false)
+				return ;
 			CGI_STATE_ = CRT_RSPNS_CGI;
 		case CRT_RSPNS_CGI:
 			return ;
@@ -131,6 +132,7 @@ std::string CGI::getScriptExecutable(const std::string &path)
  */
 void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_vector) {
 	std::cout << std::flush;
+	status_ = 0;
 	pid_ = fork();
 	if (pid_ < 0)
 		throwException("Fork failed");
@@ -162,7 +164,6 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 /// @brief forks a new process that checks the time of the CGI + timout time
 void	CGI::watchDog(void) {
 	pid_t	pid;
-	int		status;
 	time_t	start;
 	time_t	now;
 	bool	timeout = false;
@@ -176,7 +177,7 @@ void	CGI::watchDog(void) {
 	else if (pid == 0)
 	{
 		start = time(NULL);
-		while (waitpid(pid_, &status, WNOHANG) == 0)
+		while (waitpid(pid_, &status_, WNOHANG) == 0)
 		{
 			now = time(NULL);
 			if (now - start > TIMEOUT)
@@ -248,11 +249,13 @@ std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, const HT
  * @brief checks response status from CGI and receives header (and body) from pipe
  * if statuscode is not set it wil generate a Internal Server Error
  */
-void	CGI::getResponseFromCGI(int fd) {
+bool	CGI::getResponseFromCGI(int fd) {
 	if (WIFEXITED(status_))
 	{
 		int return_value = WEXITSTATUS(status_);
 		response_ = receiveBuffer(fd);
+		if (response_.empty())
+			return (false);
 		if (return_value != 0) {
 			int status_code = getStatusCodeFromResponse();
 			std::cerr << "status_code; " << status_code << std::endl;
@@ -262,6 +265,7 @@ void	CGI::getResponseFromCGI(int fd) {
 	}
 	else
 		response_ = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+	return (true);
 }
 
 /**
@@ -269,15 +273,20 @@ void	CGI::getResponseFromCGI(int fd) {
  * @return string buffer with response from child or error msg that something went wrong
  */
 std::string	CGI::receiveBuffer(int fd) {
-	char buffer[1024];
+	char	buffer[1024];
 	
+	std::cerr << "READ from " << fd << std::endl;
 	ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+
 	if (bytesRead > 0)
 		buffer[bytesRead] = '\0';
 	else
 	{
 		if (bytesRead == -1)
+		{
 			std::cerr << "Error read: " << std::strerror(errno) << std::endl;
+			return (""); // again?
+		}
 		else
 			std::cerr << "Error: no output read"; // what now?
 		return std::string("HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\n\r\n<html>\n") +

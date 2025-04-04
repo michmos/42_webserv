@@ -1,22 +1,30 @@
 #include "../../inc/HTTP/HTTPClient.hpp"
 
+
 HTTPClient::HTTPClient(
 	SharedFd clientFd, 
 	SharedFd serverFd, 
 	std::function<void(struct epoll_event, const SharedFd&)>  addToEpoll_cb,
-	std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb
-	) : clientSock_(clientFd), serverSock_(serverFd), \
-		responseGenerator_(), getConfig_cb_(getConfig_cb) {
-	pipes_.setCallbackFunction(addToEpoll_cb, serverFd);
+	std::function<const Config* (const SharedFd&, const std::string&)> getConfig_cb
+	) : clientSock_(clientFd), \
+		serverSock_(serverFd), \
+		responseGenerator_(), \
+		addToEpoll_cb_(addToEpoll_cb), \
+		getConfig_cb_(getConfig_cb) {
+	addToEpoll_cb_ = addToEpoll_cb;
 	STATE_ = RECEIVING;
 	config_ = NULL;
 }
 
-HTTPClient::HTTPClient(const HTTPClient& other) : STATE_(other.STATE_),
-	clientSock_(other.clientSock_), serverSock_(other.serverSock_), \
+HTTPClient::HTTPClient(const HTTPClient& other) : \
+	STATE_(other.STATE_),
+	clientSock_(other.clientSock_), \
+	serverSock_(other.serverSock_), \
 	responseGenerator_(other.responseGenerator_), \
-	config_(other.config_), getConfig_cb_(other.getConfig_cb_) {
-}
+	config_(other.config_), \
+	addToEpoll_cb_(other.addToEpoll_cb_), \
+	getConfig_cb_(other.getConfig_cb_) 
+{}
 
 HTTPClient::~HTTPClient(void) { }
 
@@ -81,7 +89,7 @@ void	HTTPClient::handle(const epoll_event &event) {
 			if (is_cgi_request && cgi(event.data.fd) != READY)
 				return ;
 		case RESPONSE:
-			responding(is_cgi_request, event.data.fd);
+			responding(is_cgi_request, event);
 		case DONE:
 			return ;
 	}
@@ -116,13 +124,19 @@ bool	HTTPClient::parsing(int fd) {
 }
 
 /// @brief regenerates response and add this one to the que.
-void	HTTPClient::responding(bool cgi_used, int fd) {
+void	HTTPClient::responding(bool cgi_used, const epoll_event &ev) {
+	int fd;
+
 	if (cgi_used)
+	{
 		cgiresponse();
+		fd = ev.data.u32;
+	}
 	else
 	{
 		responseGenerator_.generateResponse(request_);
 		message_que_.push_back(responseGenerator_.loadResponse());
+		fd = ev.data.fd;
 	}
 	writeTo(fd);
 	STATE_ = DONE;
@@ -132,12 +146,13 @@ void	HTTPClient::responding(bool cgi_used, int fd) {
 bool	HTTPClient::cgi(int fd) {
 	std::vector<std::string>	env_strings;
 
-	pipes_.addNewPipes();
-	cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes());
-	std::cout << "IT is a cgi!" << std::endl;
-	std::cout << "realy?" << std::endl;
+	if (cgi_ == NULL)
+	{
+		pipes_.setCallbackFunction(addToEpoll_cb_, clientSock_);
+		pipes_.addNewPipes();
+		cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes());
+	}
 	cgi_->handle_cgi(request_, fd);
-	std::cout << "handled!" << std::endl;
 	return (cgi_->isReady());
 }
 

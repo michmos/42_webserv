@@ -9,6 +9,7 @@ HTTPResponse::HTTPResponse(void) {
 	content_type_ = "application/octet-stream";
 	status_code_ = 200;
 	response_ = "";
+	dir_list_ = false;
 	config_ = NULL;
 }
 
@@ -37,7 +38,10 @@ void	HTTPResponse::generateResponse(const HTTPRequest request) {
 	std::cerr << request.invalidRequest << " " << request.status_code << std::endl;
 
 	if (request.dir_list)
-		;
+	{
+		dir_list_ = true ;
+		; //??
+	}
 	if (!request.invalidRequest && request.status_code == 200)
 			filename_ = request.request_target;
 	else if (isRedirectStatusCode(request.status_code)) // redirect
