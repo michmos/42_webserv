@@ -80,11 +80,12 @@ void	HTTPClient::handle(const epoll_event &event) {
 	switch (STATE_) {
 		case RECEIVING:
 			data = readFrom(event.data.fd);
-			parser_.addBufferToParser(data, this);
+			parser_.processData(data, this);
 			if (!parser_.isDone()) {
 				return;
 			}
-			is_cgi_request = parsing(event.data.fd); // TODO: rename
+			setRequestDataAndConfig();
+			is_cgi_request = isCGI(event.data.fd); // TODO: rename
 		case PROCESS_CGI:
 			if (is_cgi_request && cgi(event.data.fd) != READY)
 				return ;
@@ -103,21 +104,20 @@ void	printRequest(HTTPRequest request) {
 	std::cerr << "StatusCode: " << request.status_code << "\n------------------\n";
 }
 
-/// @brief parse the HTTP request header and checks if it is a cgi target
-bool	HTTPClient::parsing(int fd) {
+void	HTTPClient::setRequestDataAndConfig(void) {
 	request_ = parser_.getParsedRequest();
 	printRequest(request_);
 	responseGenerator_.setConfig(config_);
+}
+bool	HTTPClient::isCGI(int fd) {
 	if (!responseGenerator_.isCGI(request_))
 	{
 		STATE_ = RESPONSE;
-		std::cerr << "NO CGI" << std::endl;
 		return (false);
 	}
 	else
 	{
 		STATE_ = PROCESS_CGI;
-		std::cerr << "CGI" << std::endl;
 		cgi(fd);
 		return (true);
 	}

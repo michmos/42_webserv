@@ -30,7 +30,7 @@ class HTTPParser
 		~HTTPParser( void );
 
 		void				clearParser( void );
-		void				addBufferToParser( std::string &buff, HTTPClient *client );
+		void				processData( std::string &buff, HTTPClient *client );
 		const HTTPRequest	getParsedRequest( void );
 
 		inline bool isDone() {
@@ -45,16 +45,16 @@ class HTTPParser
 		bool			chunked_;
 		e_parse_state	PARSE_STATE_;
 		
-		bool	isHeadersParsed( void );
-		void	verifyBodyCompletion( void );
+		bool	isHeaderRead( void );
+		bool	isBodyComplete( void );
 
 		void	splitHeaderBody( void );
 		void	addIfProcessIsChunked( const std::string &buff );
 		bool	validWithConfig( HTTPClient *client );
 		bool	checkBodySizeLimit( size_t body_size, const Config *config, std::string path );
-		void	generatePath(const Config *config);
 		bool	isRedirection(std::string &endpoint, const std::vector<std::string> &redir);
-		void	handleRootDir( const Config *config );
+		std::string	handleRootDir( const Config *config );
+		std::string	generatePath(const Config *config);
 		std::string searchThroughIndices(std::vector<std::string> indices, bool autoindex);
 
 		// Parsing header

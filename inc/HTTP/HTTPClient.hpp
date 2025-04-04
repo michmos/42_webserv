@@ -73,11 +73,12 @@ class HTTPClient {
 		void		writeTo( int fd );
 		std::string	readFrom( int fd );
 
-		bool			parsing( int fd );
+		bool			isCGI( int fd );
 		bool			cgi( int fd );
 		void			responding( bool cgi_used, const epoll_event &ev );
 		void			cgiresponse( void );
 		const Config	*getConfig( void ) const;
+		void			setRequestDataAndConfig( void );
 
 	private:
 		e_state						STATE_;

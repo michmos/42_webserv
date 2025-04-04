@@ -13,7 +13,7 @@ HTTPParser::HTTPParser(void) : \
 
 HTTPParser::~HTTPParser(void) { }
 
-bool	HTTPParser::isHeadersParsed(void) {
+bool	HTTPParser::isHeaderRead(void) {
 	if (rawRequest_.find("\r\n\r\n") == std::string::npos)
 		return (false);
 	return (true);
@@ -30,14 +30,15 @@ void	HTTPParser::splitHeaderBody(void) {
 }
 
 /// @brief if available, checks if content length is same as size body
-void	HTTPParser::verifyBodyCompletion(void) {
+bool	HTTPParser::isBodyComplete(void) {
 	if (content_length_ > 0)
 	{
 		if (result_.body.size() == content_length_)
-		PARSE_STATE_ = DONE_PARSING;
+			return (true);
+		return (false);
 	}
 	else
-		PARSE_STATE_ = DONE_PARSING;
+		return (true);
 }
 
 /**
@@ -341,12 +342,12 @@ static bool	isAccesseble(const std::string &path, int &status_code) {
 	return (false);
 }
 
-void	HTTPParser::handleRootDir(const Config *config) {
+std::string	HTTPParser::handleRootDir(const Config *config) {
 	if (config->getAutoindex("/") == false) // AUTOINDEX OFF, so '/' returns 403 
 	{
 		result_.status_code = 403;
 		std::cerr << "auto index off, request / so statuscode 403\n";
-		return ;
+		return ("");
 	}
 
 	const std::vector<std::string> indices = config->getIndex("/");
@@ -355,7 +356,7 @@ void	HTTPParser::handleRootDir(const Config *config) {
 	{
 		result_.dir_list = true;
 		std::cerr << "no indices given so printing dir\n";
-		return ;
+		return ("");
 	}
 
 	std::string	folder_file;
@@ -370,14 +371,13 @@ void	HTTPParser::handleRootDir(const Config *config) {
 				if (S_ISDIR(statbuf.st_mode))
 					result_.dir_list = true;
 				else if (isAccesseble(fullpath, result_.status_code))
-					result_.request_target = fullpath;
-				return ;
+					return (fullpath);
 			}
 		}
 	}
 	std::cerr << "no good index found in root so 404" << std::endl;
 	result_.status_code = 404;
-	return ;
+	return ("");
 }
 
 static const std::vector<std::string>	getSubdirectories(const std::vector<std::string> &roots) {
@@ -395,24 +395,22 @@ static const std::vector<std::string>	getSubdirectories(const std::vector<std::s
  * @brief checks for paths (redir, root, access)
  * @param config pointer to Config 
  */
-void	HTTPParser::generatePath(const Config *config) {
+std::string	HTTPParser::generatePath(const Config *config) {
 	struct stat	statbuf;
 	std::string	full_path;
 
 	result_.subdir = getSubdirectories(config->getRoot(result_.request_target));
 	if (isRedirection(result_.request_target, config->getRedirect(result_.request_target)))
-		return ;
+		return ("");
 	else if (result_.request_target == "/")
 		return (handleRootDir(config));
 	for (const std::string &folder : result_.subdir)
 	{
 		full_path = addDir_Folder(folder, result_.request_target);
 		if (stat(full_path.c_str(), &statbuf) == 0)
-		{
-			result_.request_target = full_path;
-			return ;
-		}
+			return (full_path);
 	}
+	return ("");
 }
 
 static bool	isBiggerMaxBodyLength(size_t content_length, uint64_t max_size) {
@@ -438,16 +436,17 @@ bool	HTTPParser::checkBodySizeLimit(size_t body_size, const Config *config, std:
 		return (false);
 }
 
+
 /**
  * @brief process readbuffer by state;
  * @param buff std::string with readbuffer;
  */
-void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client) {
+void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 	if (PARSE_STATE_ == RCV_HEADER)
 	{
 		rawRequest_ += buff;
 		buff = "";
-		if (isHeadersParsed())
+		if (isHeaderRead())
 		{
 			splitHeaderBody();
 			result_.invalidRequest = parseRequest();
@@ -456,7 +455,7 @@ void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client) {
 			client->setServer(result_.host);
 
 			// generate PATH
-			generatePath(client->getConfig());
+			result_.request_target = generatePath(client->getConfig());
 
 			// Validate with config and results from parsing
 			if (!result_.invalidRequest)
@@ -481,7 +480,8 @@ void	HTTPParser::addBufferToParser(std::string &buff, HTTPClient *client) {
 		result_.status_code = 413;
 		PARSE_STATE_ = DONE_PARSING;
 	}
-	verifyBodyCompletion();
+	if (isBodyComplete())
+		PARSE_STATE_ = DONE_PARSING;
 }
 
 void	HTTPParser::clearParser(void) {
