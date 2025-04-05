@@ -45,6 +45,7 @@ void	CGI::handle_cgi(HTTPRequest &request, int fd) {
 		case RCV_FROM_CGI:
 			if (fd != pipe_from_CGI_[READ]) // or what is timeout??
 				return ;
+			std::cerr << "get response cgi?" << std::endl;
 			if (getResponseFromCGI(fd) == false)
 				return ;
 			CGI_STATE_ = CRT_RSPNS_CGI;
@@ -308,7 +309,7 @@ bool	CGI::getResponseFromCGI(int fd) {
 std::string	CGI::receiveBuffer(int fd) {
 	char	buffer[1024];
 	
-	// std::cerr << "READ from " << fd << std::endl;
+	std::cerr << "READ from " << fd << std::endl;
 	ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);
 
 	if (bytesRead > 0)
@@ -317,7 +318,7 @@ std::string	CGI::receiveBuffer(int fd) {
 	{
 		if (bytesRead == -1)
 		{
-			std::cerr << "Error read: " << std::strerror(errno);
+			std::cerr << "Error read: " << std::strerror(errno) << std::endl;
 			return (""); // again?
 		}
 		else
@@ -325,6 +326,7 @@ std::string	CGI::receiveBuffer(int fd) {
 		return std::string("HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\n\r\n<html>\n") +
 			"<head><title>Server Error</title></head><body><h1>Something went wrong</h1></body></html>";
 	}
+	std::cerr << "buffer read " << bytesRead << " contains: " << buffer << std::endl;
 	closeSave(pipe_from_CGI_[READ]);
 	return (buffer);
 }

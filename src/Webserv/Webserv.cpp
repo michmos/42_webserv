@@ -138,8 +138,7 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 				// save the client fd to be able to map the pipe fd to the client
 				std::cerr << "in callback: " << ev.data.fd << std::endl;
 				// ev.data.u32 = clientSock.get();
-				(void) clientSock;
-				// ev.data.u32 = ev.data.fd;
+				_client_pipe_connection[ev.data.fd] = clientSock;
 				_ep.add(ev.data.fd, ev.events);
 			},
 			// function to get ptr to config - used for callback
@@ -158,6 +157,16 @@ void	Webserv::_delClient(const SharedFd& clientSock) {
 
 	_ep.del(clientSock.get());
 	_clients.erase(it);
+}
+
+void	Webserv::_delPipes(const SharedFd& clientSock) {
+	for (auto item : _client_pipe_connection) {
+		if (item.second == clientSock)
+		{
+			_ep.del(item.second.get());
+			_client_pipe_connection.erase(item.first);
+		}
+	}
 }
 
 void	Webserv::eventLoop() {
@@ -186,15 +195,23 @@ void	Webserv::eventLoop() {
 				client.handle(ev);
 				// TODO: add logic to remove pipes when client is deleted - e.g. through callback invoked from client destructor
 				if (client.isDone())
+				{
 					_delClient(fd);
-			} else if (_clients.find(ev.data.u32) != _clients.end()) {
-				// client pipe ready
-				// std::cerr << "client:" << ev.data.u32 << " .. " << ev.data.fd << std::endl;
-				_clients.find(ev.data.u32)->second.handle(ev);
+					_delPipes(fd);
+				}
+			}
+			else if (_client_pipe_connection.find(fd) != _client_pipe_connection.end()) {
+				SharedFd client_fd = _client_pipe_connection.find(fd)->second;
+				if (_clients.find(client_fd) != _clients.end())
+					_clients.find(client_fd)->second.handle(ev);
 			} 
+			// else if (_clients.find(ev.data.u32) != _clients.end()) {
+			// 	// client pipe ready
+			// 	std::cerr << "client:" << ev.data.u32 << " .. " << ev.data.fd << std::endl;
+			// 	_clients.find(ev.data.u32)->second.handle(ev);
+			// } 
 			else {
-				std::cerr << "fd not found: " << fd.get() << std::endl;
-				// throw std::runtime_error("eventLoop(): fd not found");
+				throw std::runtime_error("eventLoop(): fd not found");
 			}
 		}
 	}
