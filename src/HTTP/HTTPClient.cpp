@@ -76,7 +76,7 @@ void	HTTPClient::handle(const epoll_event &event) {
 	std::string	data;
 	HTTPRequest	request;
 	static bool	is_cgi_request = false;
-	
+
 	switch (STATE_) {
 		case RECEIVING:
 			data = readFrom(event.data.fd);
@@ -85,7 +85,7 @@ void	HTTPClient::handle(const epoll_event &event) {
 				return;
 			}
 			setRequestDataAndConfig();
-			is_cgi_request = isCGI(event.data.fd); // TODO: rename
+			is_cgi_request = isCGI(event.data.fd);
 		case PROCESS_CGI:
 			if (is_cgi_request && cgi(event.data.fd) != READY)
 				return ;
@@ -153,11 +153,18 @@ bool	HTTPClient::cgi(int fd) {
 		cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes());
 	}
 	cgi_->handle_cgi(request_, fd);
+	if (fd != clientSock_.get())
+	{
+		std::cerr << "After handle cgi" << std::endl;
+		cgi_->printPipes();
+	}
 	return (cgi_->isReady());
 }
 
 /// @brief checks if cgi header has to be rewritten and add response to que.
 void	HTTPClient::cgiresponse(void) {
+	std::cerr << "cgi response" << std::endl;
+	cgi_->printPipes();
 	if (!cgi_->isNPHscript(request_.request_target))
 		cgi_->rewriteResonseFromCGI();
 	message_que_.push_back(cgi_->getResponse());

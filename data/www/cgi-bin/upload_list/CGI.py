@@ -45,7 +45,7 @@ class CGI:
 			+ "Content-Length: " + str(len(self.body)) + "\r\n\r\n"
 	
 	def write_to_stdout( self, response:str ) -> None:
-		print("response CGI:", response, file=sys.stderr)
+		print("response CGI to ", sys.stdout.fileno(), " : ", response, file=sys.stderr)
 		sys.stdout.write(response)
 		sys.stdout.flush()
 

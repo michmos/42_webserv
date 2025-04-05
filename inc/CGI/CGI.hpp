@@ -47,7 +47,7 @@ class CGI {
 		void				watchDog( void );
 
 		// SEND_TO_CGI
-		void				sendDataToStdin( int fd );
+		bool				sendDataToStdinReady( int fd );
 
 		// RCV_FROM_CGI
 		bool				getResponseFromCGI( int fd );
@@ -58,14 +58,16 @@ class CGI {
 		void	createArgvVector( std::vector<char*> &argv_vector, const std::string &executable );
 		void	createEnvCharPtrVector( std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector );
 		void	closeAllPipes( void);
-		void	closeTwoPipes( int &pipe1, int &pipe2 );
 		void	throwException( const char *msg );
 		void	throwExceptionExit( const char *msg );
+		void	closeSave( int &fd );
 
 	public:
 		explicit CGI( const std::string &post_data, std::vector<int> pipes );
 		~CGI( void );
 
+		void	printPipes(void) const;
+		
 		std::string			getResponse( void );
 		bool				isReady( void );
 		void				handle_cgi( HTTPRequest &request, int fd );

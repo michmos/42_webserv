@@ -11,6 +11,13 @@ CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post
 	CGI_STATE_ = START_CGI;
 }
 
+void	CGI::printPipes(void) const {
+	std::cerr << "pipe from cgi READ\t" << pipe_from_CGI_[READ] << std::endl;
+	std::cerr << "pipe from cgi WRITE\t" << pipe_from_CGI_[WRITE] << std::endl;
+	std::cerr << "pipe to cgi READ\t" << pipe_to_CGI_[READ] << std::endl;
+	std::cerr << "pipe to cgi WRITE\t" << pipe_to_CGI_[WRITE] << std::endl;
+}
+
 CGI::~CGI(void) {}
 
 std::string CGI::getResponse(void) { return (response_); }
@@ -24,14 +31,15 @@ void	CGI::handle_cgi(HTTPRequest &request, int fd) {
 		case START_CGI:
 			if (request.method == "DELETE")
 				request.request_target = "data/www/cgi-bin/nph_CGI_delete.py";
-			// else
-			// 	request.request_target = "data/www/cgi-bin" + request.request_target;
 			createEnv(env_strings, request);
 			forkCGI(request.request_target, env_strings);
 			CGI_STATE_ = SEND_TO_CGI;
 			return ;
 		case SEND_TO_CGI:
-			sendDataToStdin(fd);
+			if (fd != pipe_to_CGI_[WRITE])
+				return ;
+			if (!sendDataToStdinReady(fd))
+				return ;
 			CGI_STATE_ = RCV_FROM_CGI;
 			return ;
 		case RCV_FROM_CGI:
@@ -134,21 +142,21 @@ std::string CGI::getScriptExecutable(const std::string &path)
  */
 void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_vector) {
 	std::cout << std::flush;
-	status_ = 0;
 	pid_ = fork();
 	if (pid_ < 0)
 		throwException("Fork failed");
 	else if (pid_ == 0) 
 	{
 		std::cerr << "IN CHILD: ";
-		closeTwoPipes(pipe_to_CGI_[WRITE], pipe_from_CGI_[READ]);
-		if (dup2(pipe_to_CGI_[READ], STDIN_FILENO) < 0)
+		closeSave(pipe_to_CGI_[WRITE]);
+		closeSave(pipe_from_CGI_[READ]);
+		if (dup2(pipe_to_CGI_[READ], STDOUT_FILENO) < 0)
 			throwExceptionExit("dub2 failed");
-		if (dup2(pipe_from_CGI_[WRITE], STDOUT_FILENO) < 0)
+		if (dup2(pipe_from_CGI_[WRITE], STDIN_FILENO) < 0)
 			throwExceptionExit("dub2 failed");
 		std::cerr << "IN CHILD AFTER DUB: ";
-		closeTwoPipes(pipe_to_CGI_[READ], pipe_from_CGI_[WRITE]);
-
+		closeSave(pipe_to_CGI_[READ]);
+		closeSave(pipe_from_CGI_[WRITE]);
 		std::vector<char*>	argv_vector;
 		std::vector<char*>	env_c_vector;
 
@@ -158,12 +166,14 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 		if (execve(executable.c_str(), argv_vector.data(), env_c_vector.data()) == -1)
 		{
 			std::cerr << "Error: Execve failed: " << std::strerror(errno) << std::endl;
-			closeTwoPipes(pipe_to_CGI_[READ], pipe_from_CGI_[WRITE]);
+			closeSave(pipe_to_CGI_[READ]);
+			closeSave(pipe_from_CGI_[WRITE]);
 		}
 		exit(1);
 	}
 	std::cerr << "IN PARENT: ";
-	closeTwoPipes(pipe_to_CGI_[READ], pipe_from_CGI_[WRITE]);
+	closeSave(pipe_to_CGI_[READ]);
+	closeSave(pipe_from_CGI_[WRITE]);
 	watchDog();
 }
 
@@ -191,12 +201,16 @@ void	CGI::watchDog(void) {
 				timeout = true;
 				break ;
 			}
-			sleep(1);
+			usleep(100000);
 		}
 		if (timeout)
-			kill(pid_, SIGKILL);
-		std::cerr << "IN WACHDOG: ";
-		closeAllPipes();
+		{
+			if (kill(pid_, SIGKILL) == -1)
+				std::perror("Error: failed to kill child process");
+		}
+			std::cerr << "IN WACHDOG: ";
+		// closeSave(pipe_from_CGI_[READ]);
+		// closeSave(pipe_to_CGI_[WRITE]);
 		exit(0);
 	}
 }
@@ -208,12 +222,14 @@ void	CGI::watchDog(void) {
  * @brief writes body to stdin for CGI and closes write end pipe
  * @param post_data string with body
  */
-void	CGI::sendDataToStdin(int fd) {
+bool	CGI::sendDataToStdinReady(int fd) {
 	ssize_t	readBytes;
+
+	if (fd != pipe_to_CGI_[WRITE] && !post_data_.empty())
+		return (false);
 
 	if (!post_data_.empty())
 	{
-		assert(fd == pipe_to_CGI_[WRITE]);
 		readBytes = write(pipe_to_CGI_[WRITE], post_data_.c_str(), post_data_.size());
 		if (readBytes != (ssize_t)post_data_.size())
 		{
@@ -225,8 +241,8 @@ void	CGI::sendDataToStdin(int fd) {
 	}
 	std::cerr << "ERROR ??? fd: " << fd << " must be: " << pipe_to_CGI_[WRITE] << std::endl;
 	std::cerr << "AFTER SEND DATA close: " << pipe_to_CGI_[WRITE]<< std::endl;
-	close(pipe_to_CGI_[WRITE]);
-	pipe_to_CGI_[WRITE] = -1;
+	closeSave(pipe_to_CGI_[WRITE]);
+	return (true);
 }
 
 /**
@@ -263,15 +279,18 @@ std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, const HT
  * if statuscode is not set it wil generate a Internal Server Error
  */
 bool	CGI::getResponseFromCGI(int fd) {
+	int return_value;
+	int status_code;
+
 	if (WIFEXITED(status_))
 	{
-		int return_value = WEXITSTATUS(status_);
 		assert(fd == pipe_from_CGI_[READ]);
+		return_value = WEXITSTATUS(status_);
 		response_ = receiveBuffer(pipe_from_CGI_[READ]);
 		if (response_.empty())
 			return (false);
 		if (return_value != 0) {
-			int status_code = getStatusCodeFromResponse();
+			status_code = getStatusCodeFromResponse();
 			std::cerr << "status_code; " << status_code << std::endl;
 			// compare with configfile error pages.
 			std::cerr << "response" << response_ << std::endl;
@@ -306,8 +325,7 @@ std::string	CGI::receiveBuffer(int fd) {
 		return std::string("HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\n\r\n<html>\n") +
 			"<head><title>Server Error</title></head><body><h1>Something went wrong</h1></body></html>";
 	}
-	close(fd);
-	pipe_from_CGI_[READ] = -1;
+	closeSave(pipe_from_CGI_[READ]);
 	return (buffer);
 }
 

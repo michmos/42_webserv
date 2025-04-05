@@ -1,6 +1,6 @@
 HTTP/1.1 200 OK
 Content-Type: text/html
-Content-Length: 1909
+Content-Length: 1889
 
 <!DOCTYPE html>
 <html lang="en">
@@ -37,7 +37,7 @@ Content-Length: 1909
 		}
 
 		p {
-			color: red;
+			color: black;
 		}
 
 		/* Navigationbar */
@@ -79,7 +79,6 @@ Content-Length: 1909
 
 		footer {
 			margin-top: 20px;
-			font-size: 0.9em;
 			color: gray;
 			padding: 50px;
 			height: 5%
@@ -113,7 +112,6 @@ Content-Length: 1909
 		</form>
 	</section>
 	<footer>
-
 	</footer>
 </body>
 

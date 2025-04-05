@@ -189,10 +189,12 @@ void	Webserv::eventLoop() {
 					_delClient(fd);
 			} else if (_clients.find(ev.data.u32) != _clients.end()) {
 				// client pipe ready
-				std::cerr << "client:" << ev.data.u32 << " .. " << ev.data.fd << std::endl;
+				// std::cerr << "client:" << ev.data.u32 << " .. " << ev.data.fd << std::endl;
 				_clients.find(ev.data.u32)->second.handle(ev);
-			} else {
-				throw std::runtime_error("eventLoop(): fd not found");
+			} 
+			else {
+				std::cerr << "fd not found: " << fd.get() << std::endl;
+				// throw std::runtime_error("eventLoop(): fd not found");
 			}
 		}
 	}
