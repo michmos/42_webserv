@@ -40,11 +40,15 @@ class CGI {
 		const std::string	post_data_;
 		epoll_event			epoll_event_pipe_[2];
 		e_cgi_state			CGI_STATE_;
+		time_t				start_time_;
+		bool				timeout_;
 
 		// START_CGI
 		std::vector<char*>	createEnv( std::vector<std::string> &envStrings, const HTTPRequest request );
 		void				forkCGI( const std::string &executable, std::vector<std::string> env_vector );
 		void				watchDog( void );
+		bool				isCGIProcessFinished( void );
+		bool				isCGIProcessSuccessful( void );
 
 		// SEND_TO_CGI
 		bool				sendDataToStdinReady( int fd );
@@ -70,7 +74,7 @@ class CGI {
 		
 		std::string			getResponse( void );
 		bool				isReady( void );
-		void				handle_cgi( HTTPRequest &request, int fd );
+		void				handle_cgi( HTTPRequest &request, const epoll_event &event );
 		bool				isNPHscript( const std::string &executable );
 		void				rewriteResonseFromCGI( void );
 			

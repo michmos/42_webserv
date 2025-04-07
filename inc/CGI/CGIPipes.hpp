@@ -10,11 +10,11 @@
 # include "../Webserv/Epoll.hpp"
 
 #ifndef WRITE
-# define WRITE 0
+# define WRITE 1
 #endif
 
 #ifndef READ
-# define READ 1
+# define READ 0
 #endif
 
 #ifndef FROM_CGI_READ

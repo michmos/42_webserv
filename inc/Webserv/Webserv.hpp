@@ -40,7 +40,7 @@ public:
 private:
 	std::unordered_map<SharedFd, std::vector<Config>>	_servers;
 	std::unordered_map<SharedFd, HTTPClient> 			_clients;
-	std::unordered_map<SharedFd, SharedFd >				_client_pipe_connection;
+	std::unordered_map<SharedFd, SharedFd >				_pipe_client_connection;
 	Epoll												_ep;
 
 	void	_addClient(const SharedFd& clientSock, const SharedFd& servSock);

@@ -4,7 +4,7 @@ CGIPipes::CGIPipes(void) {
 	pipes_.resize(4, -1);
 }
 
-CGIPipes::~CGIPipes(void) { closeAllPipes(); }
+CGIPipes::~CGIPipes(void) {}
 
 void	CGIPipes::setCallbackFunction(std::function<void(struct epoll_event, const SharedFd&)> callback, \
 	const SharedFd& client_fd) {
@@ -31,13 +31,16 @@ void	CGIPipes::addNewPipes(void) {
 		std::perror("pipe_to_cgi failed");
 		close(pipe_to_cgi[WRITE]);
 		close(pipe_to_cgi[READ]);
-		std::cerr << "close pipes: " << pipe_to_cgi[WRITE] << " and " << pipe_to_cgi[READ] << std::endl;
 		throw std::exception();
 	}
-	fcntl(pipe_to_cgi[WRITE], F_SETFL, O_NONBLOCK);
-	fcntl(pipe_to_cgi[READ], F_SETFL, O_NONBLOCK);
-	fcntl(pipe_from_cgi[WRITE], F_SETFL, O_NONBLOCK);
-	fcntl(pipe_from_cgi[READ], F_SETFL, O_NONBLOCK);
+	if (fcntl(pipe_to_cgi[WRITE], F_SETFL, O_NONBLOCK) == -1)
+		std::perror("fcntl fails with pipes\n");
+	if (fcntl(pipe_to_cgi[READ], F_SETFL, FD_CLOEXEC) == -1)
+		std::perror("fcntl fails with pipes\n");
+	if (fcntl(pipe_from_cgi[WRITE], F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
+		std::perror("fcntl fails with pipes\n");
+	if (fcntl(pipe_from_cgi[READ], F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
+		std::perror("fcntl fails with pipes\n");
 	pipes_[0] = pipe_from_cgi[READ];
 	pipes_[1] = pipe_from_cgi[WRITE];
 	pipes_[2] = pipe_to_cgi[READ];
@@ -50,18 +53,17 @@ void	CGIPipes::addPipesToEpoll(void) {
 	epoll_event			event_write;
 	epoll_event 		event_read;
 
-	event_write.data.u32 = client_fd_.get();
 	event_write.data.fd = pipes_[TO_CGI_WRITE];
-	event_write.events = EPOLLOUT;
+	event_write.events = EPOLLOUT | O_NONBLOCK;
 	std::cerr << "add pipes: " << event_write.data.fd << std::endl;
 	pipe_callback_(event_write, client_fd_);
-	event_read.data.u32 = client_fd_.get();
 	event_read.data.fd = pipes_[FROM_CGI_READ];
-	event_read.events = EPOLLIN;
+	event_read.events =  EPOLLIN | O_NONBLOCK;
 	std::cerr << "add pipes: " << event_read.data.fd << std::endl;
 	pipe_callback_(event_read, client_fd_);
 }
 
+// NOT NEEDED ...
 /// @brief closes all pipes that are stored in a vector<vector<int>> array
 void	CGIPipes::closeAllPipes(void) {
 	for (size_t j = 0; j < pipes_.size(); j++)

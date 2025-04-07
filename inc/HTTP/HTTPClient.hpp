@@ -73,8 +73,8 @@ class HTTPClient {
 		void		writeTo( int fd );
 		std::string	readFrom( int fd );
 
-		bool			isCGI( int fd );
-		bool			cgi( int fd );
+		bool			isCGI( const epoll_event &event );
+		bool			cgi( const epoll_event &event );
 		void			responding( bool cgi_used, const epoll_event &ev );
 		void			cgiresponse( void );
 		const Config	*getConfig( void ) const;

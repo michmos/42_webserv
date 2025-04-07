@@ -24,6 +24,7 @@ def main() -> int:
 
 	cgi_upload_list = CGI()
 	try:
+		
 		cgi_upload_list.parsing()
 
 		if cgi_upload_list.get_status_code() == 200:

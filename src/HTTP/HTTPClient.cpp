@@ -48,6 +48,7 @@ void	HTTPClient::writeTo(int fd) {
 
 	if (message_que_.empty())
 		return ;
+	std::cerr << "response to " << fd << std::endl;
 	response = message_que_.front();
 	message_que_.erase(message_que_.begin());
 	bytes_write = write(fd, response.c_str(), response.size());
@@ -85,9 +86,9 @@ void	HTTPClient::handle(const epoll_event &event) {
 				return;
 			}
 			setRequestDataAndConfig();
-			is_cgi_request = isCGI(event.data.fd);
+			is_cgi_request = isCGI(event);
 		case PROCESS_CGI:
-			if (is_cgi_request && cgi(event.data.fd) != READY)
+			if (is_cgi_request && cgi(event) != READY)
 				return ;
 		case RESPONSE:
 			responding(is_cgi_request, event);
@@ -109,7 +110,7 @@ void	HTTPClient::setRequestDataAndConfig(void) {
 	printRequest(request_);
 	responseGenerator_.setConfig(config_);
 }
-bool	HTTPClient::isCGI(int fd) {
+bool	HTTPClient::isCGI(const epoll_event &event) {
 	if (!responseGenerator_.isCGI(request_))
 	{
 		STATE_ = RESPONSE;
@@ -118,32 +119,29 @@ bool	HTTPClient::isCGI(int fd) {
 	else
 	{
 		STATE_ = PROCESS_CGI;
-		cgi(fd);
+		cgi(event);
 		return (true);
 	}
 }
 
 /// @brief regenerates response and add this one to the que.
 void	HTTPClient::responding(bool cgi_used, const epoll_event &ev) {
-	int fd;
-
 	if (cgi_used)
 	{
 		cgiresponse();
-		fd = ev.data.u32;
 	}
 	else
 	{
 		responseGenerator_.generateResponse(request_);
 		message_que_.push_back(responseGenerator_.loadResponse());
-		fd = ev.data.fd;
 	}
-	writeTo(fd);
+	(void)ev;
+	writeTo(clientSock_.get());
 	STATE_ = DONE;
 }
 
 /// @brief creates a CGI class, checks the method/target, starts the cgi
-bool	HTTPClient::cgi(int fd) {
+bool	HTTPClient::cgi(const epoll_event &event) {
 	std::vector<std::string>	env_strings;
 
 	if (cgi_ == NULL)
@@ -152,22 +150,20 @@ bool	HTTPClient::cgi(int fd) {
 		pipes_.addNewPipes();
 		cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes());
 	}
-	cgi_->handle_cgi(request_, fd);
-	if (fd != clientSock_.get())
-	{
-		std::cerr << "After handle cgi" << std::endl;
-		cgi_->printPipes();
-	}
+	cgi_->handle_cgi(request_, event);
 	return (cgi_->isReady());
 }
 
 /// @brief checks if cgi header has to be rewritten and add response to que.
 void	HTTPClient::cgiresponse(void) {
-	std::cerr << "cgi response" << std::endl;
+	std::cerr << "cgi response nph: " << cgi_->isNPHscript(request_.request_target) << std::endl;
 	cgi_->printPipes();
 	if (!cgi_->isNPHscript(request_.request_target))
 		cgi_->rewriteResonseFromCGI();
 	message_que_.push_back(cgi_->getResponse());
+
+	std::cerr << "-------------------\nResponse: " << cgi_->getResponse() \
+		<< "\n-----------------" << std::endl;
 }
 
 const Config	*HTTPClient::getConfig( void ) const { return (config_); }

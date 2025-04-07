@@ -138,7 +138,7 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 				// save the client fd to be able to map the pipe fd to the client
 				std::cerr << "in callback: " << ev.data.fd << std::endl;
 				// ev.data.u32 = clientSock.get();
-				_client_pipe_connection[ev.data.fd] = clientSock;
+				_pipe_client_connection[ev.data.fd] = clientSock;
 				_ep.add(ev.data.fd, ev.events);
 			},
 			// function to get ptr to config - used for callback
@@ -150,6 +150,7 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 }
 
 void	Webserv::_delClient(const SharedFd& clientSock) {
+	std::cerr << "delete client: " << clientSock.get() << std::endl;
 	const auto& it = _clients.find(clientSock);
 	if (it == _clients.end()) {
 		throw std::runtime_error("delClient(): trying to del non-existant client");
@@ -160,11 +161,12 @@ void	Webserv::_delClient(const SharedFd& clientSock) {
 }
 
 void	Webserv::_delPipes(const SharedFd& clientSock) {
-	for (auto item : _client_pipe_connection) {
+	for (auto item : _pipe_client_connection) {
 		if (item.second == clientSock)
 		{
-			_ep.del(item.second.get());
-			_client_pipe_connection.erase(item.first);
+			std::cerr << "delete pipe epoll: " << item.first.get() << std::endl;
+			_ep.del(item.first.get());
+			_pipe_client_connection.erase(item.first);
 		}
 	}
 }
@@ -174,45 +176,44 @@ void	Webserv::eventLoop() {
 	
 	while (keepalive)
 	{
-		const auto& events = _ep.wait();
-		for (const auto& ev : events) {
-			// #ifdef DEBUG
-			// std::cout << "|SERVER| client: " << ev.data.fd << " "
-			// 	<< ((ev.events & EPOLLIN) ? "EPOLLIN " : " ")
-			// 	<< ((ev.events & EPOLLOUT) ? "EPOLLOUT " : " ")
-			// 	<< ((ev.events & (EPOLLHUP | EPOLLERR)) ? "EPOLLHUP | EPOLLERR" : "") << std::endl;
-			// #endif
-			SharedFd fd = ev.data.fd;
-			if (_servers.find(fd) != _servers.end()) {
-				// server socket ready
-				SharedFd clientSock = accept(fd.get(), nullptr, nullptr);
-				if (clientSock == -1)
-					throw std::runtime_error(std::string("accept(): ") + strerror(errno));
-				_addClient(clientSock, fd);
-			} else if (_clients.find(fd) != _clients.end()) {
-				//  client socket ready
-				auto& client = _clients.find(fd)->second;
-				client.handle(ev);
-				// TODO: add logic to remove pipes when client is deleted - e.g. through callback invoked from client destructor
-				if (client.isDone())
-				{
-					_delClient(fd);
-					_delPipes(fd);
+		try {
+			const auto& events = _ep.wait();
+			for (const auto& ev : events) {
+				// #ifdef DEBUG
+				// std::cout << "|SERVER| client: " << ev.data.fd << " "
+				// 	<< ((ev.events & EPOLLIN) ? "EPOLLIN " : " ")
+				// 	<< ((ev.events & EPOLLOUT) ? "EPOLLOUT " : " ")
+				// 	<< ((ev.events & (EPOLLHUP | EPOLLERR)) ? "EPOLLHUP | EPOLLERR" : "") << std::endl;
+				// #endif
+				SharedFd fd = ev.data.fd;
+				if (_servers.find(fd) != _servers.end()) {
+					// server socket ready
+					SharedFd clientSock = accept(fd.get(), nullptr, nullptr);
+					if (clientSock == -1)
+						throw std::runtime_error(std::string("accept(): ") + strerror(errno));
+					_addClient(clientSock, fd);
+				} else if (_clients.find(fd) != _clients.end()) {
+					//  client socket ready
+					auto& client = _clients.find(fd)->second;
+					client.handle(ev);
+					// TODO: add logic to remove pipes when client is deleted - e.g. through callback invoked from client destructor
+					if (client.isDone())
+					{
+						_delClient(fd);
+						_delPipes(fd);
+					}
 				}
+				else if (_pipe_client_connection.find(fd) != _pipe_client_connection.end()) {
+					SharedFd client_fd = _pipe_client_connection.find(fd)->second;
+					if (_clients.find(client_fd) != _clients.end())
+						_clients.find(client_fd)->second.handle(ev);
+				}
+				else
+					throw std::runtime_error("eventLoop(): fd not found");
 			}
-			else if (_client_pipe_connection.find(fd) != _client_pipe_connection.end()) {
-				SharedFd client_fd = _client_pipe_connection.find(fd)->second;
-				if (_clients.find(client_fd) != _clients.end())
-					_clients.find(client_fd)->second.handle(ev);
-			} 
-			// else if (_clients.find(ev.data.u32) != _clients.end()) {
-			// 	// client pipe ready
-			// 	std::cerr << "client:" << ev.data.u32 << " .. " << ev.data.fd << std::endl;
-			// 	_clients.find(ev.data.u32)->second.handle(ev);
-			// } 
-			else {
-				throw std::runtime_error("eventLoop(): fd not found");
-			}
+		}
+		catch (std::exception &e) {
+			std::cerr << "Error occurred: " << e.what() << std::endl;
 		}
 	}
 	std::cerr << "Webserver is shutting down" << std::endl;
