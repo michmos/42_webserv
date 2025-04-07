@@ -1,6 +1,5 @@
 
 #include "../../inc/Webserv/Webserv.hpp"
-#include <sys/epoll.h>
 
 std::atomic<bool> keepalive(true);
 
@@ -127,7 +126,7 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 		throw std::runtime_error("addClient(): trying to add existing client");
 	}
 	
-	_ep.add(clientSock.get(), EPOLLIN | EPOLLOUT);
+	_ep.add(clientSock.get(),  EPOLLIN | EPOLLOUT);
 	_clients.emplace(
 		std::make_pair(
 		clientSock,
@@ -136,10 +135,9 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 			servSock,
 			// function to add an epoll event to epoll instance - used for callback
 			[this](struct epoll_event ev, const SharedFd& clientSock) {
-				// save the client fd to be able to map the pipe fd to the client
-				std::cerr << "callback add pipe: " << ev.data.fd << std::endl;
-				_pipe_client_connection[ev.data.fd] = clientSock;
-				_ep.add(ev.data.fd, ev.events);
+				std::cerr << "in callback: " << ev.data.fd << std::endl;
+				// save the client fd in the data field
+				_ep.add(ev.data.fd, clientSock.get(), ev.events);
 			},
 			// function to get ptr to config - used for callback
 			[this](const SharedFd& servSock, const std::string& servName) {

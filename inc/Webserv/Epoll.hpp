@@ -16,6 +16,11 @@
 // since Linux 2.6.8 ignored anyways
 #define	EPOLL_START_SIZE 5
 
+struct epollEventData {
+	int	fd;
+	int	data;
+};
+
 class Epoll {
 public:
 	Epoll();
@@ -23,18 +28,23 @@ public:
 	Epoll& operator=(const Epoll& toAssign) = delete;
 	~Epoll() noexcept;
 
-	void	add(int fd, u_int32_t events) const;
-	void	mod(int fd, u_int32_t events) const;
-	void	del(int fd) const;
+	void	add(int fd, int data, u_int32_t events);
+	void	add(int fd, u_int32_t events);
+	void	mod(int fd, int data, u_int32_t events);
+	void	mod(int fd, u_int32_t events);
+	void	del(int fd);
 	const std::vector<struct epoll_event>&	wait();
+	static const struct epollEventData&	getEventData(struct epoll_event& ev);
+
 	void	setTimeout(int timeout) noexcept;
 	int		getEpFd() const;
 
 	// TODO: maybe add pwait() from epoll_pwait()
 
 private:
-	SharedFd						_epFd;
-	int								_timeout;
-	std::vector<struct epoll_event>	_events;
+	SharedFd										_epFd;
+	int												_timeout;
+	std::vector<struct epoll_event>					_events;
+	std::unordered_map<int, struct epollEventData>	_eventDataStorage;
 };
 
