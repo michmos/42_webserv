@@ -26,8 +26,6 @@
 # define DEFAULT_CONFIGFILE "configs/default.conf"
 # define DEFAULT_MIME_TYPES "configs/default.conf"
 
-class HTTPClient;
-
 class Webserv {
 public:
 	Webserv(const std::string& confPath);
