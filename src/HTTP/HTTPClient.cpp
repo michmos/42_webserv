@@ -1,17 +1,17 @@
 #include "../../inc/HTTP/HTTPClient.hpp"
 
-
 HTTPClient::HTTPClient(
 	SharedFd clientFd, 
 	SharedFd serverFd, 
 	std::function<void(struct epoll_event, const SharedFd&)>  addToEpoll_cb,
-	std::function<const Config* (const SharedFd&, const std::string&)> getConfig_cb
+	std::function<const Config* (const SharedFd&, const std::string&)> getConfig_cb,
+	std::function<void(int)> delFromEpoll_cb
 	) : clientSock_(clientFd), \
 		serverSock_(serverFd), \
 		responseGenerator_(), \
 		addToEpoll_cb_(addToEpoll_cb), \
-		getConfig_cb_(getConfig_cb) {
-	addToEpoll_cb_ = addToEpoll_cb;
+		getConfig_cb_(getConfig_cb), \
+		delFromEpoll_cb_(delFromEpoll_cb) {
 	STATE_ = RECEIVING;
 	config_ = NULL;
 }
@@ -23,7 +23,8 @@ HTTPClient::HTTPClient(const HTTPClient& other) : \
 	responseGenerator_(other.responseGenerator_), \
 	config_(other.config_), \
 	addToEpoll_cb_(other.addToEpoll_cb_), \
-	getConfig_cb_(other.getConfig_cb_) 
+	getConfig_cb_(other.getConfig_cb_), \
+	delFromEpoll_cb_(other.delFromEpoll_cb_)
 {}
 
 HTTPClient::~HTTPClient(void) { }
@@ -44,7 +45,6 @@ void	HTTPClient::writeTo(int fd) {
 
 	if (message_que_.empty())
 		return ;
-	std::cerr << "response to " << fd << std::endl;
 	response = message_que_.front();
 	message_que_.erase(message_que_.begin());
 	bytes_write = write(fd, response.c_str(), response.size());
@@ -105,7 +105,7 @@ void	printRequest(HTTPRequest request) {
 
 void	HTTPClient::setRequestDataAndConfig(void) {
 	request_ = parser_.getParsedRequest();
-	printRequest(request_);
+	printRequest(request_); // REMOVE
 	responseGenerator_.setConfig(config_);
 }
 bool	HTTPClient::isCGI(const epoll_event &event) {
@@ -129,7 +129,7 @@ bool	isRedirection(const std::string &response) {
 /// @brief regenerates response and add this one to the que.
 void	HTTPClient::responding(bool cgi_used, const epoll_event &ev) {
 	if (cgi_used)
-		cgiresponse();
+		cgiResponse();
 	else
 	{
 		responseGenerator_.generateResponse(request_);
@@ -147,16 +147,15 @@ bool	HTTPClient::cgi(const epoll_event &event) {
 	{
 		pipes_.setCallbackFunction(addToEpoll_cb_, clientSock_);
 		pipes_.addNewPipes();
-		cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes());
+		cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes(), delFromEpoll_cb_);
+		// cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes());
 	}
 	cgi_->handle_cgi(request_, event);
 	return (cgi_->isReady());
 }
 
-std::vector<int>	HTTPClient::removePipeFDFromEpoll(void) { return (cgi_->removeFromEpoll()); }
-
 /// @brief checks if cgi header has to be rewritten and add response to que.
-void	HTTPClient::cgiresponse(void) {
+void	HTTPClient::cgiResponse(void) {
 	if (!cgi_->isNPHscript(request_.request_target))
 		cgi_->rewriteResonseFromCGI();
 

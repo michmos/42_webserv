@@ -3,7 +3,9 @@
 // #######################     PUBLIC     ########################
 // ###############################################################
 
-CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post_data) {
+CGI::CGI(const std::string &post_data, std::vector<int> pipes, \
+		std::function<void(int)> delFromEpoll_cb) : post_data_(post_data), \
+		delFromEpoll_cb_(delFromEpoll_cb) {
 	pipe_from_CGI_[READ] = pipes[0];
 	pipe_from_CGI_[WRITE] = pipes[1];
 	pipe_to_CGI_[READ] = pipes[2];
@@ -14,12 +16,6 @@ CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post
 CGI::~CGI(void) {}
 
 std::string CGI::getResponse(void) { return (response_); }
-
-std::vector<int>	CGI::removeFromEpoll(void) { 
-	std::vector<int> copy = fd_remove_from_epoll;
-	fd_remove_from_epoll.clear();
-	return (copy);
-}
 
 bool	CGI::isReady(void) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
 
@@ -175,46 +171,6 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 	closeSave(pipe_from_CGI_[WRITE]);
 }
 
-/// @brief forks a new process that checks the time of the CGI + timout time
-void	CGI::watchDog(void) {
-	pid_t	pid;
-	time_t	start;
-	time_t	now;
-	bool	timeout = false;
-
-	pid = fork();
-	if (pid < 0)
-	{
-		std::perror("Error: fork failed");
-		throwException("Fork failed");
-	}
-	else if (pid == 0)
-	{
-		start = time(NULL);
-		std::cerr << "wait..." << std::endl;
-		while (waitpid(pid_, &status_, WNOHANG) == 0)
-		{
-			now = time(NULL);
-			if (now - start > TIMEOUT)
-			{
-				timeout = true;
-				break ;
-			}
-			usleep(100000);
-		}
-		if (timeout)
-		{
-			std::cerr << "timeout CGI\n";
-			if (kill(pid_, SIGKILL) == -1)
-				std::perror("Error: failed to kill child process");
-		}
-		std::cerr << "IN WACHDOG: ";
-		closeSave(pipe_from_CGI_[READ]);
-		closeSave(pipe_to_CGI_[WRITE]);
-		exit(0);
-	}
-}
-
 // ###############################################################
 // ###################### SEND_TO_CGI ############################
 #include <sys/socket.h>
@@ -239,7 +195,8 @@ bool	CGI::sendDataToStdinReady(int fd) {
 				std::cerr << "Error write: not written right amount:" <<  readBytes << std::endl;
 		}
 	}
-	fd_remove_from_epoll.push_back(pipe_to_CGI_[WRITE]);
+	// fd_remove_from_epoll.push_back(pipe_to_CGI_[WRITE]);
+	delFromEpoll_cb_(pipe_to_CGI_[WRITE]);
 	pipe_to_CGI_[WRITE] = -1;
 	return (true);
 }
@@ -347,7 +304,8 @@ std::string	CGI::receiveBuffer(int fd) {
 		return std::string("HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\n\r\n<html>\n") +
 			"<head><title>Server Error</title></head><body><h1>Something went wrong</h1></body></html>";
 	}
-	fd_remove_from_epoll.push_back(pipe_from_CGI_[READ]);
+	// fd_remove_from_epoll.push_back(pipe_from_CGI_[READ]);
+	delFromEpoll_cb_(pipe_from_CGI_[READ]);
 	pipe_from_CGI_[READ] = -1;
 	return (buffer); // also in chunked form...
 }

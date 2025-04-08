@@ -129,21 +129,25 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 	_ep.add(clientSock.get(), EPOLLIN | EPOLLOUT);
 	_clients.emplace(
 		std::make_pair(
-		clientSock, 
-		HTTPClient(
+		clientSock,
+		HTTPClient (
 			clientSock,
 			servSock,
 			// function to add an epoll event to epoll instance - used for callback
 			[this](struct epoll_event ev, const SharedFd& clientSock) {
 				// save the client fd to be able to map the pipe fd to the client
-				std::cerr << "in callback: " << ev.data.fd << std::endl;
-				// ev.data.u32 = clientSock.get();
+				std::cerr << "callback add pipe: " << ev.data.fd << std::endl;
 				_pipe_client_connection[ev.data.fd] = clientSock;
 				_ep.add(ev.data.fd, ev.events);
 			},
 			// function to get ptr to config - used for callback
 			[this](const SharedFd& servSock, const std::string& servName) {
 				return(getConfig(_servers, servSock, servName));
+			},
+			[this](int fd) {
+				std::cerr << "callback delete pipe: " << fd <<std::endl;
+				_pipe_client_connection.erase(fd);
+				_ep.del(fd);
 			}
 		))
 	);
@@ -159,21 +163,21 @@ void	Webserv::_delClient(const SharedFd& clientSock) {
 	_clients.erase(it);
 }
 
-void	Webserv::_delPipes(std::vector<int> to_delete) {
-	if (to_delete.empty())
-		return ;
-	for (int fd : to_delete)
-	{
-		_ep.del(fd);
-		for (auto item : _pipe_client_connection) {
-			if (item.first == fd)
-			{
-				_pipe_client_connection.erase(item.first);
-				return ;
-			}
-		}
-	}
-}
+// void	Webserv::_delPipes(std::vector<int> to_delete) {
+// 	if (to_delete.empty())
+// 		return ;
+// 	for (int fd : to_delete)
+// 	{
+// 		_ep.del(fd);
+// 		for (auto item : _pipe_client_connection) {
+// 			if (item.first == fd)
+// 			{
+// 				_pipe_client_connection.erase(item.first);
+// 				return ;
+// 			}
+// 		}
+// 	}
+// }
 
 void	Webserv::eventLoop() {
 	std::signal(2, signalhandler);
@@ -207,10 +211,7 @@ void	Webserv::eventLoop() {
 				else if (_pipe_client_connection.find(fd) != _pipe_client_connection.end()) {
 					SharedFd client_fd = _pipe_client_connection.find(fd)->second;
 					if (_clients.find(client_fd) != _clients.end())
-					{
 						_clients.find(client_fd)->second.handle(ev);
-						_delPipes(_clients.find(client_fd)->second.removePipeFDFromEpoll());
-					}
 				}
 				else
 					throw std::runtime_error("eventLoop(): fd not found");

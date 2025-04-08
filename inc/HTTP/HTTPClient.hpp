@@ -61,7 +61,8 @@ class HTTPClient {
 			SharedFd clientFd,
 			SharedFd serverFd,
 			std::function<void(struct epoll_event, const SharedFd&)> addToEpoll_cb,
-			std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb
+			std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb,
+			std::function<void(int)> delFromEpoll_cd
 		);
 		HTTPClient(const HTTPClient &other);
 		~HTTPClient( void );
@@ -70,12 +71,10 @@ class HTTPClient {
 		bool	isDone( void );
 		void	setServer(std::vector<std::string> host);
 
-		std::vector<int>	removePipeFDFromEpoll(void);
-
 		void		writeTo( int fd );
 		std::string	readFrom( int fd );
 
-		void			cgiresponse( void );
+		void			cgiResponse( void );
 		const Config	*getConfig( void ) const;
 	private:
 		e_state						STATE_;
@@ -92,6 +91,7 @@ class HTTPClient {
 
 		std::function<void(struct epoll_event, const SharedFd&)> addToEpoll_cb_;
 		std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb_;
+		std::function<void(int)> delFromEpoll_cb_;
 
 		void	setRequestDataAndConfig( void );
 		void	responding( bool cgi_used, const epoll_event &ev );

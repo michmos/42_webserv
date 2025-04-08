@@ -42,12 +42,11 @@ class CGI {
 		e_cgi_state			CGI_STATE_;
 		time_t				start_time_;
 		bool				timeout_;
-		std::vector<int>	fd_remove_from_epoll;
+		std::function<void(int)> delFromEpoll_cb_;
 
 		// START_CGI
 		std::vector<char*>	createEnv( std::vector<std::string> &envStrings, const HTTPRequest request );
 		void				forkCGI( const std::string &executable, std::vector<std::string> env_vector );
-		void				watchDog( void );
 		bool				isCGIProcessFinished( void );
 		bool				isCGIProcessSuccessful( void );
 
@@ -68,11 +67,10 @@ class CGI {
 		void	closeSave( int &fd );
 
 	public:
-		explicit CGI( const std::string &post_data, std::vector<int> pipes );
+		explicit CGI( const std::string &post_data, std::vector<int> pipes, std::function<void(int)> delFromEpoll_cb );
 		~CGI( void );
 		
 		std::string			getResponse( void );
-		std::vector<int>	removeFromEpoll( void );
 		bool				isReady( void );
 		void				handle_cgi( HTTPRequest &request, const epoll_event &event );
 		bool				isNPHscript( const std::string &executable );

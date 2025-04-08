@@ -60,21 +60,3 @@ void	CGIPipes::addPipesToEpoll(void) {
 	event_read.events =  EPOLLIN | O_NONBLOCK;
 	pipe_callback_(event_read, client_fd_);
 }
-
-// NOT NEEDED ...
-/// @brief closes all pipes that are stored in a vector<vector<int>> array
-void	CGIPipes::closeAllPipes(void) {
-	for (size_t j = 0; j < pipes_.size(); j++)
-	{
-		if (pipes_[j] != -1)
-		{
-			try {
-				close(pipes_[j]);
-			}
-			catch (std::exception &e) {
-				std::cerr << "Error occurred close All pipes CGIPipes: " << e.what() << std::endl;
-			}
-			pipes_[j] = -1;
-		}
-	}
-}

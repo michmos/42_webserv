@@ -40,6 +40,5 @@ class CGIPipes {
 		
 		void				addNewPipes( void );
 		void				addPipesToEpoll( void );
-		void				closeAllPipes( void );
 		std::vector<int>	getPipes( void );
 };
