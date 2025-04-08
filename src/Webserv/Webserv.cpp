@@ -150,7 +150,6 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 }
 
 void	Webserv::_delClient(const SharedFd& clientSock) {
-	std::cerr << "delete client: " << clientSock.get() << std::endl;
 	const auto& it = _clients.find(clientSock);
 	if (it == _clients.end()) {
 		throw std::runtime_error("delClient(): trying to del non-existant client");
@@ -166,7 +165,6 @@ void	Webserv::_delPipes(std::vector<int> to_delete) {
 	for (int fd : to_delete)
 	{
 		_ep.del(fd);
-		std::cerr << "delete pipe and from connection: " << fd << std::endl;
 		for (auto item : _pipe_client_connection) {
 			if (item.first == fd)
 			{
