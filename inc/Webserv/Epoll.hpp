@@ -16,6 +16,9 @@
 // since Linux 2.6.8 ignored anyways
 #define	EPOLL_START_SIZE 5
 
+// referenced by void* in epoll_event.data
+// - fd: fd that the event belongs to
+// - data: additional data - can be used to map to other fd
 struct epollEventData {
 	int	fd;
 	int	data;
@@ -34,7 +37,7 @@ public:
 	void	mod(int fd, u_int32_t events);
 	void	del(int fd);
 	const std::vector<struct epoll_event>&	wait();
-	static const struct epollEventData&	getEventData(struct epoll_event& ev);
+	static const struct epollEventData&	getEventData(const struct epoll_event& ev);
 
 	void	setTimeout(int timeout) noexcept;
 	int		getEpFd() const;

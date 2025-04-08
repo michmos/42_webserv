@@ -72,7 +72,7 @@ class CGI {
 		
 		std::string			getResponse( void );
 		bool				isReady( void );
-		void				handle_cgi( HTTPRequest &request, const epoll_event &event );
+		void				handle_cgi( HTTPRequest &request, int fd);
 		bool				isNPHscript( const std::string &executable );
 		void				rewriteResonseFromCGI( void );
 		

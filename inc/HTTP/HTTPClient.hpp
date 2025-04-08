@@ -94,8 +94,8 @@ class HTTPClient {
 		std::function<void(int)> delFromEpoll_cb_;
 
 		void	setRequestDataAndConfig( void );
-		void	responding( bool cgi_used, const epoll_event &ev );
-		bool	isCGI( const epoll_event &event );
-		bool	cgi( const epoll_event &event );
+		void	responding( bool cgi_used, int fd);
+		bool	isCGI();
+		bool	cgi( int fd );
 
 };

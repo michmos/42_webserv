@@ -90,10 +90,12 @@ Webserv::Webserv(const std::string& confPath) {
 	for (auto& config : ConfigParser(confPath).getConfigs()) {
 		SharedFd serverFd = resolveSocket(config.getHost(), std::to_string(config.getPort()));
 
+		// if new - add to epoll
 		if (sockets.find(serverFd.get()) == sockets.end()) {
 			sockets.insert(serverFd.get());
 			_ep.add(serverFd.get(), EPOLLIN);
 		}
+		// map config to fd
 		_servers[serverFd].push_back(config);
 	}
 }
@@ -145,7 +147,6 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 			},
 			[this](int fd) {
 				std::cerr << "callback delete pipe: " << fd <<std::endl;
-				_pipe_client_connection.erase(fd);
 				_ep.del(fd);
 			}
 		))
@@ -162,22 +163,6 @@ void	Webserv::_delClient(const SharedFd& clientSock) {
 	_clients.erase(it);
 }
 
-// void	Webserv::_delPipes(std::vector<int> to_delete) {
-// 	if (to_delete.empty())
-// 		return ;
-// 	for (int fd : to_delete)
-// 	{
-// 		_ep.del(fd);
-// 		for (auto item : _pipe_client_connection) {
-// 			if (item.first == fd)
-// 			{
-// 				_pipe_client_connection.erase(item.first);
-// 				return ;
-// 			}
-// 		}
-// 	}
-// }
-
 void	Webserv::_handleServerReady(SharedFd fd) {
 	SharedFd clientSock = accept(fd.get(), nullptr, nullptr);
 	if (clientSock == -1)
@@ -186,11 +171,12 @@ void	Webserv::_handleServerReady(SharedFd fd) {
 }
 
 void	Webserv::_handleClientReady(const struct epoll_event& ev) {
-	SharedFd fd = ev.data.fd;
+	auto eventData = Epoll::getEventData(ev);
+	SharedFd fd = eventData.fd;
 	auto it = _clients.find(fd);
 	if (it == _clients.end()) {
 		// check whether client pipe is ready
-		fd = ev.data.u32;
+		fd = eventData.data;
 		it = _clients.find(fd);
 		if (it == _clients.end()) {
 			throw std::runtime_error("_handleClientReady(): unvalid fd");
@@ -199,7 +185,6 @@ void	Webserv::_handleClientReady(const struct epoll_event& ev) {
 
 	auto& client = it->second;
 	client.handle(ev);
-	// TODO: add logic to remove pipes when client is deleted - e.g. through callback invoked from client destructor
 	if (client.isDone()) {
 		_delClient(fd);
 	}
@@ -219,28 +204,12 @@ void	Webserv::eventLoop() {
 				// 	<< ((ev.events & EPOLLOUT) ? "EPOLLOUT " : " ")
 				// 	<< ((ev.events & (EPOLLHUP | EPOLLERR)) ? "EPOLLHUP | EPOLLERR" : "") << std::endl;
 				// #endif
-				SharedFd fd = ev.data.fd;
+				SharedFd fd = Epoll::getEventData(ev).fd;
 				if (_servers.find(fd) != _servers.end()) {
-					// server socket ready
-					SharedFd clientSock = accept(fd.get(), nullptr, nullptr);
-					if (clientSock == -1)
-						throw std::runtime_error(std::string("accept(): ") + strerror(errno));
-					_addClient(clientSock, fd);
-				} else if (_clients.find(fd) != _clients.end()) {
-					//  client socket ready
-					auto& client = _clients.find(fd)->second;
-					client.handle(ev);
-					// TODO: add logic to remove pipes when client is deleted - e.g. through callback invoked from client destructor
-					if (client.isDone())
-						_delClient(fd);
+					_handleServerReady(fd);
+				} else {
+					_handleClientReady(ev);
 				}
-				else if (_pipe_client_connection.find(fd) != _pipe_client_connection.end()) {
-					SharedFd client_fd = _pipe_client_connection.find(fd)->second;
-					if (_clients.find(client_fd) != _clients.end())
-						_clients.find(client_fd)->second.handle(ev);
-				}
-				else
-					throw std::runtime_error("eventLoop(): fd not found");
 			}
 		}
 		catch (std::exception &e) {

@@ -74,22 +74,24 @@ void	HTTPClient::handle(const epoll_event &event) {
 	HTTPRequest	request;
 	static bool	is_cgi_request = false;
 
+	auto eventData = Epoll::getEventData(event);
+	
 	switch (STATE_) {
 		case RECEIVING:
-			data = readFrom(event.data.fd);
+			data = readFrom(eventData.fd);
 			parser_.processData(data, this);
 			if (!parser_.isDone()) {
 				return;
 			}
 			setRequestDataAndConfig();
-			is_cgi_request = isCGI(event);
+			is_cgi_request = isCGI();
 		case PROCESS_CGI:
-			if (is_cgi_request && cgi(event) != READY)
+			if (is_cgi_request && cgi(eventData.fd) != READY)
 				return ;
 		case RESPONSE:
-			if (event.data.fd != clientSock_.get())
+			if (eventData.fd != clientSock_.get())
 				return ;
-			responding(is_cgi_request, event);
+			responding(is_cgi_request, eventData.fd);
 		case DONE:
 			return ;
 	}
@@ -108,18 +110,14 @@ void	HTTPClient::setRequestDataAndConfig(void) {
 	printRequest(request_); // REMOVE
 	responseGenerator_.setConfig(config_);
 }
-bool	HTTPClient::isCGI(const epoll_event &event) {
+bool	HTTPClient::isCGI() {
 	if (!responseGenerator_.isCGI(request_))
 	{
 		STATE_ = RESPONSE;
 		return (false);
 	}
-	else
-	{
-		STATE_ = PROCESS_CGI;
-		cgi(event);
-		return (true);
-	}
+	STATE_ = PROCESS_CGI;
+	return (true);
 }
 
 bool	isRedirection(const std::string &response) {
@@ -127,7 +125,7 @@ bool	isRedirection(const std::string &response) {
 }
 
 /// @brief regenerates response and add this one to the que.
-void	HTTPClient::responding(bool cgi_used, const epoll_event &ev) {
+void	HTTPClient::responding(bool cgi_used, int fd) {
 	if (cgi_used)
 		cgiResponse();
 	else
@@ -135,12 +133,12 @@ void	HTTPClient::responding(bool cgi_used, const epoll_event &ev) {
 		responseGenerator_.generateResponse(request_);
 		message_que_.push_back(responseGenerator_.loadResponse());
 	}
-	writeTo(ev.data.fd);
+	writeTo(fd);
 	STATE_ = DONE;
 }
 
 /// @brief creates a CGI class, checks the method/target, starts the cgi
-bool	HTTPClient::cgi(const epoll_event &event) {
+bool	HTTPClient::cgi(int fd) {
 	std::vector<std::string>	env_strings;
 
 	if (cgi_ == NULL)
@@ -150,7 +148,7 @@ bool	HTTPClient::cgi(const epoll_event &event) {
 		cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes(), delFromEpoll_cb_);
 		// cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes());
 	}
-	cgi_->handle_cgi(request_, event);
+	cgi_->handle_cgi(request_, fd);
 	return (cgi_->isReady());
 }
 

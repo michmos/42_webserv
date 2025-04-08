@@ -45,8 +45,8 @@ void	Epoll::mod(int fd, int data, u_int32_t events) {
 	}
 }
 
-const struct epollEventData&	Epoll::getEventData(struct epoll_event& ev) {
-	if (ev.data.ptr == nullptr) {
+const struct epollEventData&	Epoll::getEventData(const struct epoll_event& ev) {
+	if (!ev.data.ptr) {
 		throw std::runtime_error("getEventData(): data.ptr is null");
 	}
 	return (*static_cast<epollEventData*>(ev.data.ptr));

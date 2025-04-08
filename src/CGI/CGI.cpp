@@ -28,7 +28,7 @@ void print_epoll_events(uint32_t events) {
     if (events & EPOLLONESHOT) std::cout << "EPOLLONESHOT " << std::endl;
 }
 
-void	CGI::handle_cgi(HTTPRequest &request, const epoll_event &event) {
+void	CGI::handle_cgi(HTTPRequest &request, int fd) {
 	std::vector<std::string>	env_strings;
 
 	switch (CGI_STATE_) {
@@ -40,16 +40,16 @@ void	CGI::handle_cgi(HTTPRequest &request, const epoll_event &event) {
 			CGI_STATE_ = SEND_TO_CGI;
 			return ;
 		case SEND_TO_CGI:
-			if (event.data.fd != pipe_to_CGI_[WRITE])
+			if (fd != pipe_to_CGI_[WRITE])
 				return ;
-			if (!sendDataToStdinReady(event.data.fd))
+			if (!sendDataToStdinReady(fd))
 				return ;
 			CGI_STATE_ = RCV_FROM_CGI;
 			return ;
 		case RCV_FROM_CGI:
-			if (event.data.fd != pipe_from_CGI_[READ])
+			if (fd != pipe_from_CGI_[READ])
 				return ;
-			if (getResponseFromCGI(event.data.fd) == false)
+			if (getResponseFromCGI(fd) == false)
 				return ;
 			CGI_STATE_ = CRT_RSPNS_CGI;
 		case CRT_RSPNS_CGI:
