@@ -43,6 +43,7 @@ void	Epoll::mod(int fd, u_int32_t events) const {
 }
 
 void	Epoll::del(int fd) const {
+	std::cerr << "Wants to delete fd: " << fd << " from client" << _epFd.get() << std::endl;
 	if (epoll_ctl(_epFd.get(), EPOLL_CTL_DEL, fd, nullptr) == -1) {
 		throw std::runtime_error(std::string("epoll_ctl(del): ") + strerror(errno));
 	}

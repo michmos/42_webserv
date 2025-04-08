@@ -45,7 +45,11 @@ void	CGI::createEnvCharPtrVector(std::vector<char*> &env_c_vector, std::vector<s
 void	CGI::closeSave(int &fd) {
 	if (fd == -1)
 		return ;
-	std::cerr << "Close pipe: " << fd << std::endl;
-	close(fd);
+	try {
+		close(fd);
+	}
+	catch (std::exception &e) {
+		std::cerr << "Error occurred: " << e.what();
+	}
 	fd = -1;
 }

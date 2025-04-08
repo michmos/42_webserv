@@ -28,11 +28,7 @@ HTTPClient::HTTPClient(const HTTPClient& other) : \
 
 HTTPClient::~HTTPClient(void) { }
 
-bool	HTTPClient::isDone(void) {
-	if (STATE_ == DONE)
-		return (true);
-	return (false);
-}
+bool	HTTPClient::isDone(void) { return (STATE_ == DONE); }
 
 /**
  * @brief get right Config corresponding with servername from the HTTP request
@@ -91,6 +87,8 @@ void	HTTPClient::handle(const epoll_event &event) {
 			if (is_cgi_request && cgi(event) != READY)
 				return ;
 		case RESPONSE:
+			if (event.data.fd != clientSock_.get())
+				return ;
 			responding(is_cgi_request, event);
 		case DONE:
 			return ;
@@ -124,19 +122,20 @@ bool	HTTPClient::isCGI(const epoll_event &event) {
 	}
 }
 
+bool	isRedirection(const std::string &response) {
+	return (response.rfind("HTTP/1.1 302 Found") == 0);
+}
+
 /// @brief regenerates response and add this one to the que.
 void	HTTPClient::responding(bool cgi_used, const epoll_event &ev) {
 	if (cgi_used)
-	{
 		cgiresponse();
-	}
 	else
 	{
 		responseGenerator_.generateResponse(request_);
 		message_que_.push_back(responseGenerator_.loadResponse());
 	}
-	(void)ev;
-	writeTo(clientSock_.get());
+	writeTo(ev.data.fd);
 	STATE_ = DONE;
 }
 
@@ -154,16 +153,17 @@ bool	HTTPClient::cgi(const epoll_event &event) {
 	return (cgi_->isReady());
 }
 
+std::vector<int>	HTTPClient::removePipeFDFromEpoll(void) { return (cgi_->removeFromEpoll()); }
+
 /// @brief checks if cgi header has to be rewritten and add response to que.
 void	HTTPClient::cgiresponse(void) {
-	std::cerr << "cgi response nph: " << cgi_->isNPHscript(request_.request_target) << std::endl;
-	cgi_->printPipes();
 	if (!cgi_->isNPHscript(request_.request_target))
 		cgi_->rewriteResonseFromCGI();
+
 	message_que_.push_back(cgi_->getResponse());
 
 	std::cerr << "-------------------\nResponse: " << cgi_->getResponse() \
 		<< "\n-----------------" << std::endl;
 }
 
-const Config	*HTTPClient::getConfig( void ) const { return (config_); }
+const Config*	HTTPClient::getConfig( void ) const { return (config_); }

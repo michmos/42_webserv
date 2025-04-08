@@ -43,8 +43,8 @@ Socket::~Socket() {
 	try {
 		close(_fd.get());
 	}
-	catch (...) {
-		;
+	catch (std::exception &e) {
+		std::cerr << "close(): " << e.what() << std::endl;
 	}
 }
 

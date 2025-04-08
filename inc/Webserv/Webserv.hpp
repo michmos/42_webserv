@@ -45,5 +45,5 @@ private:
 
 	void	_addClient(const SharedFd& clientSock, const SharedFd& servSock);
 	void	_delClient(const SharedFd& fd);
-	void	_delPipes(const SharedFd& clientSock);
+	void	_delPipes(std::vector<int> to_delete);
 };

@@ -1,0 +1,3 @@
+name = sff; email = ds@fsfs.nl; message = fese; 
+name = Testname Doe; email = test@email.com; message = Hello!; 
+name = Testname Doe; email = test@email.com; message = Hello!; 

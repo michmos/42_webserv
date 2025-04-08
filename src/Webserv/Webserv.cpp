@@ -160,13 +160,19 @@ void	Webserv::_delClient(const SharedFd& clientSock) {
 	_clients.erase(it);
 }
 
-void	Webserv::_delPipes(const SharedFd& clientSock) {
-	for (auto item : _pipe_client_connection) {
-		if (item.second == clientSock)
-		{
-			std::cerr << "delete pipe epoll: " << item.first.get() << std::endl;
-			_ep.del(item.first.get());
-			_pipe_client_connection.erase(item.first);
+void	Webserv::_delPipes(std::vector<int> to_delete) {
+	if (to_delete.empty())
+		return ;
+	for (int fd : to_delete)
+	{
+		_ep.del(fd);
+		std::cerr << "delete pipe and from connection: " << fd << std::endl;
+		for (auto item : _pipe_client_connection) {
+			if (item.first == fd)
+			{
+				_pipe_client_connection.erase(item.first);
+				return ;
+			}
 		}
 	}
 }
@@ -198,15 +204,15 @@ void	Webserv::eventLoop() {
 					client.handle(ev);
 					// TODO: add logic to remove pipes when client is deleted - e.g. through callback invoked from client destructor
 					if (client.isDone())
-					{
 						_delClient(fd);
-						_delPipes(fd);
-					}
 				}
 				else if (_pipe_client_connection.find(fd) != _pipe_client_connection.end()) {
 					SharedFd client_fd = _pipe_client_connection.find(fd)->second;
 					if (_clients.find(client_fd) != _clients.end())
+					{
 						_clients.find(client_fd)->second.handle(ev);
+						_delPipes(_clients.find(client_fd)->second.removePipeFDFromEpoll());
+					}
 				}
 				else
 					throw std::runtime_error("eventLoop(): fd not found");

@@ -55,11 +55,9 @@ void	CGIPipes::addPipesToEpoll(void) {
 
 	event_write.data.fd = pipes_[TO_CGI_WRITE];
 	event_write.events = EPOLLOUT | O_NONBLOCK;
-	std::cerr << "add pipes: " << event_write.data.fd << std::endl;
 	pipe_callback_(event_write, client_fd_);
 	event_read.data.fd = pipes_[FROM_CGI_READ];
 	event_read.events =  EPOLLIN | O_NONBLOCK;
-	std::cerr << "add pipes: " << event_read.data.fd << std::endl;
 	pipe_callback_(event_read, client_fd_);
 }
 
@@ -70,8 +68,12 @@ void	CGIPipes::closeAllPipes(void) {
 	{
 		if (pipes_[j] != -1)
 		{
-			close(pipes_[j]);
-			std::cerr << "close pipe : " << pipes_[j] << std::endl;
+			try {
+				close(pipes_[j]);
+			}
+			catch (std::exception &e) {
+				std::cerr << "Error occurred close All pipes CGIPipes: " << e.what() << std::endl;
+			}
 			pipes_[j] = -1;
 		}
 	}

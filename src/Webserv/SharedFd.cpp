@@ -34,7 +34,7 @@ SharedFd::~SharedFd() {
 	_refCounts[_fd]--;
 	if (_refCounts[_fd] == 0 && _fd >= 0)
 	{
-		if(close(_fd) ==-1)
+		if(close(_fd) == -1)
 			std::cerr << "close(): " << strerror(errno) << std::endl;
 	}
 }

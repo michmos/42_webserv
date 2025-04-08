@@ -11,18 +11,17 @@ CGI::CGI(const std::string &post_data, std::vector<int> pipes) : post_data_(post
 	CGI_STATE_ = START_CGI;
 }
 
-void	CGI::printPipes(void) const {
-	std::cerr << "pipe from cgi READ\t" << pipe_from_CGI_[READ] << std::endl;
-	std::cerr << "pipe from cgi WRITE\t" << pipe_from_CGI_[WRITE] << std::endl;
-	std::cerr << "pipe to cgi READ\t" << pipe_to_CGI_[READ] << std::endl;
-	std::cerr << "pipe to cgi WRITE\t" << pipe_to_CGI_[WRITE] << std::endl;
-}
-
 CGI::~CGI(void) {}
 
 std::string CGI::getResponse(void) { return (response_); }
 
-bool	CGI::isReady( void ) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
+std::vector<int>	CGI::removeFromEpoll(void) { 
+	std::vector<int> copy = fd_remove_from_epoll;
+	fd_remove_from_epoll.clear();
+	return (copy);
+}
+
+bool	CGI::isReady(void) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
 
 void print_epoll_events(uint32_t events) {
     if (events & EPOLLIN) std::cout << "EPOLLIN " << std::endl;
@@ -54,7 +53,6 @@ void	CGI::handle_cgi(HTTPRequest &request, const epoll_event &event) {
 		case RCV_FROM_CGI:
 			if (event.data.fd != pipe_from_CGI_[READ])
 				return ;
-			// print_epoll_events(event.events);
 			if (getResponseFromCGI(event.data.fd) == false)
 				return ;
 			CGI_STATE_ = CRT_RSPNS_CGI;
@@ -102,7 +100,7 @@ void	CGI::rewriteResonseFromCGI(void) {
  * @param executable absolute path to request target
  * @return true if nhp_ file, else false
  */
-bool	CGI::isNPHscript( const std::string &executable ) {
+bool	CGI::isNPHscript(const std::string &executable) {
 	size_t		index;
 	std::string	filename = "";
 
@@ -159,19 +157,13 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 		throwException("Fork failed");
 	else if (pid_ == 0) 
 	{
-		// std::cerr << "IN CHILD: \n";
-		// closeSave(pipe_to_CGI_[WRITE]);
-		// closeSave(pipe_from_CGI_[READ]);
 		if (dup2(pipe_to_CGI_[READ], STDIN_FILENO) < 0)
 			throwExceptionExit("dub2 failed");
 		if (dup2(pipe_from_CGI_[WRITE], STDOUT_FILENO) < 0)
 			throwExceptionExit("dub2 failed");
-		// std::cerr << "IN CHILD AFTER DUB: ";
-		// closeSave(pipe_to_CGI_[READ]);
-		// closeSave(pipe_from_CGI_[WRITE]);
+
 		std::vector<char*>	argv_vector;
 		std::vector<char*>	env_c_vector;
-
 		createArgvVector(argv_vector, executable);
 		createEnvCharPtrVector(env_c_vector, env_vector);
 
@@ -179,10 +171,8 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 			std::cerr << "Error: Execve failed: " << std::strerror(errno) << std::endl;
 		exit(1);
 	}
-	std::cerr << "IN PARENT: ";
 	closeSave(pipe_to_CGI_[READ]);
 	closeSave(pipe_from_CGI_[WRITE]);
-	// watchDog();
 }
 
 /// @brief forks a new process that checks the time of the CGI + timout time
@@ -249,8 +239,8 @@ bool	CGI::sendDataToStdinReady(int fd) {
 				std::cerr << "Error write: not written right amount:" <<  readBytes << std::endl;
 		}
 	}
-	std::cerr << "AFTER SEND DATA to CGI close: ";
-	closeSave(pipe_to_CGI_[WRITE]);
+	fd_remove_from_epoll.push_back(pipe_to_CGI_[WRITE]);
+	pipe_to_CGI_[WRITE] = -1;
 	return (true);
 }
 
@@ -319,7 +309,6 @@ bool	CGI::getResponseFromCGI(int fd) {
 	{
 		assert(fd == pipe_from_CGI_[READ]);
 		return_value = WEXITSTATUS(status_);
-		std::cerr << "Reading response ... \n";
 		response_ = receiveBuffer(fd);
 		if (response_.empty())
 			return (false);
@@ -343,16 +332,14 @@ bool	CGI::getResponseFromCGI(int fd) {
 std::string	CGI::receiveBuffer(int fd) {
 	char	buffer[1024];
 	
-	std::cerr << "READ from " << fd << std::endl;
 	ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);
-
 	if (bytesRead > 0)
 		buffer[bytesRead] = '\0';
 	else
 	{
 		if (bytesRead == -1)
 		{
-			std::cerr << "Error read?: " << std::strerror(errno) << std::endl;
+			std::cerr << "Error read: " << std::strerror(errno) << std::endl;
 			return (""); // again?
 		}
 		else
@@ -360,7 +347,8 @@ std::string	CGI::receiveBuffer(int fd) {
 		return std::string("HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\n\r\n<html>\n") +
 			"<head><title>Server Error</title></head><body><h1>Something went wrong</h1></body></html>";
 	}
-	closeSave(pipe_from_CGI_[READ]);
+	fd_remove_from_epoll.push_back(pipe_from_CGI_[READ]);
+	pipe_from_CGI_[READ] = -1;
 	return (buffer); // also in chunked form...
 }
 
