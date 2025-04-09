@@ -178,20 +178,27 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
  * @param post_data string with body
  */
 bool	CGI::sendDataToStdinReady(int fd) {
-	ssize_t	readBytes;
+	ssize_t				readBytes;
+	static std::string	to_send = "";
 
 	if (fd != pipe_to_CGI_[WRITE])
 		return (false);
 
-	if (!post_data_.empty())
+	if (to_send.empty())
+		to_send = post_data_;
+	if (!to_send.empty())
 	{
-		readBytes = write(fd, post_data_.c_str(), post_data_.size());
-		if (readBytes != (ssize_t)post_data_.size())
+		readBytes = write(fd, to_send.c_str(), to_send.size());
+		if (readBytes != (ssize_t)to_send.size())
 		{
 			if (readBytes == -1)
 				std::cerr << "Error write: " << std::strerror(errno) << std::endl;
-			else
-				std::cerr << "Error write: not written right amount:" <<  readBytes << std::endl;
+			else if (readBytes < static_cast<ssize_t>(to_send.size())) 
+			{
+				to_send = post_data_.substr(readBytes);
+				std::cerr << "Could not written everything in once, remaining bytes:" <<  readBytes << std::endl;
+				return (false);
+			}
 		}
 	}
 	delFromEpoll_cb_(pipe_to_CGI_[WRITE]);

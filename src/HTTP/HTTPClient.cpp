@@ -143,11 +143,9 @@ bool	HTTPClient::cgi(int fd) {
 
 	if (cgi_ == NULL)
 	{
-		std::cerr << "CREATING CGI\n";
 		pipes_.setCallbackFunctions(clientSock_, addToEpoll_cb_, delFromEpoll_cb_);
 		pipes_.addNewPipes();
 		cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes(), delFromEpoll_cb_);
-		// cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes());
 	}
 	cgi_->handle_cgi(request_, fd);
 	return (cgi_->isReady());
