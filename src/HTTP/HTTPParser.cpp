@@ -446,27 +446,25 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 	{
 		rawRequest_ += buff;
 		buff = "";
-		if (isHeaderRead())
-		{
-			splitHeaderBody();
-			result_.invalidRequest = parseRequest();
-
-			// SET SERVER
-			client->setServer(result_.host);
-
-			// generate PATH
-			result_.request_target = generatePath(client->getConfig());
-
-			// Validate with config and results from parsing
-			if (result_.invalidRequest || !hasValidRequestLine(*client->getConfig())) {
-				result_.invalidRequest = true;
-				PARSE_STATE_ = DONE_PARSING;
-			} else {
-				PARSE_STATE_ = RCV_BODY;
-			}
-		}
-		else
+		if (!isHeaderRead()) {
 			return ;
+		}
+		splitHeaderBody();
+		result_.invalidRequest = parseRequest();
+
+		// SET SERVER
+		client->setServer(result_.host);
+
+		// generate PATH
+		result_.request_target = generatePath(client->getConfig()); // TODO: @micha: look into again
+
+		// Validate with config and results from parsing
+		if (result_.invalidRequest || !hasValidRequestLine(*client->getConfig())) {
+			result_.invalidRequest = true;
+			PARSE_STATE_ = DONE_PARSING;
+		} else {
+			PARSE_STATE_ = RCV_BODY;
+		}
 	}
 	if (PARSE_STATE_ == RCV_BODY)
 	{
