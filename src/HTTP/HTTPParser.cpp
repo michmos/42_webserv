@@ -75,16 +75,18 @@ bool	HTTPParser::tryParseContentLength(std::string str) {
 
 /**
  * @brief header needs a method, target or protocol
- * @return bool is one or more of these are present
+ * @return true if request line is valid
  */
-bool	HTTPParser::isValidHeader(HTTPClient *client) {
-	if (!validWithConfig(client))
+bool	HTTPParser::hasValidRequestLine(const Config& config) {
+	if (!isAllwdMeth(result_.method, config)) {
+		result_.status_code = 405;
 		return (false);
+	}
 	if (result_.method.empty() || \
 		result_.request_target.empty() || \
 		result_.protocol.empty())
-		return (true);
-	return (false);
+		return (false);
+	return (true);
 }
 
 /**
@@ -242,18 +244,16 @@ void	HTTPParser::addIfProcessIsChunked(const std::string &buff) {
 	}
 }
 
-bool	HTTPParser::validWithConfig(HTTPClient *client) {
-	const Config				*config = client->getConfig();
-	std::vector<std::string>	allow_method;
+bool	HTTPParser::isAllwdMeth(const std::string& method, const Config& conf) {
+	std::vector<std::string>	allowedMethods;
 
 	// METHOD CHECK
-	allow_method = config->getMethods(result_.request_target);
-	if (std::find(allow_method.begin(), allow_method.end(), result_.method) == allow_method.end())
+	allowedMethods = conf.getMethods(result_.request_target);
+	if (std::find(allowedMethods.begin(), allowedMethods.end(), method) == allowedMethods.end())
 	{
-		result_.status_code = 405;
-		return (true);
+		return (false);
 	}
-	return (false);
+	return (true);
 }
 
 bool	HTTPParser::isRedirection(std::string &endpoint, const std::vector<std::string> &redir) {
@@ -458,12 +458,12 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 			result_.request_target = generatePath(client->getConfig());
 
 			// Validate with config and results from parsing
-			if (!result_.invalidRequest)
-				result_.invalidRequest = isValidHeader(client);
-			if (result_.invalidRequest == true)
+			if (result_.invalidRequest || !hasValidRequestLine(*client->getConfig())) {
+				result_.invalidRequest = true;
 				PARSE_STATE_ = DONE_PARSING;
-			else
+			} else {
 				PARSE_STATE_ = RCV_BODY;
+			}
 		}
 		else
 			return ;

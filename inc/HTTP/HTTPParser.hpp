@@ -50,7 +50,7 @@ class HTTPParser
 
 		void	splitHeaderBody( void );
 		void	addIfProcessIsChunked( const std::string &buff );
-		bool	validWithConfig( HTTPClient *client );
+		bool	isAllwdMeth( const std::string& method, const Config& conf );
 		bool	checkBodySizeLimit( size_t body_size, const Config *config, std::string path );
 		bool	isRedirection(std::string &endpoint, const std::vector<std::string> &redir);
 		std::string	handleRootDir( const Config *config );
@@ -62,7 +62,7 @@ class HTTPParser
 		void	parseExtraHeaderInformation( const std::string &str );
 		bool	parseHTTPline( const std::string &str );
 		bool	parseRequest( void );
-		bool	isValidHeader( HTTPClient *client );
+		bool	hasValidRequestLine(const Config& config);
 };
 
 # include "HTTPClient.hpp"
