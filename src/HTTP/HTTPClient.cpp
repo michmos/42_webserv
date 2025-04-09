@@ -40,7 +40,7 @@ void	HTTPClient::setServer(std::vector<std::string> host) {
 }
 
 void	HTTPClient::writeTo(int fd) {
-	size_t		bytes_write;
+	ssize_t		bytes_write;
 	std::string	response;
 
 	if (message_que_.empty())
@@ -48,9 +48,10 @@ void	HTTPClient::writeTo(int fd) {
 	response = message_que_.front();
 	message_que_.erase(message_que_.begin());
 	bytes_write = write(fd, response.c_str(), response.size());
-	if (bytes_write != response.size())
+	if (bytes_write < static_cast<ssize_t>(response.size())) 
+	{
 		throw std::runtime_error("write(): " + std::string(strerror(errno)));
-	
+	}
 	// check if everything can be written in once?
 	STATE_ = DONE;
 }

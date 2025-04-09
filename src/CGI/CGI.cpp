@@ -167,6 +167,7 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 		exit(1);
 	}
 	closeSave(pipe_to_CGI_[READ]);
+	pipe_to_CGI_[READ] = -1;
 	closeSave(pipe_from_CGI_[WRITE]);
 }
 
@@ -178,7 +179,7 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
  * @param post_data string with body
  */
 bool	CGI::sendDataToStdinReady(int fd) {
-	ssize_t				readBytes;
+	ssize_t				write_bytes;
 	static std::string	to_send = "";
 
 	if (fd != pipe_to_CGI_[WRITE])
@@ -188,15 +189,15 @@ bool	CGI::sendDataToStdinReady(int fd) {
 		to_send = post_data_;
 	if (!to_send.empty())
 	{
-		readBytes = write(fd, to_send.c_str(), to_send.size());
-		if (readBytes != (ssize_t)to_send.size())
+		write_bytes = write(fd, to_send.c_str(), to_send.size());
+		if (write_bytes != (ssize_t)to_send.size())
 		{
-			if (readBytes == -1)
+			if (write_bytes == -1)
 				std::cerr << "Error write: " << std::strerror(errno) << std::endl;
-			else if (readBytes < static_cast<ssize_t>(to_send.size())) 
+			else if (write_bytes < static_cast<ssize_t>(to_send.size())) 
 			{
-				to_send = post_data_.substr(readBytes);
-				std::cerr << "Could not written everything in once, remaining bytes:" <<  readBytes << std::endl;
+				to_send = post_data_.substr(write_bytes);
+				std::cerr << "Could not written everything in once, remaining bytes:" <<  write_bytes << std::endl;
 				return (false);
 			}
 		}
