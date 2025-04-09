@@ -1,5 +1,6 @@
 
 #include "../../inc/Webserv/SharedFd.hpp"
+#include <iomanip>
 
 std::unordered_map<int, int> SharedFd::_refCounts;
 
@@ -28,7 +29,16 @@ SharedFd& SharedFd::operator=(int fd) {
 	}
 	return (*this);
 }
-#include <sys/epoll.h>
+
+void	SharedFd::printOpenFds() {
+	std::cout << std::left << std::setw(10) << "fd" <<  "count" << std::endl;
+	for (auto it : _refCounts) {
+		if (it.second > 0) {
+			std::cout << std::left << std::setw(10) << it.first << it.second << std::endl;
+		}
+	}
+}
+
 // TODO: potentially rmv err_msg 
 SharedFd::~SharedFd() {
 	_refCounts[_fd]--;

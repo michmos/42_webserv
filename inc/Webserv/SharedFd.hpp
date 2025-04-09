@@ -31,6 +31,7 @@ public:
 	inline bool	isValid() const { return (this->_fd >= 0); }
 	inline int	get() const { return (_fd); }
 	void		setNonBlock() const;
+	static	void printOpenFds();
 
 private:
 	int	_fd;
