@@ -9,7 +9,19 @@ CPPFLAGS	:= -g -std=c++17
 endif
 
 SRCDIR		:=	src
-SRC			:=	$(shell find $(SRCDIR) -iname "*.cpp")
+SRC			:= $(SRCDIR)/main.cpp \
+				$(SRCDIR)/Webserv/Epoll.cpp \
+				$(SRCDIR)/Webserv/SharedFd.cpp \
+				$(SRCDIR)/Webserv/Socket.cpp \
+				$(SRCDIR)/Webserv/Webserv.cpp \
+				$(SRCDIR)/HTTP/HTTPClient.cpp \
+				$(SRCDIR)/HTTP/HTTPParser.cpp \
+				$(SRCDIR)/HTTP/HTTPResponse.cpp \
+				$(SRCDIR)/Config/Config.cpp \
+				$(SRCDIR)/Config/ConfigParser.cpp \
+				$(SRCDIR)/CGI/CGI.cpp \
+				$(SRCDIR)/CGI/CGI_utils.cpp \
+				$(SRCDIR)/CGI/CGIPipes.cpp
 
 INCL        :=   -I./inc
 
