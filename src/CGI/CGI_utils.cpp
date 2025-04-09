@@ -3,25 +3,25 @@
 void	CGI::throwException(const char *msg) {
 	std::cerr << "Error: " << msg << std::endl;
 	std::perror(msg);
-	closeAllPipes();
+	// closeAllPipes();
 	throw std::exception();
 }
 
 void	CGI::throwExceptionExit(const char *msg) {
 	std::cerr << "Error: " << msg << std::endl;
-	closeAllPipes();
+	// closeAllPipes();
 	exit(EXIT_FAILURE);
 }
 
 /// @brief closes pipe_from_child and pipe_to_child 
-void	CGI::closeAllPipes(void) {
-	std::cerr << "close pipes: " << pipe_from_CGI_[WRITE] << " and " << pipe_from_CGI_[READ] << std::endl;
-	std::cerr << "close pipes: " << pipe_to_CGI_[WRITE] << " and " << pipe_to_CGI_[READ] << std::endl;
-	closeSave(pipe_from_CGI_[WRITE]);
-	closeSave(pipe_from_CGI_[READ]);
-	closeSave(pipe_to_CGI_[WRITE]);
-	closeSave(pipe_to_CGI_[READ]);
-}
+// void	CGI::closeAllPipes(void) {
+// 	std::cerr << "close pipes: " << pipe_from_CGI_[WRITE] << " and " << pipe_from_CGI_[READ] << std::endl;
+// 	std::cerr << "close pipes: " << pipe_to_CGI_[WRITE] << " and " << pipe_to_CGI_[READ] << std::endl;
+// 	closeSave(pipe_from_CGI_[WRITE]);
+// 	closeSave(pipe_from_CGI_[READ]);
+// 	closeSave(pipe_to_CGI_[WRITE]);
+// 	closeSave(pipe_to_CGI_[READ]);
+// }
 
 /// @brief creating a vector<char*> for transfor to an array of * to strings ascommand-line arguments for execve.
 void	CGI::createArgvVector(std::vector<char*> &argv_vector, const std::string &executable) {
@@ -42,14 +42,14 @@ void	CGI::createEnvCharPtrVector(std::vector<char*> &env_c_vector, std::vector<s
 	env_c_vector.push_back(NULL);
 }
 
-void	CGI::closeSave(int &fd) {
-	if (fd == -1)
-		return ;
-	try {
-		close(fd);
-	}
-	catch (std::exception &e) {
-		std::cerr << "Error occurred: " << e.what();
-	}
-	fd = -1;
-}
+// void	CGI::closeSave(int &fd) {
+// 	if (fd == -1)
+// 		return ;
+// 	try {
+// 		close(fd);
+// 	}
+// 	catch (std::exception &e) {
+// 		std::cerr << "Error occurred: " << e.what();
+// 	}
+// 	fd = -1;
+// }

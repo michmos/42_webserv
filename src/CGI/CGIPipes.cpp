@@ -63,7 +63,7 @@ void	CGIPipes::addPipesToEpoll(void) {
 	pipe_add_cb_(event_read, client_fd_);
 }
 
-void	CGIPipes::deletePipesFromEpoll(int &fd) {
+void	CGIPipes::deletePipesFromEpoll(SharedFd &fd) {
 	if (fd == pipes_[TO_CGI_WRITE].get())
 	{
 		pipe_remove_cb_(pipes_[TO_CGI_WRITE]);
