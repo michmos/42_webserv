@@ -41,15 +41,3 @@ void	CGI::createEnvCharPtrVector(std::vector<char*> &env_c_vector, std::vector<s
 		env_c_vector.push_back(const_cast<char*>(str.c_str()));
 	env_c_vector.push_back(NULL);
 }
-
-// void	CGI::closeSave(int &fd) {
-// 	if (fd == -1)
-// 		return ;
-// 	try {
-// 		close(fd);
-// 	}
-// 	catch (std::exception &e) {
-// 		std::cerr << "Error occurred: " << e.what();
-// 	}
-// 	fd = -1;
-// }

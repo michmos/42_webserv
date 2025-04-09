@@ -69,8 +69,6 @@ void	Epoll::del(int fd) {
 	if (epoll_ctl(_epFd.get(), EPOLL_CTL_DEL, fd, nullptr) == -1) {
 		throw std::runtime_error(std::string("epoll_ctl(del): ") + strerror(errno));
 	}
-	if (close(fd) == -1)
-		std::cerr << "cant close: " << fd << "here\n";
 }
 
 const std::vector<struct epoll_event>&	Epoll::wait() {

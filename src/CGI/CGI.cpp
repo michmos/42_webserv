@@ -204,7 +204,6 @@ bool	CGI::sendDataToStdinReady(const SharedFd &fd) {
 		}
 	}
 	delFromEpoll_cb_(pipe_to_CGI_[WRITE]);
-	pipe_to_CGI_[WRITE] = -1;
 	return (true);
 }
 

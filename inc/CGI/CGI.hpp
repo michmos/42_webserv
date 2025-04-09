@@ -62,10 +62,8 @@ class CGI {
 		// CGI UTILS
 		void	createArgvVector( std::vector<char*> &argv_vector, const std::string &executable );
 		void	createEnvCharPtrVector( std::vector<char*> &env_c_vector, std::vector<std::string> &env_vector );
-		// void	closeAllPipes( void );
 		void	throwException( const char *msg );
 		void	throwExceptionExit( const char *msg );
-		// void	closeSave( int &fd );
 
 	public:
 		explicit CGI( const std::string &post_data, std::vector<SharedFd> pipes, std::function<void(int)> delFromEpoll_cb );

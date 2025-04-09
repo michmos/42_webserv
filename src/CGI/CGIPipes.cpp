@@ -31,8 +31,8 @@ void	CGIPipes::addNewPipes(void) {
 	if (pipe(pipe_from_cgi) < 0)
 	{
 		std::perror("pipe_to_cgi failed");
-		close(pipe_to_cgi[WRITE]);
-		close(pipe_to_cgi[READ]);
+		pipe_to_cgi[WRITE] = -1;
+		pipe_to_cgi[READ] = -1;
 		throw std::exception();
 	}
 	if (fcntl(pipe_to_cgi[WRITE], F_SETFL, O_NONBLOCK) == -1)
