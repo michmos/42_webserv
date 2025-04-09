@@ -5,7 +5,7 @@ HTTPClient::HTTPClient(
 	SharedFd serverFd, 
 	std::function<void(struct epoll_event, const SharedFd&)>  addToEpoll_cb,
 	std::function<const Config* (const SharedFd&, const std::string&)> getConfig_cb,
-	std::function<void(int)> delFromEpoll_cb
+	std::function<void(const SharedFd&)> delFromEpoll_cb
 	) : clientSock_(clientFd), \
 		serverSock_(serverFd), \
 		responseGenerator_(), \
@@ -143,7 +143,8 @@ bool	HTTPClient::cgi(int fd) {
 
 	if (cgi_ == NULL)
 	{
-		pipes_.setCallbackFunction(addToEpoll_cb_, clientSock_);
+		std::cerr << "CREATING CGI\n";
+		pipes_.setCallbackFunctions(clientSock_, addToEpoll_cb_, delFromEpoll_cb_);
 		pipes_.addNewPipes();
 		cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes(), delFromEpoll_cb_);
 		// cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes());
@@ -154,13 +155,23 @@ bool	HTTPClient::cgi(int fd) {
 
 /// @brief checks if cgi header has to be rewritten and add response to que.
 void	HTTPClient::cgiResponse(void) {
-	if (!cgi_->isNPHscript(request_.request_target))
-		cgi_->rewriteResonseFromCGI();
+	if (cgi_->isTimeout())
+	{
+		HTTPRequest	timeout_request;
+		std::memset(&timeout_request, 0, sizeof(timeout_request));
+		timeout_request.request_target = "timeout";
+		timeout_request.status_code = 408;
+		responseGenerator_.generateResponse(timeout_request);
+		message_que_.push_back(responseGenerator_.loadResponse());
 
-	message_que_.push_back(cgi_->getResponse());
-
-	std::cerr << "-------------------\nResponse: " << cgi_->getResponse() \
-		<< "\n-----------------" << std::endl;
+	}
+	else
+	{	if (!cgi_->isNPHscript(request_.request_target))
+			cgi_->rewriteResonseFromCGI();
+		message_que_.push_back(cgi_->getResponse());
+	}
+	std::cerr << "-------------------\nResponse: " << message_que_.back() \
+	<< "\n-----------------" << std::endl;
 }
 
 const Config*	HTTPClient::getConfig( void ) const { return (config_); }

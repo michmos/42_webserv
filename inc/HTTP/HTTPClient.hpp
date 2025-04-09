@@ -62,7 +62,7 @@ class HTTPClient {
 			SharedFd serverFd,
 			std::function<void(struct epoll_event, const SharedFd&)> addToEpoll_cb,
 			std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb,
-			std::function<void(int)> delFromEpoll_cd
+			std::function<void(const SharedFd&)> delFromEpoll_cd
 		);
 		HTTPClient(const HTTPClient &other);
 		~HTTPClient( void );
@@ -91,7 +91,7 @@ class HTTPClient {
 
 		std::function<void(struct epoll_event, const SharedFd&)> addToEpoll_cb_;
 		std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb_;
-		std::function<void(int)> delFromEpoll_cb_;
+		std::function<void(const SharedFd&)> delFromEpoll_cb_;
 
 		void	setRequestDataAndConfig( void );
 		void	responding( bool cgi_used, int fd);

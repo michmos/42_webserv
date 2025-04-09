@@ -27,18 +27,21 @@
 
 class CGIPipes {
 	private:
-		std::vector<int>											pipes_;
-		std::function<void(struct epoll_event, const SharedFd&)>	pipe_callback_;
+		std::vector<SharedFd>										pipes_;
+		std::function<void(struct epoll_event, const SharedFd&)>	pipe_add_cb_;
+		std::function<void(const SharedFd&)>						pipe_remove_cb_;
 		SharedFd													client_fd_;
 
 	public:
 		CGIPipes( void );
 		~CGIPipes( void );
 
-		void				setCallbackFunction( std::function<void(struct epoll_event, \
-								const SharedFd&)>  callback, const SharedFd& server_fd );
+		void				setCallbackFunctions( const SharedFd& client_fd, \
+								std::function<void(struct epoll_event, const SharedFd&)> pipe_add_cb, \
+								std::function<void(const SharedFd&)> pipe_remove_cb );
 		
 		void				addNewPipes( void );
 		void				addPipesToEpoll( void );
-		std::vector<int>	getPipes( void );
+		void				deletePipesFromEpoll(int &fd);
+		std::vector<SharedFd>	getPipes( void );
 };

@@ -145,9 +145,9 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 			[this](const SharedFd& servSock, const std::string& servName) {
 				return(getConfig(_servers, servSock, servName));
 			},
-			[this](int fd) {
-				std::cerr << "callback delete pipe: " << fd <<std::endl;
-				_ep.del(fd);
+			[this](const SharedFd& fd) {
+				std::cerr << "callback delete pipe: " << fd.get() <<std::endl;
+				_ep.del(fd.get());
 			}
 		))
 	);

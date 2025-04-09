@@ -3,13 +3,14 @@
 // #######################     PUBLIC     ########################
 // ###############################################################
 
-CGI::CGI(const std::string &post_data, std::vector<int> pipes, \
+CGI::CGI(const std::string &post_data, std::vector<SharedFd> pipes, \
 		std::function<void(int)> delFromEpoll_cb) : post_data_(post_data), \
 		delFromEpoll_cb_(delFromEpoll_cb) {
-	pipe_from_CGI_[READ] = pipes[0];
-	pipe_from_CGI_[WRITE] = pipes[1];
-	pipe_to_CGI_[READ] = pipes[2];
-	pipe_to_CGI_[WRITE] = pipes[3];
+	pipe_from_CGI_[READ] = pipes[0].get();
+	pipe_from_CGI_[WRITE] = pipes[1].get();
+	pipe_to_CGI_[READ] = pipes[2].get();
+	pipe_to_CGI_[WRITE] = pipes[3].get();
+	(void) pipes;
 	CGI_STATE_ = START_CGI;
 }
 
@@ -18,6 +19,8 @@ CGI::~CGI(void) {}
 std::string CGI::getResponse(void) { return (response_); }
 
 bool	CGI::isReady(void) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
+
+bool	CGI::isTimeout(void) { return (timeout_); }
 
 void print_epoll_events(uint32_t events) {
     if (events & EPOLLIN) std::cout << "EPOLLIN " << std::endl;
@@ -40,16 +43,12 @@ void	CGI::handle_cgi(HTTPRequest &request, int fd) {
 			CGI_STATE_ = SEND_TO_CGI;
 			return ;
 		case SEND_TO_CGI:
-			if (fd != pipe_to_CGI_[WRITE])
-				return ;
 			if (!sendDataToStdinReady(fd))
 				return ;
 			CGI_STATE_ = RCV_FROM_CGI;
 			return ;
 		case RCV_FROM_CGI:
-			if (fd != pipe_from_CGI_[READ])
-				return ;
-			if (getResponseFromCGI(fd) == false)
+			if (!getResponseFromCGI(fd))
 				return ;
 			CGI_STATE_ = CRT_RSPNS_CGI;
 		case CRT_RSPNS_CGI:
@@ -195,7 +194,6 @@ bool	CGI::sendDataToStdinReady(int fd) {
 				std::cerr << "Error write: not written right amount:" <<  readBytes << std::endl;
 		}
 	}
-	// fd_remove_from_epoll.push_back(pipe_to_CGI_[WRITE]);
 	delFromEpoll_cb_(pipe_to_CGI_[WRITE]);
 	pipe_to_CGI_[WRITE] = -1;
 	return (true);
@@ -227,7 +225,6 @@ std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, const HT
 	return (env);
 }
 
-
 bool	CGI::isCGIProcessFinished(void) {
 	time_t	current_time;
 	pid_t	result;
@@ -239,7 +236,22 @@ bool	CGI::isCGIProcessFinished(void) {
 	timeout_ = false;
 	current_time = time(NULL);
 	if (current_time - start_time_ > TIMEOUT)
+	{
+		std::cerr << "TIMOUT\n";
 		timeout_ = true;
+		if (pipe_to_CGI_[WRITE] != -1)
+		{
+			delFromEpoll_cb_(pipe_to_CGI_[WRITE]);
+			pipe_to_CGI_[WRITE] = -1;
+		}
+		if (pipe_from_CGI_[READ] != -1)
+		{
+			delFromEpoll_cb_(pipe_from_CGI_[READ]);
+			pipe_from_CGI_[READ] = -1;
+		}
+		CGI_STATE_ = CRT_RSPNS_CGI;
+		return (true);
+	}
 	return (false);
 }
 
@@ -260,11 +272,12 @@ bool	CGI::getResponseFromCGI(int fd) {
 	int return_value;
 	int status_code;
 
+	if (fd != pipe_from_CGI_[READ])
+		return (false);
 	if (!isCGIProcessFinished())
 		return (false);
 	if (isCGIProcessSuccessful())
 	{
-		assert(fd == pipe_from_CGI_[READ]);
 		return_value = WEXITSTATUS(status_);
 		response_ = receiveBuffer(fd);
 		if (response_.empty())
@@ -304,7 +317,6 @@ std::string	CGI::receiveBuffer(int fd) {
 		return std::string("HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\n\r\n<html>\n") +
 			"<head><title>Server Error</title></head><body><h1>Something went wrong</h1></body></html>";
 	}
-	// fd_remove_from_epoll.push_back(pipe_from_CGI_[READ]);
 	delFromEpoll_cb_(pipe_from_CGI_[READ]);
 	pipe_from_CGI_[READ] = -1;
 	return (buffer); // also in chunked form...

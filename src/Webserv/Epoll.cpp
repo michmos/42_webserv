@@ -57,16 +57,20 @@ void	Epoll::mod(int fd, u_int32_t events) {
 }
 
 void	Epoll::del(int fd) {
-	std::cerr << "del fd: " << fd << std::endl;
-
 	auto it = _eventDataStorage.find(fd);
+
+	std::cerr << "del fd: " << fd << " from client: " << it->second.data << std::endl;
 	if (it != _eventDataStorage.end()) {
 		_eventDataStorage.erase(it);
 	}
+	else
+		std::cerr << "not in eventDataStorage ...\n";
 
 	if (epoll_ctl(_epFd.get(), EPOLL_CTL_DEL, fd, nullptr) == -1) {
 		throw std::runtime_error(std::string("epoll_ctl(del): ") + strerror(errno));
 	}
+	if (close(fd) == -1)
+		std::cerr << "cant close: " << fd << "here\n";
 }
 
 const std::vector<struct epoll_event>&	Epoll::wait() {

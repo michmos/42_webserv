@@ -11,6 +11,7 @@
 # include <sys/epoll.h>
 
 # include "../HTTP/HTTPRequest.hpp"
+# include "../Webserv/SharedFd.hpp"
 
 #ifndef READ
 # define READ 0
@@ -20,7 +21,7 @@
 # define WRITE 1
 #endif
 
-# define TIMEOUT 10
+# define TIMEOUT 3
 
 enum e_cgi_state {
 	START_CGI,
@@ -67,11 +68,12 @@ class CGI {
 		void	closeSave( int &fd );
 
 	public:
-		explicit CGI( const std::string &post_data, std::vector<int> pipes, std::function<void(int)> delFromEpoll_cb );
+		explicit CGI( const std::string &post_data, std::vector<SharedFd> pipes, std::function<void(int)> delFromEpoll_cb );
 		~CGI( void );
 		
 		std::string			getResponse( void );
 		bool				isReady( void );
+		bool				isTimeout(void);
 		void				handle_cgi( HTTPRequest &request, int fd);
 		bool				isNPHscript( const std::string &executable );
 		void				rewriteResonseFromCGI( void );

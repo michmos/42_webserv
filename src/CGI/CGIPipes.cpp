@@ -6,13 +6,15 @@ CGIPipes::CGIPipes(void) {
 
 CGIPipes::~CGIPipes(void) {}
 
-void	CGIPipes::setCallbackFunction(std::function<void(struct epoll_event, const SharedFd&)> callback, \
-	const SharedFd& client_fd) {
-	pipe_callback_ = callback;
+void	CGIPipes::setCallbackFunctions( const SharedFd& client_fd, \
+		std::function<void(struct epoll_event, const SharedFd&)> pipe_add_cb, \
+		std::function<void(const SharedFd&)> pipe_remove_cb ) {
 	client_fd_ = client_fd;
+	pipe_add_cb_ = pipe_add_cb;
+	pipe_remove_cb_ = pipe_remove_cb;
 }
 
-std::vector<int>	CGIPipes::getPipes(void) { return (pipes_); }
+std::vector<SharedFd>	CGIPipes::getPipes(void) { return (pipes_); }
 
 /// @brief set pipes to -1 and then open both (to and from child) + nonblock
 void	CGIPipes::addNewPipes(void) {
@@ -53,10 +55,25 @@ void	CGIPipes::addPipesToEpoll(void) {
 	epoll_event			event_write;
 	epoll_event 		event_read;
 
-	event_write.data.fd = pipes_[TO_CGI_WRITE];
+	event_write.data.fd = pipes_[TO_CGI_WRITE].get();
 	event_write.events = EPOLLOUT | O_NONBLOCK;
-	pipe_callback_(event_write, client_fd_);
-	event_read.data.fd = pipes_[FROM_CGI_READ];
+	pipe_add_cb_(event_write, client_fd_);
+	event_read.data.fd = pipes_[FROM_CGI_READ].get();
 	event_read.events =  EPOLLIN | O_NONBLOCK;
-	pipe_callback_(event_read, client_fd_);
+	pipe_add_cb_(event_read, client_fd_);
+}
+
+void	CGIPipes::deletePipesFromEpoll(int &fd) {
+	if (fd == pipes_[TO_CGI_WRITE].get())
+	{
+		pipe_remove_cb_(pipes_[TO_CGI_WRITE]);
+		pipes_[TO_CGI_WRITE] = -1;
+		fd = -1;
+	}
+	else if (fd == pipes_[FROM_CGI_READ].get())
+	{
+		pipe_remove_cb_(pipes_[FROM_CGI_READ]);
+		pipes_[FROM_CGI_READ] = -1;
+		fd = -1;
+	}
 }

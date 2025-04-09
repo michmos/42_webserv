@@ -28,14 +28,14 @@ SharedFd& SharedFd::operator=(int fd) {
 	}
 	return (*this);
 }
-
+#include <sys/epoll.h>
 // TODO: potentially rmv err_msg 
 SharedFd::~SharedFd() {
 	_refCounts[_fd]--;
 	if (_refCounts[_fd] == 0 && _fd >= 0)
 	{
 		if(close(_fd) == -1)
-			std::cerr << "close(): " << strerror(errno) << std::endl;
+			std::cerr << "close() " << _fd << " : " << strerror(errno) << std::endl;
 	}
 }
 
