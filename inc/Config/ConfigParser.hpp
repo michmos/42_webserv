@@ -75,12 +75,11 @@ class ConfigParser {
 
 		void	checkPort();
 		void	checkHost();
-		void	checkServerName();		//
+		void	checkServerName();
 		void	checkClientBodySize();	// https://nginx.org/en/docs/syntax.html
 
 		// GETTERS
 		std::vector<Config> getConfigs() const { return this->_configs; }
-
 
 		// UTILS
 		void	printInput();

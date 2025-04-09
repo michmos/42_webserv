@@ -7,12 +7,8 @@
 # include <iostream>
 # include <regex>
 
-
 class Webserv;
 
-// make a static for the mime.types conf
-// make the htpp wrapper maybe??
-// read and store the mime.type map
 struct Location {
 	bool														strict_match;
 	std::unordered_map<std::string, std::vector<std::string>>	directives;
@@ -51,6 +47,7 @@ class Config {
 		const std::vector<std::string>	getMethods(const std::string locKey) const;			// allow_methods  DELETE POST GET;
 		const std::vector<std::string>	getIndex(const std::string locKey) const;			// index index.html index.php;
 		const std::string				getErrorPage(int errorCode) const;	// error_page 404 /tmp/www/404.html;
+
 		// UTILS
 		void	printConfig();
 
