@@ -71,7 +71,7 @@ class HTTPClient {
 		bool	isDone( void );
 		void	setServer(std::vector<std::string> host);
 
-		void		writeTo( int fd );
+		void		writeTo( const SharedFd &fd );
 		std::string	readFrom( int fd );
 
 		void			cgiResponse( void );
@@ -94,8 +94,8 @@ class HTTPClient {
 		std::function<void(const SharedFd&)> delFromEpoll_cb_;
 
 		void	setRequestDataAndConfig( void );
-		void	responding( bool cgi_used, int fd);
+		void	responding( bool cgi_used, const SharedFd &fd);
 		bool	isCGI();
-		bool	cgi( int fd );
+		bool	cgi( const SharedFd &fd );
 
 };

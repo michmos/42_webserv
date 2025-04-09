@@ -31,7 +31,7 @@ void print_epoll_events(uint32_t events) {
     if (events & EPOLLONESHOT) std::cout << "EPOLLONESHOT " << std::endl;
 }
 
-void	CGI::handle_cgi(HTTPRequest &request, int fd) {
+void	CGI::handle_cgi(HTTPRequest &request, const SharedFd &fd) {
 	std::vector<std::string>	env_strings;
 
 	switch (CGI_STATE_) {
@@ -166,9 +166,10 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 			std::cerr << "Error: Execve failed: " << std::strerror(errno) << std::endl;
 		exit(1);
 	}
-	closeSave(pipe_to_CGI_[READ]);
+	// closeSave(pipe_to_CGI_[READ]);
 	pipe_to_CGI_[READ] = -1;
-	closeSave(pipe_from_CGI_[WRITE]);
+	// closeSave(pipe_from_CGI_[WRITE]);
+	pipe_from_CGI_[WRITE] = -1;
 }
 
 // ###############################################################
@@ -178,18 +179,18 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
  * @brief writes body to stdin for CGI and closes write end pipe
  * @param post_data string with body
  */
-bool	CGI::sendDataToStdinReady(int fd) {
+bool	CGI::sendDataToStdinReady(const SharedFd &fd) {
 	ssize_t				write_bytes;
 	static std::string	to_send = "";
 
-	if (fd != pipe_to_CGI_[WRITE])
+	if (fd.get() != pipe_to_CGI_[WRITE])
 		return (false);
 
 	if (to_send.empty())
 		to_send = post_data_;
 	if (!to_send.empty())
 	{
-		write_bytes = write(fd, to_send.c_str(), to_send.size());
+		write_bytes = write(fd.get(), to_send.c_str(), to_send.size());
 		if (write_bytes != (ssize_t)to_send.size())
 		{
 			if (write_bytes == -1)
@@ -276,11 +277,11 @@ bool	CGI::isCGIProcessSuccessful(void) {
  * @brief checks response status from CGI and receives header (and body) from pipe
  * if statuscode is not set it wil generate a Internal Server Error
  */
-bool	CGI::getResponseFromCGI(int fd) {
+bool	CGI::getResponseFromCGI(const SharedFd &fd) {
 	int return_value;
 	int status_code;
 
-	if (fd != pipe_from_CGI_[READ])
+	if (fd.get() != pipe_from_CGI_[READ])
 		return (false);
 	if (!isCGIProcessFinished())
 		return (false);
@@ -307,10 +308,10 @@ bool	CGI::getResponseFromCGI(int fd) {
  * @brief receives a response from child with a headerfile and body to return to the client
  * @return string buffer with response from child or error msg that something went wrong
  */
-std::string	CGI::receiveBuffer(int fd) {
+std::string	CGI::receiveBuffer(const SharedFd &fd) {
 	char	buffer[1024];
 	
-	ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+	ssize_t bytesRead = read(fd.get(), buffer, sizeof(buffer) - 1);
 	if (bytesRead > 0)
 		buffer[bytesRead] = '\0';
 	else

@@ -42,6 +42,6 @@ class CGIPipes {
 		
 		void				addNewPipes( void );
 		void				addPipesToEpoll( void );
-		void				deletePipesFromEpoll(int &fd);
+		void				deletePipesFromEpoll( SharedFd &fd );
 		std::vector<SharedFd>	getPipes( void );
 };

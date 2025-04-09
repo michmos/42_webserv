@@ -39,7 +39,7 @@ void	HTTPClient::setServer(std::vector<std::string> host) {
 	config_ = getConfig_cb_(serverSock_, host[0]);
 }
 
-void	HTTPClient::writeTo(int fd) {
+void	HTTPClient::writeTo(const SharedFd &fd) {
 	ssize_t		bytes_write;
 	std::string	response;
 
@@ -47,7 +47,7 @@ void	HTTPClient::writeTo(int fd) {
 		return ;
 	response = message_que_.front();
 	message_que_.erase(message_que_.begin());
-	bytes_write = write(fd, response.c_str(), response.size());
+	bytes_write = write(fd.get(), response.c_str(), response.size());
 	if (bytes_write < static_cast<ssize_t>(response.size())) 
 	{
 		throw std::runtime_error("write(): " + std::string(strerror(errno)));
@@ -126,7 +126,7 @@ bool	isRedirection(const std::string &response) {
 }
 
 /// @brief regenerates response and add this one to the que.
-void	HTTPClient::responding(bool cgi_used, int fd) {
+void	HTTPClient::responding(bool cgi_used, const SharedFd &fd) {
 	if (cgi_used)
 		cgiResponse();
 	else
@@ -139,7 +139,7 @@ void	HTTPClient::responding(bool cgi_used, int fd) {
 }
 
 /// @brief creates a CGI class, checks the method/target, starts the cgi
-bool	HTTPClient::cgi(int fd) {
+bool	HTTPClient::cgi(const SharedFd &fd) {
 	std::vector<std::string>	env_strings;
 
 	if (cgi_ == NULL)
