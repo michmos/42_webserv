@@ -137,7 +137,6 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 			servSock,
 			// function to add an epoll event to epoll instance - used for callback
 			[this](struct epoll_event ev, const SharedFd& clientSock) {
-				std::cerr << "in callback: " << ev.data.fd << std::endl;
 				// save the client fd in the data field
 				_ep.add(ev.data.fd, clientSock.get(), ev.events);
 			},
@@ -146,7 +145,6 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 				return(getConfig(_servers, servSock, servName));
 			},
 			[this](const SharedFd& fd) {
-				std::cerr << "callback delete pipe: " << fd.get() <<std::endl;
 				_ep.del(fd.get());
 			}
 		))

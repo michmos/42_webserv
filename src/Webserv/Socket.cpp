@@ -39,7 +39,7 @@ Socket& Socket::operator=(const Socket& other) {
 }
 
 Socket::~Socket() {
-	// REMOVE!!!
+	std::cerr << "close fd: " << _fd.get() << std::endl;
 	try {
 		close(_fd.get());
 	}

@@ -195,7 +195,7 @@ bool	CGI::sendDataToStdinReady(const SharedFd &fd) {
 		{
 			if (write_bytes == -1)
 				std::cerr << "Error write: " << std::strerror(errno) << std::endl;
-			else if (write_bytes < static_cast<ssize_t>(to_send.size())) 
+			else 
 			{
 				to_send = post_data_.substr(write_bytes);
 				std::cerr << "Could not written everything in once, remaining bytes:" <<  write_bytes << std::endl;
