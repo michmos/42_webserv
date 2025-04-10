@@ -163,6 +163,7 @@ bool	HTTPClient::cgi(const SharedFd &fd) {
 	{
 		pipes_.setCallbackFunctions(clientSock_, addToEpoll_cb_, delFromEpoll_cb_);
 		pipes_.addNewPipes();
+		std::cerr << "check\n";
 		cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes(), delFromEpoll_cb_);
 	}
 	cgi_->handle_cgi(request_, fd);

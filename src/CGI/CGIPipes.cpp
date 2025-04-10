@@ -33,11 +33,11 @@ void	CGIPipes::addNewPipes(void) {
 		// set flags
 		auto setFlags = [](SharedFd& fd, int flags) {
 			if (fcntl(fd.get(), F_SETFL, flags) == -1)
-				throw std::runtime_error("fcntl(): " + std::string(strerror(errno)));
+				throw std::runtime_error("fcntl()?: " + std::string(strerror(errno)));
 		};
 		setFlags(pipes_[FROM_CGI_READ], O_NONBLOCK | FD_CLOEXEC);
 		setFlags(pipes_[FROM_CGI_WRITE], O_NONBLOCK | FD_CLOEXEC);
-		setFlags(pipes_[TO_CGI_READ], FD_CLOEXEC);
+		setFlags(pipes_[TO_CGI_READ], O_NONBLOCK | FD_CLOEXEC);
 		setFlags(pipes_[TO_CGI_WRITE], O_NONBLOCK);
 	}
 	catch (std::runtime_error &e)

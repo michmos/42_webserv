@@ -231,7 +231,7 @@ std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, HTTPRequ
 	for (auto &str : envStrings)
 	{
 		env.push_back(const_cast<char*>(str.c_str()));
-		std::cerr << "env: " << str << std::endl;
+		// std::cerr << "env: " << str << std::endl;
 	}
 	env.push_back(nullptr);
 	return (env);
