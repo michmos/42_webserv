@@ -9,21 +9,13 @@
 
 # include "../Webserv/Epoll.hpp"
 
-#ifndef WRITE
-# define WRITE 1
-#endif
 
-#ifndef READ
-# define READ 0
-#endif
-
-#ifndef FROM_CGI_READ
-# define FROM_CGI_READ 0
-#endif
-
-#ifndef TO_CGI_WRITE
-# define TO_CGI_WRITE 3
-#endif
+enum ePipe {
+	FROM_CGI_READ,
+	FROM_CGI_WRITE,
+	TO_CGI_READ,
+	TO_CGI_WRITE
+};
 
 class CGIPipes {
 	private:
@@ -41,7 +33,6 @@ class CGIPipes {
 								std::function<void(const SharedFd&)> pipe_remove_cb );
 		
 		void				addNewPipes( void );
-		void				addPipesToEpoll( void );
 		void				deletePipesFromEpoll( SharedFd &fd );
-		std::vector<SharedFd>	getPipes( void );
+		inline std::vector<SharedFd>	getPipes( void ) { return (pipes_); };
 };
