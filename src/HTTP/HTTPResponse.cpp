@@ -29,7 +29,7 @@ void	HTTPResponse::setConfig(const Config *conf) { config_ = conf; }
 static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 && status_code <= 308); }
 
 /**
- * @brief generates Response by processing the request Header 
+ * @brief generates Response by processing the request Header
  * @param request struct that contains all the parsed header info
  */
 void	HTTPResponse::generateResponse(const HTTPRequest request) {
@@ -111,7 +111,7 @@ static std::string	getAllDirNames(const char *path) {
 	struct dirent 	*d;
 	std::string		list;
 	DIR 			*dir = opendir(path);
-	
+
 	if (!dir)
 		return ("");
 	list = "<!DOCTYPE html><head><title>" + std::string(path) + \
@@ -187,7 +187,7 @@ void	HTTPResponse::getHttpStatusMessages(void) {
 		{307, "307 Temporary Redirect"}, {308, "308 Permanent Redirect"},
 		{400, "400 Bad Request"}, {401, "401 Unauthorized"}, {403, "403 Forbidden"},
 		{404, "404 Not Found"}, {405, "405 Method Not Allowed"}, {408, "408 Request Timeout"},
-		{409, "409 Conflict"}, {410, "410 Gone"}, {413 ,"413 Payload Too Large"}, {415, "415 Unsupported Media Type"}, 
+		{409, "409 Conflict"}, {410, "410 Gone"}, {413 ,"413 Payload Too Large"}, {415, "415 Unsupported Media Type"},
 		{429, "429 Too Many Requests"}, {500, "500 Internal Server Error"},
 		{501, "501 Not Implemented"}, {502, "502 Bad Gateway"}, {503, "503 Service Unavailable"},
 		{504, "504 Gateway Timeout"}, {505, "505 HTTP Version Not Supported"}
@@ -204,7 +204,7 @@ void	HTTPResponse::getHttpStatusMessages(void) {
 		if (index != body_.size())
 			body_.replace(index, 30, "Error " + httpStatusMessages_);
 	}
-	content_type_ = "text/html";
+	// content_type_ = "text/html";
 }
 
 /// @brief combines all parts of HTTP header and adds right values
