@@ -36,8 +36,6 @@ void	CGI::handle_cgi(HTTPRequest &request, const SharedFd &fd) {
 
 	switch (CGI_STATE_) {
 		case START_CGI:
-			if (request.method == "DELETE")
-				request.request_target = "data/www/cgi-bin/nph_CGI_delete.py";
 			createEnv(env_strings, request);
 			forkCGI(request.request_target, env_strings);
 			CGI_STATE_ = SEND_TO_CGI;
@@ -163,12 +161,10 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 		createEnvCharPtrVector(env_c_vector, env_vector);
 
 		if (execve(executable.c_str(), argv_vector.data(), env_c_vector.data()) == -1)
-			std::cerr << "Error: Execve failed: " << std::strerror(errno) << std::endl;
+			std::cerr << "Error: Execve failed: " <<  executable << std::strerror(errno) << std::endl;
 		exit(1);
 	}
-	// closeSave(pipe_to_CGI_[READ]);
 	pipe_to_CGI_[READ] = -1;
-	// closeSave(pipe_from_CGI_[WRITE]);
 	pipe_from_CGI_[WRITE] = -1;
 }
 
@@ -213,9 +209,14 @@ bool	CGI::sendDataToStdinReady(const SharedFd &fd) {
  * @param request struct with all information that is gathered. 
  * @return vector<char*> with all env information
  */
-std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, const HTTPRequest request) {
-	envStrings.push_back("REQUEST_METHOD=" + request.method);
+std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, HTTPRequest &request) {
+	if (request.method == "DELETE")
+	{
+		envStrings.push_back("DELETE_FILE=" + request.request_target);
+		request.request_target = "data/www/cgi-bin/nph_CGI_delete.py";
+	}
 	envStrings.push_back("REQUEST_TARGET=" + request.request_target);
+	envStrings.push_back("REQUEST_METHOD=" + request.method);
 	envStrings.push_back("CONTENT_LENGTH=" + std::to_string(request.body.size()));
 
 	for (const auto& pair : request.headers)
@@ -228,7 +229,10 @@ std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, const HT
 
 	std::vector<char*>	env;
 	for (auto &str : envStrings)
+	{
 		env.push_back(const_cast<char*>(str.c_str()));
+		std::cerr << "env: " << str << std::endl;
+	}
 	env.push_back(nullptr);
 	return (env);
 }

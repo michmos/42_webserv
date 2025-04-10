@@ -46,7 +46,7 @@ class CGI {
 		std::function<void(int)> delFromEpoll_cb_;
 
 		// START_CGI
-		std::vector<char*>	createEnv( std::vector<std::string> &envStrings, const HTTPRequest request );
+		std::vector<char*>	createEnv( std::vector<std::string> &envStrings, HTTPRequest &request );
 		void				forkCGI( const std::string &executable, std::vector<std::string> env_vector );
 		bool				isCGIProcessFinished( void );
 		bool				isCGIProcessSuccessful( void );

@@ -43,10 +43,11 @@ class Parser:
 						break
 					if q == 'file':
 						found = True
-		elif request_method == 'DELETE' and "REQUEST_TARGET" in os.environ:
-			file = os.getenv('REQUEST_TARGET')
+		elif request_method == 'DELETE' and "DELETE_FILE" in os.environ:
+			file = os.getenv('DELETE_FILE')
 			if "../" in file:
 				self.status_code = 403
+			file = os.path.basename(file)
 			if "SERVER_PROTOCOL" in os.environ and os.getenv("SERVER_PROTOCOL") == "HTTP/1.1":
 				0
 			else:
