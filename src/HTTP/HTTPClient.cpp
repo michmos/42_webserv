@@ -103,7 +103,8 @@ void	printRequest(HTTPRequest request) {
 	std::cerr << "Method: " << request.method << "\n";
 	std::cerr << "Target: " << request.request_target << "\n";
 	std::cerr << "Host: " << request.host[0] << "\n";
-	std::cerr << "StatusCode: " << request.status_code << "\n------------------\n";
+	std::cerr << "StatusCode: " << request.status_code << "\n";
+	std::cerr <<  "Dir on/off: " << request.dir_list << "\n------------------\n";
 }
 
 void	HTTPClient::setRequestDataAndConfig(void) {

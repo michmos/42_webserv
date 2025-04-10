@@ -34,16 +34,12 @@ static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 &
  */
 void	HTTPResponse::generateResponse(const HTTPRequest request) {
 	std::string	filename(request.request_target);
-	std::cerr << request.method << " " << request.request_target << std::endl;
-	std::cerr << request.invalidRequest << " " << request.status_code << std::endl;
+	std::cerr << request.method << " " << request.request_target << request.status_code << std::endl;
 
 	if (request.dir_list)
-	{
 		dir_list_ = true ;
-		; //??
-	}
 	if (!request.invalidRequest && request.status_code == 200)
-			filename_ = request.request_target;
+		filename_ = request.request_target;
 	else if (isRedirectStatusCode(request.status_code)) // redirect
 		header_ = request.body;
 	else if (isCustomErrorPages(filename, request.status_code))
@@ -118,15 +114,18 @@ static std::string	getAllDirNames(const char *path) {
 	
 	if (!dir)
 		return ("");
+	list = "<!DOCTYPE html><head><title>" + std::string(path) + "Folder:</title></head><body><ul>";
 	while (1)
 	{
 		d = readdir(dir);
 		if (d != nullptr)
-			list += std::string(d->d_name) + std::string("\n");
+			list += "<li>" + std::string(d->d_name) + "</li>";
 		else
 			break ;
 	}
 	closedir(dir);
+	list += "</ul></body></html>";
+	std::cerr << list << std::endl;
 	return (list);
 }
 
@@ -152,8 +151,14 @@ void	HTTPResponse::getBody(void) {
 void	HTTPResponse::getContentType( void )
 {
 	std::string	extension;
-	size_t		index(filename_.find_last_of('.'));
+	size_t		index;
 
+	if (dir_list_)
+	{
+		content_type_ = "text/html";
+		return ;
+	}
+	index = filename_.find_last_of('.');
 	if (index == std::string::npos)
 		return ;
 

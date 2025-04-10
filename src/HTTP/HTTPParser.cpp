@@ -32,11 +32,7 @@ void	HTTPParser::splitHeaderBody(void) {
 /// @brief if available, checks if content length is same as size body
 bool	HTTPParser::isBodyComplete(void) {
 	if (content_length_ > 0)
-	{
-		if (result_.body.size() == content_length_)
-			return (true);
-		return (false);
-	}
+		return (result_.body.size() == content_length_);
 	else
 		return (true);
 }
@@ -75,17 +71,17 @@ void	HTTPParser::parseContentLength(std::string str) {
  * @THROW if request line is invalid
  */
 void	HTTPParser::verifyRequestLine(const Config& config) {
-	if (!isAllwdMeth(result_.method, config)) {
+	if (!isAllwdMeth(result_.method, config))
+	{
 		result_.status_code = 405;
 		throw InvalidRequestException("Unallowed method in request line");
 	}
-	if (result_.method.empty()) {
+	if (result_.method.empty())
 		throw InvalidRequestException("Empty method in request line");
-	} else if (result_.request_target.empty()) {
+	else if (result_.request_target.empty())
 		throw InvalidRequestException("Empty request target in request line");
-	} else if (result_.protocol.empty()) {
+	else if (result_.protocol.empty())
 		throw InvalidRequestException("Empty protocol target in request line");
-	}
 }
 
 /**
@@ -127,7 +123,7 @@ static std::string trimString(const std::string &str) {
 	size_t	end;
 	
 	if (str.empty()) 
-		return "";
+		return ("");
 	start = str.find_first_not_of(' ');
 	end = str.find_last_not_of(' ');
 	if (start == std::string::npos || start == end)
@@ -182,6 +178,34 @@ static std::vector<std::string>	getHost(std::string &host_string) {
 	return (host);
 }
 
+static void split_and_trim(std::vector<std::string> &encoding_items, const std::string& input) {
+	std::stringstream			ss(input);
+	std::string					item;
+
+	while (std::getline(ss, item, ','))
+	{
+		item = trimString(item);
+		if (item.empty())
+			throw InvalidRequestException("Tranfer-Encoding has a empty value");
+		encoding_items.push_back(item);
+	}
+}
+
+static void	validateTransferEncoding(std::string str) {
+	std::vector<std::string>				encoding_items;
+	static const std::vector<std::string> 	valid_encodings = { \
+		"chunked", "gzip", "compress", "deflate", "identity"};
+
+	split_and_trim(encoding_items, str);
+	if (encoding_items.empty())
+		throw InvalidRequestException("Tranfer-Encoding value is missing");
+	for (std::string item : encoding_items)
+	{
+		if (std::find(valid_encodings.begin(), valid_encodings.end(), item) == valid_encodings.end())
+			throw InvalidRequestException("Invalid Tranfer-Encoding value");
+	}
+}
+
 /**
  * @brief extract all info from header and validate
  * @THROW if invalidRequest
@@ -195,22 +219,16 @@ void	HTTPParser::parseRequest(void) {
 		if (str.find("Host:") != std::string::npos)
 			result_.host = getHost(str);
 		else if (result_.method.empty() && str.find("HTTP/") != std::string::npos)
-		{
 			parseHTTPline(str);
-		}
-		else if (str.find("Transfer-Encoding:") != std::string::npos && \
-				str.find("chunked") != std::string::npos) {
-			// TODO: would a line like Transfer-Encoding: sldjflksdf chunked
-			// not be an invalid request? If so, are we checking for this?
+		else if (str.find("Transfer-Encoding:") != std::string::npos)
+		{
+			validateTransferEncoding(str.substr(19));
 			chunked_ = true;
 		}
 		else if (str.find("Content-Length:") != std::string::npos)
-		{
 			parseContentLength(str);
-		}
-		else {
+		else
 			parseExtraHeaderInformation(str);
-		}
 	}
 }
 
@@ -229,14 +247,14 @@ void	HTTPParser::addIfProcessIsChunked(const std::string &buff) {
 	{
 		chunk_size_str = raw_body.substr(pos, found - pos);
 		chunk_size = std::stoi(chunk_size_str, nullptr, 16);
-		
 		if (chunk_size == 0)
 		{
 			PARSE_STATE_ = DONE_PARSING;
 			return ;
 		}
 		pos = found + 2;
-		if (pos + chunk_size <= raw_body.size()) {
+		if (pos + chunk_size <= raw_body.size())
+		{
 			result_.body += raw_body.substr(pos, chunk_size);
 			pos += chunk_size + 2;
 		}
@@ -244,15 +262,10 @@ void	HTTPParser::addIfProcessIsChunked(const std::string &buff) {
 }
 
 bool	HTTPParser::isAllwdMeth(const std::string& method, const Config& conf) {
-	std::vector<std::string>	allowedMethods;
+	std::vector<std::string>	allwdMeth;
 
-	// METHOD CHECK
-	allowedMethods = conf.getMethods(result_.request_target);
-	if (std::find(allowedMethods.begin(), allowedMethods.end(), method) == allowedMethods.end())
-	{
-		return (false);
-	}
-	return (true);
+	allwdMeth = conf.getMethods(result_.request_target);
+	return (std::find(allwdMeth.begin(), allwdMeth.end(), method) != allwdMeth.end());
 }
 
 bool	HTTPParser::isRedirection(std::string &endpoint, const std::vector<std::string> &redir) {
@@ -350,7 +363,6 @@ std::string	HTTPParser::handleRootDir(const Config *config) {
 	}
 
 	const std::vector<std::string> indices = config->getIndex("/");
-	result_.dir_list = false;
 	if (indices.empty()) // if no indices givens body = list of dir
 	{
 		result_.dir_list = true;
@@ -389,7 +401,7 @@ static const std::vector<std::string>	getSubdirectories(const std::vector<std::s
 	}
 	return (subdir);
 }
-
+#include <filesystem>
 /**
  * @brief checks for paths (redir, root, access)
  * @param config pointer to Config 
@@ -407,7 +419,11 @@ std::string	HTTPParser::generatePath(const Config *config) {
 	{
 		full_path = addDir_Folder(folder, result_.request_target);
 		if (stat(full_path.c_str(), &statbuf) == 0)
+		{
+			if (statbuf.st_mode & S_IFDIR)
+				result_.dir_list = true;
 			return (full_path);
+		}
 	}
 	return ("");
 }
@@ -445,13 +461,14 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 		case RCV_HEADER:
 			rawRequest_ += buff;
 			buff.clear();
-			if (!isHeaderRead()) {
+			if (!isHeaderRead())
 				return ;
-			}
+
 			splitHeaderBody();
 
 			result_.invalidRequest = false;
-			try {
+			try
+			{
 				parseRequest();
 				client->setServer(result_.host);
 				result_.request_target = generatePath(client->getConfig()); // TODO: @micha: look into again
@@ -471,9 +488,7 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 				result_.body += buff;
 
 			if (checkBodySizeLimit(result_.body.size(), client->getConfig(), result_.request_target))
-			{
 				result_.status_code = 413;
-			}
 			if (!isBodyComplete())
 				return;
 		default:
