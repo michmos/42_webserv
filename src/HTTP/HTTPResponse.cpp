@@ -114,8 +114,10 @@ static std::string	getAllDirNames(const char *path) {
 	
 	if (!dir)
 		return ("");
-	list = "<!DOCTYPE html><head><title>" + std::string(path) + "Folder:</title></head><body><ul>";
-	while (1)
+	list = "<!DOCTYPE html><head><title>" + std::string(path) + \
+		"Folder:</title></head><body><p>" \
+		+ std::string(path) + "</p><br><ul>";
+	while (true)
 	{
 		d = readdir(dir);
 		if (d != nullptr)
@@ -125,7 +127,6 @@ static std::string	getAllDirNames(const char *path) {
 	}
 	closedir(dir);
 	list += "</ul></body></html>";
-	std::cerr << list << std::endl;
 	return (list);
 }
 
