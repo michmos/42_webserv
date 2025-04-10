@@ -1,5 +1,7 @@
 #include "../../inc/CGI/CGIPipes.hpp"
 
+CGIPipes::CGIPipes( void ) {};
+
 CGIPipes::~CGIPipes(void) {}
 
 void	CGIPipes::setCallbackFunctions( const SharedFd& client_fd, \
