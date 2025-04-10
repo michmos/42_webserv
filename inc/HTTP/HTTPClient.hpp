@@ -71,7 +71,7 @@ class HTTPClient {
 		bool	isDone( void );
 		void	setServer(std::vector<std::string> host);
 
-		void		writeTo( const SharedFd &fd );
+		void		writeTo( const SharedFd &fd, std::string &remaining );
 		std::string	readFrom( int fd );
 
 		void			cgiResponse( void );

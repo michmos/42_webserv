@@ -39,20 +39,31 @@ void	HTTPClient::setServer(std::vector<std::string> host) {
 	config_ = getConfig_cb_(serverSock_, host[0]);
 }
 
-void	HTTPClient::writeTo(const SharedFd &fd) {
+void	HTTPClient::writeTo(const SharedFd &fd, std::string &remaining) {
 	ssize_t		bytes_write;
-	std::string	response;
+	std::string	response = "";
 
-	if (message_que_.empty())
-		return ;
-	response = message_que_.front();
-	message_que_.erase(message_que_.begin());
-	bytes_write = write(fd.get(), response.c_str(), response.size());
-	if (bytes_write < static_cast<ssize_t>(response.size())) 
+	if (!remaining.empty())
 	{
-		throw std::runtime_error("write(): " + std::string(strerror(errno)));
+		response = remaining;
+		remaining.clear();
 	}
-	// check if everything can be written in once?
+	else if (!message_que_.empty())
+	{
+		response = message_que_.front();
+		message_que_.erase(message_que_.begin());
+	}
+	if (!response.empty())
+	{
+		bytes_write = write(fd.get(), response.c_str(), response.size());
+		if (bytes_write == -1)
+			throw std::runtime_error("write(): " + std::string(strerror(errno)));
+		else
+		{
+			remaining = response.substr(bytes_write);
+			return ;
+		}
+	}
 	STATE_ = DONE;
 }
 
@@ -128,14 +139,19 @@ bool	isRedirection(const std::string &response) {
 
 /// @brief regenerates response and add this one to the que.
 void	HTTPClient::responding(bool cgi_used, const SharedFd &fd) {
-	if (cgi_used)
-		cgiResponse();
-	else
+	static std::string	remaining_write = "";
+
+	if (remaining_write.empty())
 	{
-		responseGenerator_.generateResponse(request_);
-		message_que_.push_back(responseGenerator_.loadResponse());
+		if (cgi_used)
+			cgiResponse();
+		else
+		{
+			responseGenerator_.generateResponse(request_);
+			message_que_.push_back(responseGenerator_.loadResponse());
+		}
 	}
-	writeTo(fd);
+	writeTo(fd, remaining_write);
 	STATE_ = DONE;
 }
 
