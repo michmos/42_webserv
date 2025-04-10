@@ -204,6 +204,7 @@ void	HTTPResponse::getHttpStatusMessages(void) {
 		if (index != body_.size())
 			body_.replace(index, 30, "Error " + httpStatusMessages_);
 	}
+	content_type_ = "text/html";
 }
 
 /// @brief combines all parts of HTTP header and adds right values

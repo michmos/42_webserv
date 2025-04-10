@@ -425,6 +425,7 @@ std::string	HTTPParser::generatePath(const Config *config) {
 			return (full_path);
 		}
 	}
+	result_.status_code = 404;
 	return ("");
 }
 
