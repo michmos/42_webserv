@@ -1,4 +1,5 @@
-HTTP/1.1 302 Found
-Location: successdelete.html
+HTTP/1.1 404 Not Found
 Content-Type: text/html
+Content-Length: 69
 
+<html><head><title>404 Not Found</title></head><body></body></html>

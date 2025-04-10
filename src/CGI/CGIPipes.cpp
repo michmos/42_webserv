@@ -16,7 +16,8 @@ void	CGIPipes::setCallbackFunctions( const SharedFd& client_fd, \
 
 /// @brief open pipes and set flags
 /// @THROW throws exception if syscall fails
-void	CGIPipes::addNewPipes(void) {
+void	CGIPipes::setPipes(void) {
+	pipes_.clear();
 	try {
 		// create pipes
 		auto addPipe = [this](){
@@ -24,6 +25,7 @@ void	CGIPipes::addNewPipes(void) {
 			if (::pipe(fds) == -1) {
 				throw std::runtime_error("pipe(): " + std::string(strerror(errno)));
 			}
+			std::cerr << fds[0] << " " << fds[1] << std::endl;
 			pipes_.push_back(fds[0]);
 			pipes_.push_back(fds[1]);
 		};
@@ -32,9 +34,17 @@ void	CGIPipes::addNewPipes(void) {
 
 		// set flags
 		auto setFlags = [](SharedFd& fd, int flags) {
+			std::cerr << "try fcntl with fd: " << fd.get() << std::endl;
 			if (fcntl(fd.get(), F_SETFL, flags) == -1)
-				throw std::runtime_error("fcntl()?: " + std::string(strerror(errno)));
+				throw std::runtime_error("fcntl(): " + std::string(strerror(errno)));
 		};
+		std::cerr << "fd: " << pipes_[FROM_CGI_READ].get() << std::endl;
+		std::cerr << "fd: " << pipes_[FROM_CGI_WRITE].get() << std::endl;
+		std::cerr << "fd: " << pipes_[TO_CGI_READ].get() << std::endl;
+		std::cerr << "fd: " << pipes_[TO_CGI_WRITE].get() << std::endl;
+		std::cerr << pipes_.size() << std::endl;
+
+
 		setFlags(pipes_[FROM_CGI_READ], O_NONBLOCK | FD_CLOEXEC);
 		setFlags(pipes_[FROM_CGI_WRITE], O_NONBLOCK | FD_CLOEXEC);
 		setFlags(pipes_[TO_CGI_READ], O_NONBLOCK | FD_CLOEXEC);

@@ -18,7 +18,8 @@ Epoll::Epoll() :
 // - data:	other data - can be used to store associated fd
 void	Epoll::add(int fd, int data, u_int32_t events) {
 	std::cerr << "add fd: " << fd << std::endl;
-
+	if (fd == -1)
+		throw std::runtime_error(std::string("fd == -1 in add Epoll"));
 	_eventDataStorage[fd] = {fd, data};
 
 	epoll_event	ev;
