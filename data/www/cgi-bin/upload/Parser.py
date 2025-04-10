@@ -5,6 +5,7 @@ import urllib.parse
 import cgi
 import sys
 import re
+import time
 
 class Parser:
 	def __init__( self ):
@@ -104,8 +105,22 @@ class Parser:
 	def parse_stdin_data( self ) -> None:
 		if self.no_content_length():
 			return
-		post_data = sys.stdin.buffer.read(self.env["content_length"])
-
+		post_data = b""
+		start_time = time.time()
+		length = int(self.env.get("content_length", 0))
+		i = 0
+		print("length: ", length, file=sys.stderr)
+		while len(post_data) < length - 1:
+			chunk = sys.stdin.buffer.read(length - len(post_data))
+			if chunk:
+				print("read: " , len(chunk), file=sys.stderr)
+				post_data += chunk
+			i += 1
+			if i % 20 == 0 and time.time() - start_time > 5:
+				self.status_code = 404
+				print("Error: timeout", file=sys.stderr)
+				break
+				
 		if "multipart/form-data" not in self.env["content_type"]:
 			self.status_code = 400
 			print("Error: wrong content-type, no multipart/form-data", file=sys.stderr)
