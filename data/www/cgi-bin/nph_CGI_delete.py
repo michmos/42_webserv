@@ -37,8 +37,11 @@ def main() -> int:
 		except Exception as e:
 			print(f"Error with generate_response: {e}", file=sys.stderr)
 		return 400
-	
-	return 0 if cgi_delete.get_status_code() == 200 else 1
+	# if the delete is good or not found it has a good return msg
+	if cgi_delete.get_status_code() == 200 or cgi_delete.get_status_code() == 404:
+		return 0
+	else:
+		return 1
 
 if __name__ == '__main__':
 	sys.exit(main())

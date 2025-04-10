@@ -19,7 +19,7 @@ void	CGIPipes::setCallbackFunctions( const SharedFd& client_fd, \
 void	CGIPipes::addNewPipes(void) {
 	try {
 		// create pipes
-		auto addPipe = [this]() {
+		auto addPipe = [this](){
 			int fds[2];
 			if (::pipe(fds) == -1) {
 				throw std::runtime_error("pipe(): " + std::string(strerror(errno)));
@@ -40,12 +40,13 @@ void	CGIPipes::addNewPipes(void) {
 		setFlags(pipes_[TO_CGI_READ], FD_CLOEXEC);
 		setFlags(pipes_[TO_CGI_WRITE], O_NONBLOCK);
 	}
-	catch (std::runtime_error &e) {
+	catch (std::runtime_error &e)
+	{
 		pipes_.clear();
 		throw;
 	}
 	// add fd to epoll
-	auto addToEpoll = [this](int fd, u_int32_t events){
+	auto addToEpoll = [this](int fd, u_int32_t events) {
 		epoll_event	ev;
 		ev.data.fd = fd;
 		ev.events = events;
