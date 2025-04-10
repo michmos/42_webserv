@@ -19,7 +19,7 @@ static int	findExistingSocket(const std::vector<std::pair<struct sockaddr_storag
 	return (-1);
 }
 
-static int	createAndBindSock(struct addrinfo* info) {
+static int	createBindListen(struct addrinfo* info) {
 	int fd = socket(info->ai_family, info->ai_socktype | SOCK_NONBLOCK, info->ai_protocol);
 	if (fd == -1) {
 		return (-1);
@@ -28,6 +28,9 @@ static int	createAndBindSock(struct addrinfo* info) {
 	if (bind(fd, info->ai_addr, sizeof(struct addrinfo)) == -1) {
 		close(fd);
 		return (-1);
+	}
+	if(listen(fd, 5) == -1) {  // TODO: replace random number 5
+		throw std::runtime_error("listen(): " + std::string(strerror(errno)));
 	}
 	return (fd);
 }
@@ -63,7 +66,7 @@ static int	resolveSocket(const std::string& host, const std::string& port) {
 		if (res != -1)
 			break;
 
-		res = createAndBindSock(temp);
+		res = createBindListen(temp);
 		if (res != -1) {
 			// copy sockaddr to storage to save it in vector
 			struct sockaddr_storage addr;
@@ -77,9 +80,6 @@ static int	resolveSocket(const std::string& host, const std::string& port) {
 	if (res == -1) {
 		throw std::runtime_error("Socket could not be created for host: " + host + " and port: "
 						   + port + ": " + std::string(strerror(errno)));
-	}
-	if(listen(res, 5) == -1) {  // TODO: replace random number
-		throw std::runtime_error("listen(): " + std::string(strerror(errno)));
 	}
 	return (res);
 }

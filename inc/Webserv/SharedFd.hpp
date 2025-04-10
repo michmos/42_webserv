@@ -20,10 +20,17 @@ public:
 
 	// comparison operators
 	inline bool	operator==(const SharedFd& other) const { return (this->_fd == other._fd); }
+	inline bool	operator!=(const SharedFd& other) const { return (this->_fd != other._fd); }
 	inline bool	operator<(const SharedFd& other) const { return (this->_fd < other._fd); }
 	inline bool	operator>(const SharedFd& other) const { return (this->_fd > other._fd); }
 	inline bool	operator<=(const SharedFd& other) const { return (this->_fd <= other._fd); }
 	inline bool	operator>=(const SharedFd& other) const { return (this->_fd >= other._fd); }
+	inline bool	operator==(int other) const { return (this->_fd == other); }
+	inline bool	operator!=(int other) const { return (this->_fd != other); }
+	inline bool	operator<(int other) const { return (this->_fd < other); }
+	inline bool	operator>(int other) const { return (this->_fd > other); }
+	inline bool	operator<=(int other) const { return (this->_fd <= other); }
+	inline bool	operator>=(int other) const { return (this->_fd >= other); }
 
 	// conversion operator
 	inline explicit operator	int() const { return (_fd); }

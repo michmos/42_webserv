@@ -14,53 +14,47 @@ void	CGIPipes::setCallbackFunctions( const SharedFd& client_fd, \
 	pipe_remove_cb_ = pipe_remove_cb;
 }
 
-std::vector<SharedFd>	CGIPipes::getPipes(void) { return (pipes_); }
-
-/// @brief set pipes to -1 and then open both (to and from child) + nonblock
+/// @brief open pipes and set flags
+/// @THROW throws exception if syscall fails
 void	CGIPipes::addNewPipes(void) {
-	int	pipe_from_cgi[2];
-	int	pipe_to_cgi[2];
+	try {
+		// create pipes
+		auto addPipe = [this](){
+			int fds[2];
+			if (::pipe(fds) == -1) {
+				throw std::runtime_error("pipe(): " + std::string(strerror(errno)));
+			}
+			pipes_.push_back(fds[0]);
+			pipes_.push_back(fds[1]);
+		};
+		addPipe();
+		addPipe();
 
-	std::memset(pipe_from_cgi, -1, sizeof(pipe_from_cgi));
-	std::memset(pipe_to_cgi, -1, sizeof(pipe_to_cgi));
-	if (pipe(pipe_to_cgi) < 0)
-	{
-		std::perror("pipe_from_cgi failed");
-		throw std::exception();
+		// set flags
+		auto setFlags = [](SharedFd& fd, int flags) {
+			if (fcntl(fd.get(), F_SETFL, flags) == -1)
+				throw std::runtime_error("fcntl(): " + std::string(strerror(errno)));
+		};
+		setFlags(pipes_[FROM_CGI_READ], O_NONBLOCK | FD_CLOEXEC);
+		setFlags(pipes_[FROM_CGI_WRITE], O_NONBLOCK | FD_CLOEXEC);
+		setFlags(pipes_[TO_CGI_READ], FD_CLOEXEC);
+		setFlags(pipes_[TO_CGI_WRITE], O_NONBLOCK);
 	}
-	if (pipe(pipe_from_cgi) < 0)
+	catch (std::runtime_error &e)
 	{
-		std::perror("pipe_to_cgi failed");
-		pipe_to_cgi[WRITE] = -1;
-		pipe_to_cgi[READ] = -1;
-		throw std::exception();
+		pipes_.clear();
+		throw;
 	}
-	if (fcntl(pipe_to_cgi[WRITE], F_SETFL, O_NONBLOCK) == -1)
-		std::perror("fcntl fails with pipes\n");
-	if (fcntl(pipe_to_cgi[READ], F_SETFL, FD_CLOEXEC) == -1)
-		std::perror("fcntl fails with pipes\n");
-	if (fcntl(pipe_from_cgi[WRITE], F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
-		std::perror("fcntl fails with pipes\n");
-	if (fcntl(pipe_from_cgi[READ], F_SETFL, O_NONBLOCK | FD_CLOEXEC) == -1)
-		std::perror("fcntl fails with pipes\n");
-	pipes_[0] = pipe_from_cgi[READ];
-	pipes_[1] = pipe_from_cgi[WRITE];
-	pipes_[2] = pipe_to_cgi[READ];
-	pipes_[3] = pipe_to_cgi[WRITE];
-	addPipesToEpoll();
-}
+	// add fd to epoll
+	auto addToEpoll = [this](int fd, u_int32_t events) {
+		epoll_event	ev;
+		ev.data.fd = fd;
+		ev.events = events;
 
-/// @brief takes the last pipe and exectutes the pipe_callback function
-void	CGIPipes::addPipesToEpoll(void) {
-	epoll_event			event_write;
-	epoll_event 		event_read;
-
-	event_write.data.fd = pipes_[TO_CGI_WRITE].get();
-	event_write.events = EPOLLOUT | O_NONBLOCK;
-	pipe_add_cb_(event_write, client_fd_);
-	event_read.data.fd = pipes_[FROM_CGI_READ].get();
-	event_read.events =  EPOLLIN | O_NONBLOCK;
-	pipe_add_cb_(event_read, client_fd_);
+		pipe_add_cb_(ev, client_fd_);
+	};
+	addToEpoll(pipes_[TO_CGI_WRITE].get(), EPOLLOUT | O_NONBLOCK);
+	addToEpoll(pipes_[FROM_CGI_READ].get(), EPOLLIN | O_NONBLOCK);
 }
 
 void	CGIPipes::deletePipesFromEpoll(SharedFd &fd) {

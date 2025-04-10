@@ -32,11 +32,7 @@ void	HTTPParser::splitHeaderBody(void) {
 /// @brief if available, checks if content length is same as size body
 bool	HTTPParser::isBodyComplete(void) {
 	if (content_length_ > 0)
-	{
-		if (result_.body.size() == content_length_)
-			return (true);
-		return (false);
-	}
+		return (result_.body.size() == content_length_);
 	else
 		return (true);
 }
@@ -44,9 +40,9 @@ bool	HTTPParser::isBodyComplete(void) {
 /**
  * @brief set content_length_ if possible
  * @param str string with line that contains Content-Lenght
- * @return bool if invalid content length input
+ * @TRHOW if invalid content length input
  */
-bool	HTTPParser::tryParseContentLength(std::string str) {
+void	HTTPParser::parseContentLength(std::string str) {
 	std::string	str_nr;
 	size_t		cl_pos;
 	size_t		start;
@@ -54,56 +50,57 @@ bool	HTTPParser::tryParseContentLength(std::string str) {
 	
 	cl_pos = str.find("Content-Length:");
 	if (cl_pos == std::string::npos)
-		return (true);
+		throw InvalidRequestException("Invalid content length");
 	str_nr = str.substr(cl_pos + 15);
 	start = str_nr.find_first_not_of(" \n\r\t");
 	end = str_nr.find_last_not_of(" \n\r\t");
 	if (start == std::string::npos || start == end)
-		return (true);
+		throw InvalidRequestException("Invalid content length");
 	try
 	{
 		content_length_ = std::stol(str_nr.substr(start, end - start + 1));
-		return (false);
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "No valid Content-Lenght: " << e.what() << std::endl;
-		return (true);
+		throw InvalidRequestException("Invalid content length");
 	}
-	return (true);
 } 
 
 /**
  * @brief header needs a method, target or protocol
- * @return bool is one or more of these are present
+ * @THROW if request line is invalid
  */
-bool	HTTPParser::isValidHeader(HTTPClient *client) {
-	if (!validWithConfig(client))
-		return (false);
-	if (result_.method.empty() || \
-		result_.request_target.empty() || \
-		result_.protocol.empty())
-		return (true);
-	return (false);
+void	HTTPParser::verifyRequestLine(const Config& config) {
+	if (!isAllwdMeth(result_.method, config))
+	{
+		result_.status_code = 405;
+		throw InvalidRequestException("Unallowed method in request line");
+	}
+	if (result_.method.empty())
+		throw InvalidRequestException("Empty method in request line");
+	else if (result_.request_target.empty())
+		throw InvalidRequestException("Empty request target in request line");
+	else if (result_.protocol.empty())
+		throw InvalidRequestException("Empty protocol target in request line");
 }
 
 /**
  * @brief extracts HTTP protocol, request target and if available query string
  * @param str line with HTTP in it
- * @return bool if header is invalid
+ * @THROW throws exception if invalid line encountered
  */
-bool	HTTPParser::parseHTTPline(const std::string &str) {
+void	HTTPParser::parseHTTPline(const std::string &str) {
 	size_t	split;
 	size_t	second_space;
 	size_t	query_index;
 
 	split = str.find(" ");
 	if (split == std::string::npos)
-		return (true);
+		throw InvalidRequestException("Invalid request line");
 	result_.method = str.substr(0, split);
 	second_space = str.find(" ", split + 1);
 	if (second_space == std::string::npos)
-		return (true);
+		throw InvalidRequestException("Invalid request line");
 	result_.request_target = str.substr(split + 1, second_space - split - 1);
 	query_index = result_.request_target.find("?");
 	if (query_index != std::string::npos)
@@ -114,7 +111,6 @@ bool	HTTPParser::parseHTTPline(const std::string &str) {
 	else
 		result_.headers["QUERY_STRING"] = "";
 	result_.protocol = str.substr(second_space + 1);
-	return (false);
 }
 
 /**
@@ -127,7 +123,7 @@ static std::string trimString(const std::string &str) {
 	size_t	end;
 	
 	if (str.empty()) 
-		return "";
+		return ("");
 	start = str.find_first_not_of(' ');
 	end = str.find_last_not_of(' ');
 	if (start == std::string::npos || start == end)
@@ -182,11 +178,39 @@ static std::vector<std::string>	getHost(std::string &host_string) {
 	return (host);
 }
 
+static void split_and_trim(std::vector<std::string> &encoding_items, const std::string& input) {
+	std::stringstream			ss(input);
+	std::string					item;
+
+	while (std::getline(ss, item, ','))
+	{
+		item = trimString(item);
+		if (item.empty())
+			throw InvalidRequestException("Tranfer-Encoding has a empty value");
+		encoding_items.push_back(item);
+	}
+}
+
+static void	validateTransferEncoding(std::string str) {
+	std::vector<std::string>				encoding_items;
+	static const std::vector<std::string> 	valid_encodings = { \
+		"chunked", "gzip", "compress", "deflate", "identity"};
+
+	split_and_trim(encoding_items, str);
+	if (encoding_items.empty())
+		throw InvalidRequestException("Tranfer-Encoding value is missing");
+	for (std::string item : encoding_items)
+	{
+		if (std::find(valid_encodings.begin(), valid_encodings.end(), item) == valid_encodings.end())
+			throw InvalidRequestException("Invalid Tranfer-Encoding value");
+	}
+}
+
 /**
  * @brief extract all info from header and validate
- * @return bool for invalidRequest
+ * @THROW if invalidRequest
  */
-bool	HTTPParser::parseRequest(void) {
+void	HTTPParser::parseRequest(void) {
 	std::istringstream 	is(header_);
 	std::string			str;
 
@@ -195,22 +219,17 @@ bool	HTTPParser::parseRequest(void) {
 		if (str.find("Host:") != std::string::npos)
 			result_.host = getHost(str);
 		else if (result_.method.empty() && str.find("HTTP/") != std::string::npos)
+			parseHTTPline(str);
+		else if (str.find("Transfer-Encoding:") != std::string::npos)
 		{
-			if (parseHTTPline(str))
-				return (true);
-		}
-		else if (str.find("Transfer-Encoding:") != std::string::npos && \
-				str.find("chunked") != std::string::npos)
+			validateTransferEncoding(str.substr(19));
 			chunked_ = true;
-		else if (str.find("Content-Length:") != std::string::npos)
-		{
-			if (tryParseContentLength(str))
-				return (true);
 		}
+		else if (str.find("Content-Length:") != std::string::npos)
+			parseContentLength(str);
 		else
 			parseExtraHeaderInformation(str);
 	}
-	return (false);	
 }
 
 /**
@@ -228,32 +247,25 @@ void	HTTPParser::addIfProcessIsChunked(const std::string &buff) {
 	{
 		chunk_size_str = raw_body.substr(pos, found - pos);
 		chunk_size = std::stoi(chunk_size_str, nullptr, 16);
-		
 		if (chunk_size == 0)
 		{
 			PARSE_STATE_ = DONE_PARSING;
 			return ;
 		}
 		pos = found + 2;
-		if (pos + chunk_size <= raw_body.size()) {
+		if (pos + chunk_size <= raw_body.size())
+		{
 			result_.body += raw_body.substr(pos, chunk_size);
 			pos += chunk_size + 2;
 		}
 	}
 }
 
-bool	HTTPParser::validWithConfig(HTTPClient *client) {
-	const Config				*config = client->getConfig();
-	std::vector<std::string>	allow_method;
+bool	HTTPParser::isAllwdMeth(const std::string& method, const Config& conf) {
+	std::vector<std::string>	allwdMeth;
 
-	// METHOD CHECK
-	allow_method = config->getMethods(result_.request_target);
-	if (std::find(allow_method.begin(), allow_method.end(), result_.method) == allow_method.end())
-	{
-		result_.status_code = 405;
-		return (true);
-	}
-	return (false);
+	allwdMeth = conf.getMethods(result_.request_target);
+	return (std::find(allwdMeth.begin(), allwdMeth.end(), method) != allwdMeth.end());
 }
 
 bool	HTTPParser::isRedirection(std::string &endpoint, const std::vector<std::string> &redir) {
@@ -351,7 +363,6 @@ std::string	HTTPParser::handleRootDir(const Config *config) {
 	}
 
 	const std::vector<std::string> indices = config->getIndex("/");
-	result_.dir_list = false;
 	if (indices.empty()) // if no indices givens body = list of dir
 	{
 		result_.dir_list = true;
@@ -370,7 +381,7 @@ std::string	HTTPParser::handleRootDir(const Config *config) {
 			{ 
 				if (S_ISDIR(statbuf.st_mode))
 					result_.dir_list = true;
-				else if (isAccesseble(fullpath, result_.status_code))
+				else if (isAccesseble(fullpath, result_.status_code)) // TODO: typo
 					return (fullpath);
 			}
 		}
@@ -390,7 +401,7 @@ static const std::vector<std::string>	getSubdirectories(const std::vector<std::s
 	}
 	return (subdir);
 }
-
+#include <filesystem>
 /**
  * @brief checks for paths (redir, root, access)
  * @param config pointer to Config 
@@ -408,8 +419,13 @@ std::string	HTTPParser::generatePath(const Config *config) {
 	{
 		full_path = addDir_Folder(folder, result_.request_target);
 		if (stat(full_path.c_str(), &statbuf) == 0)
+		{
+			if (statbuf.st_mode & S_IFDIR)
+				result_.dir_list = true;
 			return (full_path);
+		}
 	}
+	result_.status_code = 404;
 	return ("");
 }
 
@@ -442,46 +458,44 @@ bool	HTTPParser::checkBodySizeLimit(size_t body_size, const Config *config, std:
  * @param buff std::string with readbuffer;
  */
 void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
-	if (PARSE_STATE_ == RCV_HEADER)
-	{
-		rawRequest_ += buff;
-		buff = "";
-		if (isHeaderRead())
-		{
+	switch (PARSE_STATE_) {
+		case RCV_HEADER:
+			rawRequest_ += buff;
+			buff.clear();
+			if (!isHeaderRead())
+				return ;
+
 			splitHeaderBody();
-			result_.invalidRequest = parseRequest();
 
-			// SET SERVER
-			client->setServer(result_.host);
-
-			// generate PATH
-			result_.request_target = generatePath(client->getConfig());
-
-			// Validate with config and results from parsing
-			if (!result_.invalidRequest)
-				result_.invalidRequest = isValidHeader(client);
-			if (result_.invalidRequest == true)
+			result_.invalidRequest = false;
+			try
+			{
+				parseRequest();
+				client->setServer(result_.host);
+				result_.request_target = generatePath(client->getConfig()); // TODO: @micha: look into again
+				verifyRequestLine(*client->getConfig());
+			}
+			catch (InvalidRequestException& e)
+			{
+				result_.invalidRequest = true;
 				PARSE_STATE_ = DONE_PARSING;
+				return; // TODO: @micha maybe even catch the exception one level before in handle function
+			}
+		case RCV_BODY:
+			PARSE_STATE_ = RCV_BODY;
+			if (chunked_)
+				addIfProcessIsChunked(buff);
 			else
-				PARSE_STATE_ = RCV_BODY;
-		}
-		else
-			return ;
+				result_.body += buff;
+
+			if (checkBodySizeLimit(result_.body.size(), client->getConfig(), result_.request_target))
+				result_.status_code = 413;
+			if (!isBodyComplete())
+				return;
+		default:
+			PARSE_STATE_ = DONE_PARSING;
+			break;
 	}
-	if (PARSE_STATE_ == RCV_BODY)
-	{
-		if (chunked_)
-			addIfProcessIsChunked(buff);
-		else
-			result_.body += buff;
-	}
-	if (checkBodySizeLimit(result_.body.size(), client->getConfig(), result_.request_target))
-	{
-		result_.status_code = 413;
-		PARSE_STATE_ = DONE_PARSING;
-	}
-	if (isBodyComplete())
-		PARSE_STATE_ = DONE_PARSING;
 }
 
 void	HTTPParser::clearParser(void) {
