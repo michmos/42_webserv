@@ -1,5 +1,6 @@
 #pragma once
 
+#include <exception>
 # include <iostream>
 # include <bitset>
 # include <climits>
@@ -99,3 +100,14 @@ class HTTPClient {
 		bool	cgi( const SharedFd &fd );
 
 };
+
+///@brief Exception specific to a client - not critical for server
+class ClientException : public std::exception {
+public:
+	explicit ClientException(const std::string& msg) : message_(msg) {}
+	const char* what() const noexcept override  { return message_.c_str(); }
+
+private:
+	std::string	message_;
+};
+

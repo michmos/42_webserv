@@ -182,7 +182,13 @@ void	Webserv::_handleClientReady(const struct epoll_event& ev) {
 	}
 
 	auto& client = it->second;
-	client.handle(ev);
+	try {
+		client.handle(ev);
+	} catch (ClientException &e) {
+		_delClient(fd);
+		return;
+	}
+
 	if (client.isDone()) {
 		_delClient(fd);
 	}
@@ -193,25 +199,20 @@ void	Webserv::eventLoop() {
 	
 	while (keepalive)
 	{
-		try {
-			const auto& events = _ep.wait();
-			for (const auto& ev : events) {
-				// #ifdef DEBUG
-				// std::cout << "|SERVER| client: " << ev.data.fd << " "
-				// 	<< ((ev.events & EPOLLIN) ? "EPOLLIN " : " ")
-				// 	<< ((ev.events & EPOLLOUT) ? "EPOLLOUT " : " ")
-				// 	<< ((ev.events & (EPOLLHUP | EPOLLERR)) ? "EPOLLHUP | EPOLLERR" : "") << std::endl;
-				// #endif
-				SharedFd fd = Epoll::getEventData(ev).fd;
-				if (_servers.find(fd) != _servers.end()) {
-					_handleServerReady(fd);
-				} else {
-					_handleClientReady(ev);
-				}
+		const auto& events = _ep.wait();
+		for (const auto& ev : events) {
+			// #ifdef DEBUG
+			// std::cout << "|SERVER| client: " << ev.data.fd << " "
+			// 	<< ((ev.events & EPOLLIN) ? "EPOLLIN " : " ")
+			// 	<< ((ev.events & EPOLLOUT) ? "EPOLLOUT " : " ")
+			// 	<< ((ev.events & (EPOLLHUP | EPOLLERR)) ? "EPOLLHUP | EPOLLERR" : "") << std::endl;
+			// #endif
+			SharedFd fd = Epoll::getEventData(ev).fd;
+			if (_servers.find(fd) != _servers.end()) {
+				_handleServerReady(fd);
+			} else {
+				_handleClientReady(ev);
 			}
-		}
-		catch (std::exception &e) {
-			std::cerr << "Error occurred: " << e.what() << std::endl;
 		}
 	}
 	std::cerr << "Webserver is shutting down" << std::endl;
