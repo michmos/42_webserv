@@ -32,7 +32,7 @@ class CGIPipes {
 								std::function<void(struct epoll_event, const SharedFd&)> pipe_add_cb, \
 								std::function<void(const SharedFd&)> pipe_remove_cb );
 		
-		void				setPipes( void );
+		void				addNewPipes( void );
 		void				deletePipesFromEpoll( SharedFd &fd );
 		inline std::vector<SharedFd>	getPipes( void ) { return (pipes_); };
 };

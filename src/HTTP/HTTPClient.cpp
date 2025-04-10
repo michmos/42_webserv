@@ -162,8 +162,7 @@ bool	HTTPClient::cgi(const SharedFd &fd) {
 	if (cgi_ == NULL)
 	{
 		pipes_.setCallbackFunctions(clientSock_, addToEpoll_cb_, delFromEpoll_cb_);
-		pipes_.setPipes();
-		std::cerr << "check\n";
+		pipes_.addNewPipes();
 		cgi_ = std::make_unique<CGI>(request_.body, pipes_.getPipes(), delFromEpoll_cb_);
 	}
 	cgi_->handle_cgi(request_, fd);
