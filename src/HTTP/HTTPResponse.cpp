@@ -160,6 +160,7 @@ void	HTTPResponse::getContentType( void )
 	if (dir_list_)
 	{
 		content_type_ = "text/html";
+		std::cerr << "dir list on\n";
 		return ;
 	}
 	index = filename_.find_last_of('.');

@@ -14,7 +14,7 @@ HTTPClient::HTTPClient(
 		delFromEpoll_cb_(delFromEpoll_cb) {
 	STATE_ = RECEIVING;
 	config_ = NULL;
-	remaining_write_ = "";
+	response_ = "";
 }
 
 HTTPClient::HTTPClient(const HTTPClient& other) : \
@@ -38,44 +38,6 @@ bool	HTTPClient::isDone(void) { return (STATE_ == DONE); }
  */
 void	HTTPClient::setServer(std::vector<std::string> host) {
 	config_ = getConfig_cb_(serverSock_, host[0]);
-}
-
-void	HTTPClient::writeTo(const SharedFd &fd) {
-	ssize_t		bytes_write;
-	std::string	response = "";
-
-	if (!remaining_write_.empty())
-	{
-		response = remaining_write_;
-		remaining_write_.clear();
-	}
-	else if (!message_que_.empty())
-	{
-		response = message_que_.front();
-		message_que_.erase(message_que_.begin());
-	}
-	if (!response.empty())
-	{
-		bytes_write = write(fd.get(), response.c_str(), response.size());
-		if (bytes_write == -1)
-			throw std::runtime_error("write(): " + std::string(strerror(errno)));
-		else
-		{
-			remaining_write_ = response.substr(bytes_write);
-			return ;
-		}
-	}
-	STATE_ = DONE;
-}
-
-std::string	HTTPClient::readFrom(int fd) {
-	char	buff[READSIZE + 1] = { '\0'};
-	int		bytes_read;
-
-	bytes_read = read(fd, buff, READSIZE);
-	if (bytes_read == -1)
-		throw std::runtime_error(std::string("read(): ") + strerror(errno));
-	return (std::string(buff, bytes_read));
 }
 
 /**
@@ -139,7 +101,9 @@ bool	isRedirection(const std::string &response) {
 
 /// @brief regenerates response and add this one to the que.
 void	HTTPClient::responding(bool cgi_used, const SharedFd &fd) {
-	if (remaining_write_.empty())
+	static bool	send_first_msg = true ;
+
+	if (send_first_msg)
 	{
 		if (cgi_used)
 			cgiResponse();
@@ -148,9 +112,13 @@ void	HTTPClient::responding(bool cgi_used, const SharedFd &fd) {
 			responseGenerator_.generateResponse(request_);
 			message_que_.push_back(responseGenerator_.loadResponse());
 		}
+		writeToClient(fd, send_first_msg);
+		send_first_msg = false;
 	}
-	writeTo(fd);
-	STATE_ = DONE;
+	else
+		writeToClient(fd, send_first_msg);
+	if (STATE_ == DONE)
+		send_first_msg = true; // because of the static
 }
 
 /// @brief creates a CGI class, checks the method/target, starts the cgi

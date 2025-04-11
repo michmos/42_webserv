@@ -17,6 +17,7 @@ SRC			:= $(SRCDIR)/main.cpp \
 				$(SRCDIR)/HTTP/HTTPClient.cpp \
 				$(SRCDIR)/HTTP/HTTPParser.cpp \
 				$(SRCDIR)/HTTP/HTTPResponse.cpp \
+				$(SRCDIR)/HTTP/ClientCommunication.cpp \
 				$(SRCDIR)/Config/Config.cpp \
 				$(SRCDIR)/Config/ConfigParser.cpp \
 				$(SRCDIR)/CGI/CGI.cpp \

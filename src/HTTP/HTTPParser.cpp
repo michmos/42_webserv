@@ -458,6 +458,8 @@ bool	HTTPParser::checkBodySizeLimit(size_t body_size, const Config *config, std:
  * @param buff std::string with readbuffer;
  */
 void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
+	if (buff.empty())
+		return ;
 	switch (PARSE_STATE_) {
 		case RCV_HEADER:
 			rawRequest_ += buff;
