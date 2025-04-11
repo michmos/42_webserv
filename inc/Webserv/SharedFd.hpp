@@ -35,6 +35,11 @@ public:
 	// conversion operator
 	inline explicit operator	int() const { return (_fd); }
 
+	///@brief resets ref count to one
+	/// Should be used in child process after call to fork
+	/// Use with caution: can lead to undefined behaviour if used wrong
+	inline void	resetRefCount() { _refCounts[_fd] = 1; }
+
 	inline bool	isValid() const { return (this->_fd >= 0); }
 	inline int	get() const { return (_fd); }
 	void		setNonBlock() const;
@@ -43,6 +48,7 @@ public:
 private:
 	int	_fd;
 	static std::unordered_map<int, int> _refCounts;
+	void	closeFd();
 };
 
 // special hash template struct to allow SharedFd as key in unordered map

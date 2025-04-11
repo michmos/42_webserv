@@ -1,6 +1,5 @@
 
 #include "../../inc/Webserv/SharedFd.hpp"
-#include <iomanip>
 
 std::unordered_map<int, int> SharedFd::_refCounts;
 
@@ -24,6 +23,10 @@ SharedFd& SharedFd::operator=(const SharedFd& other) {
 SharedFd& SharedFd::operator=(int fd) {
 	if (this->_fd != fd) {
 		_refCounts[this->_fd]--;
+		if (_refCounts[_fd] == 0)
+		{
+			closeFd();
+		}
 		this->_fd = fd;
 		_refCounts[this->_fd]++;
 	}
@@ -39,13 +42,19 @@ void	SharedFd::printOpenFds() {
 	}
 }
 
-// TODO: potentially rmv err_msg 
-SharedFd::~SharedFd() {
-	_refCounts[_fd]--;
-	if (_refCounts[_fd] == 0 && _fd >= 0)
+void	SharedFd::closeFd() {
+	if (_fd >= 0)
 	{
 		if(close(_fd) == -1)
-			std::cerr << "close() " << _fd << " : " << strerror(errno) << std::endl;
+			throw std::runtime_error("close " + std::to_string(_fd) + " : " + strerror(errno));
+	}
+}
+
+SharedFd::~SharedFd() {
+	_refCounts[_fd]--;
+	if (_refCounts[_fd] == 0)
+	{
+		closeFd();
 	}
 }
 
