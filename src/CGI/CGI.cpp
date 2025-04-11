@@ -182,6 +182,7 @@ void	CGI::sendDataToCGI(const SharedFd &fd) {
 
 	if (!post_data_.empty())
 	{
+		// TODO: add write size and write in loop
 		write_bytes = write(fd.get(), post_data_.c_str(), post_data_.size());
 		if (write_bytes == -1) {
 			throw std::runtime_error("CGI write(): " + std::to_string(fd.get()) + " : " + strerror(errno));
@@ -193,6 +194,7 @@ void	CGI::sendDataToCGI(const SharedFd &fd) {
 		}
 	}
 	delFromEpoll_cb_(pipes_[TO_CGI_WRITE].get());
+	pipes_[TO_CGI_WRITE] = -1;
 	CGI_STATE_ = RCV_FROM_CGI;
 }
 
@@ -250,19 +252,6 @@ bool	CGI::hasCGIProcessTimedOut(void) {
 	return (false);
 }
 
-void	CGI::cleanupPipes(void) {
-	if (pipes_[TO_CGI_WRITE] != -1)
-	{
-		delFromEpoll_cb_(pipes_[TO_CGI_WRITE].get());
-		pipes_[TO_CGI_WRITE] = -1;
-	}
-	if (pipes_[FROM_CGI_READ] != -1)
-	{
-		delFromEpoll_cb_(pipes_[FROM_CGI_READ].get());
-		pipes_[FROM_CGI_READ] = -1;
-	}
-}
-
 
 bool	CGI::isCGIProcessSuccessful(void) {
 	if (WIFEXITED(status_) && WEXITSTATUS(status_) == 0)
@@ -302,7 +291,8 @@ void	CGI::getResponseFromCGI(const SharedFd &fd) {
 		if (kill(pid_, SIGKILL) == -1) // TODO: maybe use sigterm instead
 			throw std::runtime_error("kill() " + std::to_string(pid_) + " : " + strerror(errno));
 	}
-	cleanupPipes();
+	delFromEpoll_cb_(pipes_[FROM_CGI_READ].get());
+	pipes_[FROM_CGI_READ] = -1;
 	CGI_STATE_ = CRT_RSPNS_CGI;
 }
 

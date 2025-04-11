@@ -54,7 +54,6 @@ class CGI {
 		bool				isCGIProcessFinished( void );
 		bool				isCGIProcessSuccessful( void );
 		bool				hasCGIProcessTimedOut(void);
-		void				cleanupPipes(void);
 
 		// SEND_TO_CGI
 		void				sendDataToCGI( const SharedFd &fd );
