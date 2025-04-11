@@ -163,6 +163,7 @@ void	Webserv::_delClient(const SharedFd& clientSock) {
 
 void	Webserv::_handleServerReady(SharedFd fd) {
 	SharedFd clientSock = accept(fd.get(), nullptr, nullptr);
+	clientSock.setNonBlock();
 	if (clientSock == -1)
 		throw std::runtime_error(std::string("accept(): ") + strerror(errno));
 	_addClient(clientSock, fd);
