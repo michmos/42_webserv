@@ -60,12 +60,12 @@ void	Epoll::mod(int fd, u_int32_t events) {
 void	Epoll::del(int fd) {
 	auto it = _eventDataStorage.find(fd);
 
-	std::cerr << "del fd: " << fd << " from client: " << it->second.data << std::endl;
-	if (it != _eventDataStorage.end()) {
-		_eventDataStorage.erase(it);
+	if (it == _eventDataStorage.end()) {
+		throw std::runtime_error("Epoll::del(): trying to delete unmonitored fd: " + std::to_string(fd));
 	}
-	else
-		std::cerr << "not in eventDataStorage ...\n";
+
+	std::cerr << "del fd: " << fd << " from client: " << it->second.data << std::endl;
+	_eventDataStorage.erase(it);
 
 	if (epoll_ctl(_epFd.get(), EPOLL_CTL_DEL, fd, nullptr) == -1) {
 		throw std::runtime_error(std::string("epoll_ctl(del): ") + strerror(errno));
