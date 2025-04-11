@@ -12,10 +12,10 @@ CGI::CGI(const std::string &post_data,
 		 CGIPipes pipes,
 		 std::function<void(int)> delFromEpoll_cb)
 	:
-	post_data_(post_data), 
 	pipes_(pipes),
-	delFromEpoll_cb_(delFromEpoll_cb),
-	CGI_STATE_(START_CGI)
+	post_data_(post_data), 
+	CGI_STATE_(START_CGI),
+	delFromEpoll_cb_(delFromEpoll_cb)
 {
 }
 
