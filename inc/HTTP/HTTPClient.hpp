@@ -92,7 +92,6 @@ class HTTPClient {
 		HTTPParser					parser_;
 		HTTPRequest					request_;
 		std::unique_ptr<CGI> 		cgi_;
-		CGIPipes					pipes_;
 		HTTPResponse				responseGenerator_;
 		const Config				*config_;
 		std::string					response_;
