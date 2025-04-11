@@ -118,7 +118,7 @@ void	HTTPClient::responding(bool cgi_used, const SharedFd &fd) {
 	else
 		writeToClient(fd, send_first_msg);
 	if (STATE_ == DONE)
-		send_first_msg = true; // because of the static
+		send_first_msg = true;
 }
 
 /// @brief creates a CGI class, checks the method/target, starts the cgi
