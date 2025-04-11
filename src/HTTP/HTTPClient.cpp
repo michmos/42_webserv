@@ -14,6 +14,7 @@ HTTPClient::HTTPClient(
 		delFromEpoll_cb_(delFromEpoll_cb) {
 	STATE_ = RECEIVING;
 	config_ = NULL;
+	remaining_write_ = "";
 }
 
 HTTPClient::HTTPClient(const HTTPClient& other) : \
@@ -39,14 +40,14 @@ void	HTTPClient::setServer(std::vector<std::string> host) {
 	config_ = getConfig_cb_(serverSock_, host[0]);
 }
 
-void	HTTPClient::writeTo(const SharedFd &fd, std::string &remaining) {
+void	HTTPClient::writeTo(const SharedFd &fd) {
 	ssize_t		bytes_write;
 	std::string	response = "";
 
-	if (!remaining.empty())
+	if (!remaining_write_.empty())
 	{
-		response = remaining;
-		remaining.clear();
+		response = remaining_write_;
+		remaining_write_.clear();
 	}
 	else if (!message_que_.empty())
 	{
@@ -60,7 +61,7 @@ void	HTTPClient::writeTo(const SharedFd &fd, std::string &remaining) {
 			throw std::runtime_error("write(): " + std::string(strerror(errno)));
 		else
 		{
-			remaining = response.substr(bytes_write);
+			remaining_write_ = response.substr(bytes_write);
 			return ;
 		}
 	}
@@ -139,9 +140,7 @@ bool	isRedirection(const std::string &response) {
 
 /// @brief regenerates response and add this one to the que.
 void	HTTPClient::responding(bool cgi_used, const SharedFd &fd) {
-	static std::string	remaining_write = "";
-
-	if (remaining_write.empty())
+	if (remaining_write_.empty())
 	{
 		if (cgi_used)
 			cgiResponse();
@@ -151,7 +150,7 @@ void	HTTPClient::responding(bool cgi_used, const SharedFd &fd) {
 			message_que_.push_back(responseGenerator_.loadResponse());
 		}
 	}
-	writeTo(fd, remaining_write);
+	writeTo(fd);
 	STATE_ = DONE;
 }
 
@@ -188,6 +187,7 @@ void	HTTPClient::cgiResponse(void) {
 	}
 	std::cerr << "-------------------\nResponse: " << message_que_.back() \
 	<< "\n-----------------" << std::endl;
+	cgi_.reset();
 }
 
 const Config*	HTTPClient::getConfig( void ) const { return (config_); }

@@ -37,7 +37,10 @@ void	HTTPResponse::generateResponse(const HTTPRequest request) {
 	std::cerr << request.method << " " << request.request_target << request.status_code << std::endl;
 
 	if (request.dir_list)
+	{
 		dir_list_ = true ;
+		std::cerr << "dirlist is one" << std::endl;
+	}
 	if (!request.invalidRequest && request.status_code == 200)
 		filename_ = request.request_target;
 	else if (isRedirectStatusCode(request.status_code)) // redirect
@@ -156,7 +159,8 @@ void	HTTPResponse::getContentType( void )
 
 	if (dir_list_)
 	{
-		content_type_ = "text/html";
+		// content_type_ = "text/html";
+		std::cerr << "dir is on\n";
 		return ;
 	}
 	index = filename_.find_last_of('.');
@@ -203,8 +207,8 @@ void	HTTPResponse::getHttpStatusMessages(void) {
 		size_t index = body_.find("<h1>Error 404: Not found</h1>");
 		if (index != body_.size())
 			body_.replace(index, 30, "Error " + httpStatusMessages_);
+		content_type_ = "text/html";
 	}
-	// content_type_ = "text/html";
 }
 
 /// @brief combines all parts of HTTP header and adds right values

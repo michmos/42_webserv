@@ -38,7 +38,7 @@ class CGI {
 		pid_t				pid_;
 		int					status_;
 		std::string 		response_;
-		const std::string	post_data_;
+		std::string			post_data_;
 		epoll_event			epoll_event_pipe_[2];
 		e_cgi_state			CGI_STATE_;
 		time_t				start_time_;

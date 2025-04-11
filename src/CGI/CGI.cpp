@@ -177,23 +177,20 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
  */
 bool	CGI::sendDataToStdinReady(const SharedFd &fd) {
 	ssize_t				write_bytes;
-	static std::string	to_send = "";
 
 	if (fd.get() != pipe_to_CGI_[WRITE])
 		return (false);
 
-	if (to_send.empty())
-		to_send = post_data_;
-	if (!to_send.empty())
+	if (!post_data_.empty())
 	{
-		write_bytes = write(fd.get(), to_send.c_str(), to_send.size());
-		if (write_bytes != (ssize_t)to_send.size())
+		write_bytes = write(fd.get(), post_data_.c_str(), post_data_.size());
+		if (write_bytes != (ssize_t)post_data_.size())
 		{
 			if (write_bytes == -1)
 				std::cerr << "Error write: " << std::strerror(errno) << std::endl;
 			else 
 			{
-				to_send = post_data_.substr(write_bytes);
+				post_data_.erase(0, write_bytes);
 				std::cerr << "Could not written everything in once, remaining bytes:" <<  write_bytes << std::endl;
 				return (false);
 			}
@@ -231,7 +228,7 @@ std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, HTTPRequ
 	for (auto &str : envStrings)
 	{
 		env.push_back(const_cast<char*>(str.c_str()));
-		// std::cerr << "env: " << str << std::endl;
+		std::cerr << "env: " << str << std::endl;
 	}
 	env.push_back(nullptr);
 	return (env);
