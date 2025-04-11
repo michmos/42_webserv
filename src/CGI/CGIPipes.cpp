@@ -22,7 +22,6 @@ void	CGIPipes::addNewPipes(void) {
 			if (::pipe(fds) == -1) {
 				throw std::runtime_error("pipe(): " + std::string(strerror(errno)));
 			}
-			std::cerr << fds[0] << " " << fds[1] << std::endl;
 			pipes_.push_back(fds[0]);
 			pipes_.push_back(fds[1]);
 		};

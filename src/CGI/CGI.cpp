@@ -22,15 +22,6 @@ bool	CGI::isReady(void) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
 
 bool	CGI::isTimeout(void) { return (timeout_); }
 
-void print_epoll_events(uint32_t events) {
-    if (events & EPOLLIN) std::cout << "EPOLLIN " << std::endl;
-    if (events & EPOLLOUT) std::cout << "EPOLLOUT " << std::endl;
-    if (events & EPOLLERR) std::cout << "EPOLLERR " << std::endl;
-    if (events & EPOLLHUP) std::cout << "EPOLLHUP " << std::endl;
-    if (events & EPOLLET) std::cout << "EPOLLET " << std::endl;
-    if (events & EPOLLONESHOT) std::cout << "EPOLLONESHOT " << std::endl;
-}
-
 void	CGI::handle_cgi(HTTPRequest &request, const SharedFd &fd) {
 	std::vector<std::string>	env_strings;
 
@@ -170,7 +161,7 @@ void	CGI::forkCGI(const std::string &executable, std::vector<std::string> env_ve
 
 // ###############################################################
 // ###################### SEND_TO_CGI ############################
-#include <sys/socket.h>
+
 /**
  * @brief writes body to stdin for CGI and closes write end pipe
  * @param post_data string with body
@@ -226,10 +217,7 @@ std::vector<char*> CGI::createEnv(std::vector<std::string> &envStrings, HTTPRequ
 
 	std::vector<char*>	env;
 	for (auto &str : envStrings)
-	{
 		env.push_back(const_cast<char*>(str.c_str()));
-		std::cerr << "env: " << str << std::endl;
-	}
 	env.push_back(nullptr);
 	return (env);
 }
@@ -246,7 +234,7 @@ bool	CGI::isCGIProcessFinished(void) {
 	current_time = time(NULL);
 	if (current_time - start_time_ > TIMEOUT)
 	{
-		std::cerr << "TIMOUT\n";
+		std::cerr << "TIMEOUT, shutting down CGI...\n";
 		timeout_ = true;
 		if (pipe_to_CGI_[WRITE] != -1)
 		{
@@ -319,7 +307,7 @@ std::string	CGI::receiveBuffer(const SharedFd &fd) {
 		if (bytesRead == -1)
 		{
 			std::cerr << "Error read: " << std::strerror(errno) << std::endl;
-			return (""); // again?
+			return ("");
 		}
 		else
 			std::cerr << "Error: no output read"; // what now?
