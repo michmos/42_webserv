@@ -152,12 +152,13 @@ void	CGI::execCGI(HTTPRequest& request) {
 		};
 		try {
 			redir(pipes_[TO_CGI_READ].get(), STDIN_FILENO);
-			redir(pipes_[TO_CGI_WRITE].get(), STDOUT_FILENO);
+			redir(pipes_[FROM_CGI_WRITE].get(), STDOUT_FILENO);
 			std::vector<char*>	argv_vector = createArgvVector(executable);
 			std::vector<char*>	env_vector = createEnv(request);
 			if (execve(executable.c_str(), argv_vector.data(), env_vector.data()) == -1)
 				throw std::runtime_error("execve(): " +  executable + ": " + std::strerror(errno));
 		} catch (std::runtime_error) {
+			std::cerr << "execve returned" << std::endl;
 			exit(1); // TODO: how to handle this case
 		}
 	}
@@ -281,6 +282,7 @@ void	CGI::getResponseFromCGI(const SharedFd &fd) {
 		return;
 	}
 	if (isFinished && !isCGIProcessSuccessful()) {
+		std::cerr << "exit code cgi: " << WEXITSTATUS(status_) << std::endl;
 		response_ = CGI_ERR_RESPONSE;
 		status_code = getStatusCodeFromResponse();
 		std::cerr << "status_code; " << status_code << std::endl;
