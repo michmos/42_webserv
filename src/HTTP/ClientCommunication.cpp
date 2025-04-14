@@ -59,11 +59,6 @@ std::string	HTTPClient::getChunk(bool first_msg) {
 	chunk_os << response_.substr(0, chunksize) << "\r\n";
 	chunk_response = chunk_os.str();
 	response_.erase(0,chunksize);
-	if (response_.empty() || response_.size() <= 5) // REMAINING ONLY \r\n\r\n
-	{
-		response_.clear();
-		return("0\r\n\r\n");
-	}
 	return (chunk_response);
 }
 
@@ -85,7 +80,7 @@ void	HTTPClient::writeToClient(const SharedFd &fd, bool send_first_msg) {
 	if (response_.length() > WRITESIZE || !send_first_msg) // IF CHUNKED
 	{
 		std::string write_msg = getChunk(send_first_msg);
-		if (write_msg.size() <= 10)
+		if (write_msg == "0\r\n\r\n")
 			STATE_ = DONE;
 		writeToFd(fd, write_msg);
 	}

@@ -39,7 +39,7 @@
 # define READSIZE 1000
 # define WRITESIZE 1000
 # define READY true
-# define CHUNKSIZE 900
+# define CHUNKSIZE 500
 
 enum e_state {
 	RECEIVING,
