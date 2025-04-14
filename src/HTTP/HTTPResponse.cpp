@@ -34,8 +34,8 @@ static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 &
  */
 void	HTTPResponse::generateResponse(const HTTPRequest request) {
 	std::string	filename(request.request_target);
-	std::cerr << request.method << " " << request.request_target << request.status_code << std::endl;
-
+	std::cerr << "generateResponse: " << request.method << " " << request.request_target << "code: " << request.status_code << std::endl;
+	std::cerr << "invalid: " << request.invalidRequest << std::endl;
 	if (request.dir_list)
 	{
 		dir_list_ = true ;
@@ -46,7 +46,9 @@ void	HTTPResponse::generateResponse(const HTTPRequest request) {
 	else if (isRedirectStatusCode(request.status_code)) // redirect
 		header_ = request.body;
 	else if (isCustomErrorPages(filename, request.status_code))
-		filename_ = searchErorPage(request.subdir, filename);
+		filename_ = searchErrorPage(request.subdir, filename);
+	else
+		status_code_ = request.status_code;
 }
 
 std::string	HTTPResponse::loadResponse(void) {
@@ -57,6 +59,7 @@ std::string	HTTPResponse::loadResponse(void) {
 	getContentType();
 	getHttpStatusMessages();
 	createHeader();
+	std::cerr << "Response: \n" << header_ << "body size: " << body_.size() << std::endl;
 	return (header_ + body_);
 }
 
@@ -69,7 +72,7 @@ std::string	HTTPResponse::loadResponse(void) {
  * @param errorpage string with the filename of the errorpage
  * @return fullpath if found, else empty
  */
-std::string	HTTPResponse::searchErorPage(const std::vector<std::string> &dir, const std::string &errorpage) {
+std::string	HTTPResponse::searchErrorPage(const std::vector<std::string> &dir, const std::string &errorpage) {
 	struct stat	statbuf;
 
 	for (const std::string &path : dir)
@@ -99,6 +102,7 @@ bool	HTTPResponse::isCustomErrorPages(std::string &filename, int status_code) {
 	if (error_page.empty())
 		return (false);
 	filename = error_page;
+	status_code_ = status_code;
 	return (true);
 }
 
@@ -196,13 +200,13 @@ void	HTTPResponse::getHttpStatusMessages(void) {
 		{501, "501 Not Implemented"}, {502, "502 Bad Gateway"}, {503, "503 Service Unavailable"},
 		{504, "504 Gateway Timeout"}, {505, "505 HTTP Version Not Supported"}
 	};
-
+	std::cerr << "error: " << status_code_ << " ??? \n"; 
 	auto it = httpStatusMessages.find(status_code_);
 	if (it != httpStatusMessages.end())
 		httpStatusMessages_ = it->second;
 	else
 		httpStatusMessages_ = "500 Internal Server Error";
-	if (status_code_ != 200 && status_code_ != 404 && !body_.empty())
+	if (status_code_ != 200 && status_code_ != 404 && !body_.empty()) // Do we want this?
 	{
 		size_t index = body_.find("<h1>Error 404: Not found</h1>");
 		if (index != body_.size())
@@ -214,6 +218,8 @@ void	HTTPResponse::getHttpStatusMessages(void) {
 /// @brief combines all parts of HTTP header and adds right values
 void	HTTPResponse::createHeader(void) {
 	header_ = "HTTP/1.1 " + httpStatusMessages_ + "\r\n" \
-			+ "Content-Type: " + content_type_ + "\r\n" \
-			+ "Content-Length: " + std::to_string(body_.size()) + "\r\n\r\n"; // what if chunked?
+			+ "Content-Type: " + content_type_ + "\r\n";
+	if (!body_.empty())
+		header_ += "Content-Length: " + std::to_string(body_.size()); // what if chunked?
+	header_ += "\r\n\r\n";
 }

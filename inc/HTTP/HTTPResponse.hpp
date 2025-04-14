@@ -33,7 +33,7 @@ class HTTPResponse {
 
 	private:
 		// Generate Response
-		std::string	searchErorPage( const std::vector<std::string> &dir, const std::string &errorpage );
+		std::string	searchErrorPage( const std::vector<std::string> &dir, const std::string &errorpage );
 		bool		isCustomErrorPages( std::string &filename, int status_code );
 		
 		// Load Response

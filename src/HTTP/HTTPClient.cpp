@@ -112,11 +112,11 @@ void	HTTPClient::responding(bool cgi_used, const SharedFd &fd) {
 			responseGenerator_.generateResponse(request_);
 			message_que_.push_back(responseGenerator_.loadResponse());
 		}
-		writeToClient(fd, send_first_msg);
+		writeToClient(fd, send_first_msg, cgi_used);
 		send_first_msg = false;
 	}
 	else
-		writeToClient(fd, send_first_msg);
+		writeToClient(fd, send_first_msg, cgi_used);
 	if (STATE_ == DONE)
 		send_first_msg = true;
 }

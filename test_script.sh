@@ -83,3 +83,8 @@ curl -s --http1.1 -X POST \
      -i -o test_results.txt
 head -n 1 test_results.txt | grep -q "302" && echo -e "${GRE} Status is 302 found" || echo -e "${RED}Status is not ok${RES}"
 echo ""
+
+echo -e "TEST 14: ${YEL} GET localhost:8080/notexistingfile -> status 404: ${RES}"
+curl -s --http1.1 -G localhost:8080/notexistingfile -i -o test_results.txt
+head -n 1 test_results.txt | grep -q "404" && echo -e "${GRE} Status is 404 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
+echo ""
