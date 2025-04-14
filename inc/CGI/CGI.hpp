@@ -37,6 +37,7 @@ enum e_cgi_state {
 class CGI {
 	private:
 		std::string 		path_;
+		std::vector<std::string>	envStrings_;
 		CGIPipes			pipes_;
 		pid_t				pid_;
 		int					status_;
@@ -60,7 +61,7 @@ class CGI {
 
 		// RCV_FROM_CGI
 		void				getResponseFromCGI( const SharedFd &fd );
-		std::string			receiveBuffer( const SharedFd &fd );
+		std::string			receiveBuffer();
 		int					getStatusCodeFromResponse( void );
 
 		// CGI UTILS

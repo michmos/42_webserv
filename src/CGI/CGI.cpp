@@ -158,7 +158,7 @@ void	CGI::execCGI(HTTPRequest& request) {
 			if (execve(executable.c_str(), argv_vector.data(), env_vector.data()) == -1)
 				throw std::runtime_error("execve(): " +  executable + ": " + std::strerror(errno));
 		} catch (std::runtime_error) {
-			std::cerr << "execve returned" << std::endl;
+			perror("execve(): ");
 			exit(1); // TODO: how to handle this case
 		}
 	}
@@ -205,29 +205,30 @@ void	CGI::sendDataToCGI(const SharedFd &fd) {
  * @return vector<char*> with all env information
  */
 std::vector<char*> CGI::createEnv(HTTPRequest &request) {
-	std::vector<std::string> envStrings;
+	envStrings_.push_back("GATEWAY=CGI/1.1");
+	envStrings_.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	if (request.method == "DELETE")
 	{
-		envStrings.push_back("DELETE_FILE=" + request.request_target);
+		envStrings_.push_back("DELETE_FILE=" + request.request_target);
 		request.request_target = "data/www/cgi-bin/nph_CGI_delete.py"; // TODO: why overwriting? and should this be hardcoded?
 	}
-	envStrings.push_back("REQUEST_TARGET=" + request.request_target);
-	envStrings.push_back("REQUEST_METHOD=" + request.method);
-	envStrings.push_back("CONTENT_LENGTH=" + std::to_string(request.body.size()));
+	envStrings_.push_back("REQUEST_TARGET=" + request.request_target);
+	envStrings_.push_back("REQUEST_METHOD=" + request.method);
+	envStrings_.push_back("CONTENT_LENGTH=" + std::to_string(request.body.size()));
 
 	for (const auto& pair : request.headers)
 	{
 		if (*pair.second.end() == '\n')
-			envStrings.push_back(pair.first + "=" + pair.second.substr(0, pair.second.size() - 1));
+			envStrings_.push_back(pair.first + "=" + pair.second.substr(0, pair.second.size() - 1));
 		else
-			envStrings.push_back(pair.first + "=" + pair.second);
+			envStrings_.push_back(pair.first + "=" + pair.second);
 	}
 
 	// create result vector with char*
 	std::vector<char*> result;
 	result.push_back(const_cast<char*>("GATEWAY=CGI/1.1"));
 	result.push_back(const_cast<char*>("SERVER_PROTOCOL=HTTP/1.1"));
-	for (auto& str : envStrings)
+	for (auto& str : envStrings_)
 		result.push_back(const_cast<char*>(str.c_str()));
 	result.push_back(NULL);
 	return (result);
@@ -274,17 +275,17 @@ void	CGI::getResponseFromCGI(const SharedFd &fd) {
 	if (fd.get() != pipes_[FROM_CGI_READ].get())
 		return ;
 
-	std::string buffer = receiveBuffer(fd);
+	std::string buffer = receiveBuffer();
 	response_ += buffer;
 	bool isFinished = isCGIProcessFinished();
 	bool timedOut = hasCGIProcessTimedOut();
-	if (!buffer.empty() || (!isFinished && !timedOut)) {
+	if (!isFinished && !timedOut) {
 		return;
 	}
-	if (isFinished && !isCGIProcessSuccessful()) {
+	else if (isFinished && !isCGIProcessSuccessful()) {
 		std::cerr << "exit code cgi: " << WEXITSTATUS(status_) << std::endl;
 		response_ = CGI_ERR_RESPONSE;
-		status_code = getStatusCodeFromResponse();
+		status_code = getStatusCodeFromResponse(); // TODO: doesn't make sense in this order - first overwriting response and then getting status code from it
 		std::cerr << "status_code; " << status_code << std::endl;
 		// TODO: compare with configfile error pages.
 	} else if (timedOut) {
@@ -293,6 +294,7 @@ void	CGI::getResponseFromCGI(const SharedFd &fd) {
 		if (kill(pid_, SIGKILL) == -1) // TODO: maybe use sigterm instead
 			throw std::runtime_error("kill() " + std::to_string(pid_) + " : " + strerror(errno));
 	}
+	std::cout << "CGI response: " << response_ << std::endl;
 	delFromEpoll_cb_(pipes_[FROM_CGI_READ].get());
 	pipes_[FROM_CGI_READ] = -1;
 	CGI_STATE_ = CRT_RSPNS_CGI;
@@ -303,11 +305,12 @@ void	CGI::getResponseFromCGI(const SharedFd &fd) {
  * @return string with read buffer
  * @THROW throws exception if read fails
  */
-std::string	CGI::receiveBuffer(const SharedFd &fd) {
-	std::string buffer;
+std::string	CGI::receiveBuffer() {
+	char buffer[1024];
+	int fd = pipes_[FROM_CGI_READ].get();
 	
 	// TODO: replace 1024 by macro
-	ssize_t bytesRead = read(fd.get(), buffer.data(), 1024 - 1);
+	ssize_t bytesRead = read(fd, buffer, 1024 - 1);
 	if (bytesRead == -1) {
 		throw std::runtime_error(std::string("CGI read(): ") + strerror(errno));
 	} 
