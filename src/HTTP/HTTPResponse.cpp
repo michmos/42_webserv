@@ -34,8 +34,6 @@ static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 &
  */
 void	HTTPResponse::generateResponse(const HTTPRequest request) {
 	std::string	filename(request.request_target);
-	std::cerr << "generateResponse: " << request.method << " " << request.request_target << "code: " << request.status_code << std::endl;
-	std::cerr << "invalid: " << request.invalidRequest << std::endl;
 	if (request.dir_list)
 	{
 		dir_list_ = true ;
@@ -52,14 +50,13 @@ void	HTTPResponse::generateResponse(const HTTPRequest request) {
 }
 
 std::string	HTTPResponse::loadResponse(void) {
-	std::cerr << "load response" << std::endl;
 	if (isRedirectStatusCode(status_code_))
 		return (header_);
 	getBody();
 	getContentType();
 	getHttpStatusMessages();
 	createHeader();
-	std::cerr << "Response: \n" << header_ << "body size: " << body_.size() << std::endl;
+	std::cerr << "Response: \n" << header_ << "body size: " << body_.size() << "\n" << std::endl;
 	return (header_ + body_);
 }
 
@@ -200,7 +197,6 @@ void	HTTPResponse::getHttpStatusMessages(void) {
 		{501, "501 Not Implemented"}, {502, "502 Bad Gateway"}, {503, "503 Service Unavailable"},
 		{504, "504 Gateway Timeout"}, {505, "505 HTTP Version Not Supported"}
 	};
-	std::cerr << "error: " << status_code_ << " ??? \n"; 
 	auto it = httpStatusMessages.find(status_code_);
 	if (it != httpStatusMessages.end())
 		httpStatusMessages_ = it->second;
