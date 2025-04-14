@@ -288,7 +288,7 @@ bool	CGI::getResponseFromCGI(const SharedFd &fd) {
 		}
 	}
 	else
-		response_ = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+		response_ = "HTTP/1.1 500 Internal Server Error??\r\n\r\n";
 	return (true);
 }
 

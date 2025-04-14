@@ -20,7 +20,11 @@ import os
 # If something went wrong response HTML is errorpage
 
 def main() -> int:
-	if general_checks(False):
+	try:
+		if general_checks(False):
+			return 0
+	except Exception as e:
+		print(f"Error CGI: {e}", file=sys.stderr)
 		return 1
 
 	cgi_upload = CGI()
@@ -38,7 +42,7 @@ def main() -> int:
 			print(f"Error with generate_response: {e}", file=sys.stderr)
 		return 1
 
-	return 0 if cgi_upload.get_status_code() == 200 else 1
+	return 0
 
 
 if __name__ == '__main__':

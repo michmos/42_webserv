@@ -34,7 +34,6 @@ std::string	HTTPClient::getHeaderInclChunked() {
 		return ("");
 	header = response_.substr(0,split) + "\r\nTransfer-Encoding: chunked\r\n\r\n";
 	response_.erase(0, split + 4);
-	std::cerr << "header: " << header << std::endl;
 	return (header);
 }
 
