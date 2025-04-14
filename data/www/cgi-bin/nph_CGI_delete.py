@@ -21,7 +21,7 @@ import os
 
 def main() -> int:
 	if general_checks(False):
-		return 1
+		return 0
 
 	cgi_delete = CGI()
 	try:
@@ -36,12 +36,9 @@ def main() -> int:
 			cgi_delete.generate_response()
 		except Exception as e:
 			print(f"Error with generate_response: {e}", file=sys.stderr)
-		return 400
-	# if the delete is good or not found it has a good return msg
-	if cgi_delete.get_status_code() == 200 or cgi_delete.get_status_code() == 404:
-		return 0
-	else:
-		return 1
+			return 1
+
+	return 0
 
 if __name__ == '__main__':
 	sys.exit(main())

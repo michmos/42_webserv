@@ -178,7 +178,9 @@ void	Webserv::_handleClientReady(const struct epoll_event& ev) {
 		fd = eventData.data;
 		it = _clients.find(fd);
 		if (it == _clients.end()) {
-			//throw std::runtime_error("_handleClientReady(): unvalid fd"); not shutting down I think
+			std::cerr << "fd: " << fd.get() << std::endl;
+			// throw std::runtime_error("_handleClientReady(): unvalid fd");// not shutting down I think
+			SharedFd::printOpenFds();
 			std::cerr << "_handleClientReady(): unvalid fd";
 			return ;
 		}

@@ -10,7 +10,7 @@ http_status_messages = {
 	307: "307 Temporary Redirect", 308: "308 Permanent Redirect",
 	400: "400 Bad Request", 401: "401 Unauthorized", 403: "403 Forbidden",
 	404: "404 Not Found", 405: "405 Method Not Allowed", 408: "408 Request Timeout",
-	409: "409 Conflict", 410: "410 Gone", 429: "429 Too Many Requests",
+	409: "409 Conflict", 410: "410 Gone", 415: "415 Unsupported Media Type", 429: "429 Too Many Requests",
 	500: "500 Internal Server Error", 501: "501 Not Implemented",
 	502: "502 Bad Gateway", 503: "503 Service Unavailable",
 	504: "504 Gateway Timeout", 505: "505 HTTP Version Not Supported"
@@ -65,8 +65,8 @@ class ResponseGenerator:
 	# header when something turned wrong
 	def nph_error_status_code_header( self ) -> str:
 		body = (
-			f"<html><head><title>{http_status_messages[self.status_code]}</title></head>"
-			"<body></body></html>\r\n"
+			f"<!DOCTYPE html><html><head><title>{http_status_messages[self.status_code]}</title></head>"
+			f"<body><p>{http_status_messages[self.status_code]}</p></body></html>\r\n"
 		)
 		header = (
 			f"HTTP/1.1 {http_status_messages[self.status_code]}\r\n"

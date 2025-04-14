@@ -142,7 +142,7 @@ class Parser:
         self.save_filename_in_env(header)
         if not self.is_valid_extension():
             print("Error: No valid extension file", file=sys.stderr)
-            self.status_code = 400
+            self.status_code = 415
 
     # check method and handles POST request
     # returns env from Server and Stdin

@@ -137,8 +137,10 @@ bool	HTTPClient::cgi(const SharedFd &fd) {
 
 /// @brief checks if cgi header has to be rewritten and add response to que.
 void	HTTPClient::cgiResponse(void) {
+	std::cerr << "is cgi response...\n";
 	if (cgi_->isTimeout())
 	{
+		std::cerr << "is cgi timeout...\n";
 		HTTPRequest	timeout_request;
 		std::memset(&timeout_request, 0, sizeof(timeout_request));
 		timeout_request.request_target = "timeout";
@@ -150,11 +152,13 @@ void	HTTPClient::cgiResponse(void) {
 	else
 	{	if (!cgi_->isNPHscript(request_.request_target))
 			cgi_->rewriteResonseFromCGI();
+		else
+			std::cerr << "is cgi nph...\n";
 		message_que_.push_back(cgi_->getResponse());
 	}
 	std::cerr << "-------------------\nResponse: " << message_que_.back() \
 	<< "\n-----------------" << std::endl;
-	cgi_.reset();
+	// cgi_.reset(); // NEED?
 }
 
 const Config*	HTTPClient::getConfig( void ) const { return (config_); }
