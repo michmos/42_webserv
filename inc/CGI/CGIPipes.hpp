@@ -12,10 +12,10 @@
 
 
 enum ePipe {
-	FROM_CGI_READ,
-	FROM_CGI_WRITE,
 	TO_CGI_READ,
-	TO_CGI_WRITE
+	TO_CGI_WRITE,
+	FROM_CGI_READ,
+	FROM_CGI_WRITE
 };
 
 class CGIPipes {
