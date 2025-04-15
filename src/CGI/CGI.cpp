@@ -55,16 +55,15 @@ void	CGI::handle(const SharedFd &fd) {
 			return ;
 		case SEND_TO_CGI:
 			sendDataToCGI(fd);
-			if (CGI_STATE_ == SEND_TO_CGI)
-				return ; // TODO: can return in any case since needs to go through epoll no?
-			[[fallthrough]];
+			return ;
 		case RCV_FROM_CGI:
 			getResponseFromCGI(fd);
 			if (CGI_STATE_ == RCV_FROM_CGI)
 				return ;
+			[[fallthrough]];
+		case CRT_RSPNS_CGI:
 			if (!isNPHscript())
 				rewriteResonseFromCGI();
-		case CRT_RSPNS_CGI:
 		default:
 			return ;
 	}
@@ -177,7 +176,7 @@ void	CGI::execCGI() {
 			if (execve(scriptPath_.c_str(), argv_vector.data(), env_vector.data()) == -1)
 				throw std::runtime_error("execve(): " +  scriptPath_ + ": " + std::strerror(errno));
 		} catch (...) {
-			perror("execve(): ");
+			perror("execve(): "); // TODO: remove print
 			exit(1); // TODO: how to handle this case
 		}
 	}
