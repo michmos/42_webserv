@@ -60,8 +60,8 @@ void	CGIPipes::addNewPipes(void) {
 
 		pipe_add_cb_(ev, client_fd_);
 	};
-	addToEpoll(pipes_[TO_CGI_WRITE].get(), EPOLLOUT | O_NONBLOCK);
-	addToEpoll(pipes_[FROM_CGI_READ].get(), EPOLLIN | O_NONBLOCK);
+	addToEpoll(pipes_[TO_CGI_WRITE].get(), EPOLLOUT);
+	addToEpoll(pipes_[FROM_CGI_READ].get(), EPOLLIN);
 }
 
 void	CGIPipes::deletePipesFromEpoll(SharedFd &fd) {
