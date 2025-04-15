@@ -101,9 +101,9 @@ class HTTPClient {
 		std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb_;
 		std::function<void(const SharedFd&)> delFromEpoll_cb_;
 
-		e_state	handleResponding(const SharedFd &fd);
-		e_state	handleCGI( const SharedFd &fd );
-		e_state	handleReceiving(struct epollEventData& ev);
+		void	handleResponding(const SharedFd &fd);
+		void	handleCGI( const SharedFd &fd );
+		void	handleReceiving(struct epollEventData& ev);
 
 };
 

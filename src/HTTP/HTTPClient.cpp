@@ -44,13 +44,13 @@ void	HTTPClient::handle(const epoll_event &event) {
 	
 	switch (STATE_) {
 		case RECEIVING:
-			STATE_ = handleReceiving(eventData);
+			handleReceiving(eventData);
 			break;
 		case PROCESS_CGI:
-			STATE_ = handleCGI(eventData.fd); // TODO: why only checking fd and not flags?
+			handleCGI(eventData.fd); // TODO: why only checking fd and not flags?
 			break;
 		case RESPONSE:
-			STATE_ = handleResponding(eventData.fd);  // TODO: why only checking fd and not flags?
+			handleResponding(eventData.fd);  // TODO: why only checking fd and not flags?
 			break;
 		case DONE:
 			return ;
@@ -67,19 +67,20 @@ void	printRequest(HTTPRequest request) {
 }
 
 /// @brief receives input, processes input, starts cgi if required
-/// @return e_state next client state
-e_state	HTTPClient::handleReceiving(struct epollEventData& evData) {
+void	HTTPClient::handleReceiving(struct epollEventData& evData) {
 	std::string data = readFrom(evData.fd);
 	parser_.processData(data, this);
-	if (!parser_.isDone())
-		return RECEIVING;
+	if (!parser_.isDone()) {
+		return ;
+	}
 
 	request_ = parser_.getParsedRequest();
 	printRequest(request_); //TODO: REMOVE
 	responseGenerator_.setConfig(config_);
 	if (!CGI::isCGI(request_))
 	{
-		return RESPONSE;
+		STATE_ = RESPONSE;
+		return ;
 	}
 	
 	// start cgi
@@ -88,27 +89,28 @@ e_state	HTTPClient::handleReceiving(struct epollEventData& evData) {
 	pipes.setCallbackFunctions(clientSock_, addToEpoll_cb_, delFromEpoll_cb_);
 	pipes.addNewPipes();
 	cgi_ = std::make_unique<CGI>(request_, pipes, delFromEpoll_cb_);
-	return PROCESS_CGI;
+	STATE_ = PROCESS_CGI;
 }
 
 /// @brief redirects epoll event to cgi object to handle it
-/// @return e_state next client state
-e_state	HTTPClient::handleCGI(const SharedFd &fd) {
+void	HTTPClient::handleCGI(const SharedFd &fd) {
 	std::vector<std::string>	env_strings;
 
 	cgi_->handle(fd);
-	if (cgi_->isReady()) // TODO: rename to isDone
-		return (RESPONSE);
-	return (PROCESS_CGI);
+	if (cgi_->isReady()) {// TODO: rename to isDone 
+		STATE_ = RESPONSE;
+		return ;
+	}
+	STATE_ = PROCESS_CGI;
 }
 
 /// @brief regenerates response and add this one to the que.
-/// @return e_state next client state
-e_state	HTTPClient::handleResponding(const SharedFd &fd) {
+void	HTTPClient::handleResponding(const SharedFd &fd) {
 	static bool	send_first_msg = true ;
 
-	if (fd != clientSock_.get())
-		return RESPONSE;
+	if (fd != clientSock_.get()) {
+		return;
+	}
 
 	if (send_first_msg)
 	{
@@ -126,7 +128,7 @@ e_state	HTTPClient::handleResponding(const SharedFd &fd) {
 		writeToClient(fd, send_first_msg);
 	if (STATE_ == DONE)
 		send_first_msg = true;
-	return (DONE);
+	STATE_ = DONE;
 }
 
 /// @brief checks if cgi header has to be rewritten and add response to que.
