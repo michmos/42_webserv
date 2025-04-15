@@ -104,6 +104,7 @@ class HTTPClient {
 
 		void	handleResponding(SharedFd fd, uint32_t events);
 		void	handleCGI( SharedFd fd, uint32_t events );
+		void	initCGI();
 		void	handleReceiving(SharedFd fd, uint32_t events);
 };
 

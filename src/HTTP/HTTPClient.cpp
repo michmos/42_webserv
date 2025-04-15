@@ -66,6 +66,13 @@ void	printRequest(HTTPRequest request) {
 	std::cerr <<  "Dir on/off: " << request.dir_list << "\n------------------\n";
 }
 
+void	HTTPClient::initCGI() {
+	CGIPipes pipes;
+	pipes.setCallbackFunctions(clientSock_, addToEpoll_cb_, delFromEpoll_cb_);
+	pipes.addNewPipes();
+	cgi_ = std::make_unique<CGI>(request_, pipes, delFromEpoll_cb_);
+}
+
 /// @brief receives input, processes input, starts cgi if required
 void	HTTPClient::handleReceiving(SharedFd fd, uint32_t events) {
 	if (fd != clientSock_.get() || !(events & EPOLLIN)) {
@@ -86,13 +93,8 @@ void	HTTPClient::handleReceiving(SharedFd fd, uint32_t events) {
 		STATE_ = RESPONSE;
 		return ;
 	}
-	
-	// start cgi
 	isCgiRequ_  = true;
-	CGIPipes pipes;
-	pipes.setCallbackFunctions(clientSock_, addToEpoll_cb_, delFromEpoll_cb_);
-	pipes.addNewPipes();
-	cgi_ = std::make_unique<CGI>(request_, pipes, delFromEpoll_cb_);
+	initCGI();
 	STATE_ = PROCESS_CGI;
 }
 
