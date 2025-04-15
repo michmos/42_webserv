@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <exception>
 # include <iostream>
 # include <bitset>
@@ -101,10 +102,9 @@ class HTTPClient {
 		std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb_;
 		std::function<void(const SharedFd&)> delFromEpoll_cb_;
 
-		void	handleResponding(const SharedFd &fd);
-		void	handleCGI( const SharedFd &fd );
-		void	handleReceiving(struct epollEventData& ev);
-
+		void	handleResponding(SharedFd fd, uint32_t events);
+		void	handleCGI( SharedFd fd, uint32_t events );
+		void	handleReceiving(SharedFd fd, uint32_t events);
 };
 
 ///@brief Exception specific to a client - not critical for server

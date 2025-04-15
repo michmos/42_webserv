@@ -40,17 +40,17 @@ HTTPClient::~HTTPClient(void) { }
  */
 void	HTTPClient::handle(const epoll_event &event) {
 
-	auto eventData = Epoll::getEventData(event);
+	auto fd = Epoll::getEventData(event).fd;
 	
 	switch (STATE_) {
 		case RECEIVING:
-			handleReceiving(eventData);
+			handleReceiving(fd, event.events);
 			break;
 		case PROCESS_CGI:
-			handleCGI(eventData.fd); // TODO: why only checking fd and not flags?
+			handleCGI(fd, event.events); // TODO: why only checking fd and not flags?
 			break;
 		case RESPONSE:
-			handleResponding(eventData.fd);  // TODO: why only checking fd and not flags?
+			handleResponding(fd, event.events);  // TODO: why only checking fd and not flags?
 			break;
 		case DONE:
 			return ;
@@ -67,8 +67,12 @@ void	printRequest(HTTPRequest request) {
 }
 
 /// @brief receives input, processes input, starts cgi if required
-void	HTTPClient::handleReceiving(struct epollEventData& evData) {
-	std::string data = readFrom(evData.fd);
+void	HTTPClient::handleReceiving(SharedFd fd, uint32_t events) {
+	if (fd != clientSock_.get() || !(events & EPOLLIN)) {
+		return ;
+	}
+
+	std::string data = readFrom(fd.get());
 	parser_.processData(data, this);
 	if (!parser_.isDone()) {
 		return ;
@@ -93,9 +97,12 @@ void	HTTPClient::handleReceiving(struct epollEventData& evData) {
 }
 
 /// @brief redirects epoll event to cgi object to handle it
-void	HTTPClient::handleCGI(const SharedFd &fd) {
-	std::vector<std::string>	env_strings;
+void	HTTPClient::handleCGI(SharedFd fd, uint32_t events) {
+	if (fd == clientSock_.get()) {
+		return ;
+	}
 
+	(void) events;// TODO: reach through to cgi
 	cgi_->handle(fd);
 	if (cgi_->isReady()) {// TODO: rename to isDone 
 		STATE_ = RESPONSE;
@@ -105,11 +112,11 @@ void	HTTPClient::handleCGI(const SharedFd &fd) {
 }
 
 /// @brief regenerates response and add this one to the que.
-void	HTTPClient::handleResponding(const SharedFd &fd) {
+void	HTTPClient::handleResponding(SharedFd fd, uint32_t events) {
 	static bool	send_first_msg = true ;
 
-	if (fd != clientSock_.get()) {
-		return;
+	if (fd != clientSock_.get() || !(events & EPOLLOUT)) {
+		return ;
 	}
 
 	if (send_first_msg)
