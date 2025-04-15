@@ -9,10 +9,10 @@ HTTPClient::HTTPClient(
 	) : clientSock_(clientFd),
 		serverSock_(serverFd),
 		responseGenerator_(),
+		isCgiRequ_(false),
 		addToEpoll_cb_(addToEpoll_cb),
 		getConfig_cb_(getConfig_cb),
-		delFromEpoll_cb_(delFromEpoll_cb),
-		isCgiRequ_(false) {
+		delFromEpoll_cb_(delFromEpoll_cb) {
 	STATE_ = RECEIVING;
 	config_ = NULL;
 	response_ = "";
@@ -25,10 +25,10 @@ HTTPClient::HTTPClient(const HTTPClient& other) :
 	serverSock_(other.serverSock_),
 	responseGenerator_(other.responseGenerator_),
 	config_(other.config_),
+	isCgiRequ_(other.isCgiRequ_),
 	addToEpoll_cb_(other.addToEpoll_cb_),
 	getConfig_cb_(other.getConfig_cb_),
-	delFromEpoll_cb_(other.delFromEpoll_cb_),
-	isCgiRequ_(other.isCgiRequ_)
+	delFromEpoll_cb_(other.delFromEpoll_cb_)
 {
 }
 
@@ -136,7 +136,6 @@ void	HTTPClient::cgiResponse(void) {
 	{
 		std::cerr << "is cgi timeout...\n";
 		HTTPRequest	timeout_request;
-		std::memset(&timeout_request, 0, sizeof(timeout_request));
 		timeout_request.request_target = "timeout";
 		timeout_request.status_code = 408;
 		responseGenerator_.generateResponse(timeout_request);

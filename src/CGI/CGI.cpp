@@ -27,10 +27,10 @@ CGI::CGI(const HTTPRequest &request,
 		 CGIPipes pipes,
 		 std::function<void(int)> delFromEpoll_cb)
 	:
-	request_(request),
 	pipes_(pipes),
 	CGI_STATE_(START_CGI),
-	delFromEpoll_cb_(delFromEpoll_cb)
+	delFromEpoll_cb_(delFromEpoll_cb),
+	request_(request)
 {
 	scriptPath_ = request_.request_target;
 	if (request_.method == "DELETE") {
@@ -56,7 +56,8 @@ void	CGI::handle(const SharedFd &fd) {
 		case SEND_TO_CGI:
 			sendDataToCGI(fd);
 			if (CGI_STATE_ == SEND_TO_CGI)
-				return ;
+				return ; // TODO: can return in any case since needs to go through epoll no?
+			[[fallthrough]];
 		case RCV_FROM_CGI:
 			getResponseFromCGI(fd);
 			if (CGI_STATE_ == RCV_FROM_CGI)
@@ -175,7 +176,7 @@ void	CGI::execCGI() {
 
 			if (execve(scriptPath_.c_str(), argv_vector.data(), env_vector.data()) == -1)
 				throw std::runtime_error("execve(): " +  scriptPath_ + ": " + std::strerror(errno));
-		} catch (std::runtime_error) {
+		} catch (...) {
 			perror("execve(): ");
 			exit(1); // TODO: how to handle this case
 		}

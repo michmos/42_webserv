@@ -476,6 +476,7 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 				client->setConfig(result_.host);
 				result_.request_target = generatePath(client->getConfig()); // TODO: @micha: look into again
 				verifyRequestLine(*client->getConfig());
+				[[fallthrough]];
 			}
 			catch (InvalidRequestException& e)
 			{
@@ -494,6 +495,7 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 				result_.status_code = 413;
 			if (!isBodyComplete())
 				return;
+			[[fallthrough]];
 		default:
 			PARSE_STATE_ = DONE_PARSING;
 			break;

@@ -16,8 +16,9 @@ ssize_t	HTTPClient::writeToFd(const SharedFd &fd, const std::string &response) {
 	bytes_write = write(fd.get(), response.c_str(), response.size());
 	if (bytes_write == -1)
 		throw std::runtime_error("write(): " + std::string(strerror(errno)));
-	else if (bytes_write != (ssize_t)response.size())
-		; // TO DO ... not really sure what to do here
+	else if (bytes_write != (ssize_t)response.size()) {
+		; // TODO: ... not really sure what to do here
+	}
 	return (bytes_write); // not needed to return
 }
 
