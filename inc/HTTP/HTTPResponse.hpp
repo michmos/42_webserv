@@ -28,7 +28,6 @@ class HTTPResponse {
 
 		void		generateResponse( const HTTPRequest request );
 		std::string loadResponse( void );
-		bool		isCGI(const HTTPRequest request);
 		void		setConfig( const Config *conf ) ;
 
 	private:

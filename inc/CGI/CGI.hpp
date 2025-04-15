@@ -76,7 +76,8 @@ class CGI {
 		inline const std::string&	getScriptPath() const { return scriptPath_; }
 		inline bool					isNPHscript() { return nph_;}
 		
-		static bool			isCgiScript( const std::string &path );
+		static bool			isCGIScript( const std::string &path );
+		static bool			isCGI(const HTTPRequest& request );
 		static std::string	getScriptExecutable( const std::string &path );
 		
 

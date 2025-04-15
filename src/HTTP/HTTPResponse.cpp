@@ -15,15 +15,6 @@ HTTPResponse::HTTPResponse(void) {
 
 HTTPResponse::~HTTPResponse(void) { }
 
-bool	HTTPResponse::isCGI(const HTTPRequest request) {
-	if (request.invalidRequest)
-		return (false);
-	else if (!CGI::isCgiScript(request.request_target) && request.method != "DELETE")
-		return (false);
-	else
-		return (true);
-}
-
 void	HTTPResponse::setConfig(const Config *conf) { config_ = conf; }
 
 static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 && status_code <= 308); }

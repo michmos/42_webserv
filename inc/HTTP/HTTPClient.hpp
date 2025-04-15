@@ -71,18 +71,18 @@ class HTTPClient {
 		~HTTPClient( void );
 
 		void	handle( const epoll_event &event );
-		bool	isDone( void );
-		void	setServer(std::vector<std::string> host);
 
 		//ClientReadWrite
 		ssize_t		writeToFd( const SharedFd &fd, const std::string &response );
-		void		writeToClient( const SharedFd &fd, bool send_first_msg, bool cgi_used );
+		void		writeToClient( const SharedFd &fd, bool send_first_msg);
 		std::string	getChunk( bool first_msg );
 		std::string	getHeaderInclChunked( void );
 		std::string	readFrom( int fd );
 
 		void			cgiResponse( void );
-		const Config	*getConfig( void ) const;
+		inline const Config	*getConfig( void ) const { return (config_); }
+		inline void			setConfig(std::vector<std::string> host) { config_ = getConfig_cb_(serverSock_, host[0]); }
+		inline bool			isDone( void ) const { return (STATE_ == DONE); }
 	private:
 		e_state						STATE_;
 
@@ -95,15 +95,15 @@ class HTTPClient {
 		HTTPResponse				responseGenerator_;
 		const Config				*config_;
 		std::string					response_;
+		bool						isCgiRequ_;
 
 		std::function<void(struct epoll_event, const SharedFd&)> addToEpoll_cb_;
 		std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb_;
 		std::function<void(const SharedFd&)> delFromEpoll_cb_;
 
-		void	setRequestDataAndConfig( void );
-		void	responding( bool cgi_used, const SharedFd &fd);
-		bool	isCGI();
-		bool	cgi( const SharedFd &fd );
+		e_state	handleResponding(const SharedFd &fd);
+		e_state	handleCGI( const SharedFd &fd );
+		e_state	handleReceiving(struct epollEventData& ev);
 
 };
 

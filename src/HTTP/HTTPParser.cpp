@@ -473,7 +473,7 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 			try
 			{
 				parseRequest();
-				client->setServer(result_.host);
+				client->setConfig(result_.host);
 				result_.request_target = generatePath(client->getConfig()); // TODO: @micha: look into again
 				verifyRequestLine(*client->getConfig());
 			}

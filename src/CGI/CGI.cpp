@@ -106,11 +106,26 @@ void	CGI::rewriteResonseFromCGI(void) {
  * @param path string with path and filename
  * @return bool if cgi script is valid
  */
-bool CGI::isCgiScript(const std::string &path)
+bool CGI::isCGIScript(const std::string &path)
 {
 	std::string executable = getScriptExecutable(path);
 	return (!executable.empty());
 }
+
+/**
+ * @brief static function that checks if request requires CGI
+ * @param request to be checked
+ * @return bool true if cgi required
+ */
+bool	CGI::isCGI(const HTTPRequest& request) {
+	if (request.invalidRequest)
+		return (false);
+
+	if (CGI::isCGIScript(request.request_target) || request.method == "DELETE")
+		return (true);
+	return (false);
+}
+
 
 /**
  * @brief static function that compares executable extension with the allowed cgi scripts

@@ -66,7 +66,7 @@ std::string	HTTPClient::getChunk(bool first_msg) {
  * @param fd SharedFd from Client
  * @param send_first_msg bool
  */
-void	HTTPClient::writeToClient(const SharedFd &fd, bool send_first_msg, bool cgi_used) {
+void	HTTPClient::writeToClient(const SharedFd &fd, bool send_first_msg) {
 	static bool	isNPHscript = false;
 	
 	if (send_first_msg) // ONLY SEND HEADER
@@ -77,7 +77,7 @@ void	HTTPClient::writeToClient(const SharedFd &fd, bool send_first_msg, bool cgi
 		message_que_.erase(message_que_.begin());
 		if (response_.empty())
 			return ;
-		if (cgi_used)
+		if (isCgiRequ_)
 			isNPHscript = cgi_->isNPHscript();
 	}
 	if (!isNPHscript && (response_.length() > WRITESIZE || !send_first_msg)) // IF CHUNKED
