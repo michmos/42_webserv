@@ -104,8 +104,7 @@ void	HTTPClient::handleCGI(SharedFd fd, uint32_t events) {
 		return ;
 	}
 
-	(void) events;// TODO: reach through to cgi
-	cgi_->handle(fd);
+	cgi_->handle(fd, events);
 	if (cgi_->isReady()) {// TODO: rename to isDone 
 		STATE_ = RESPONSE;
 		return ;

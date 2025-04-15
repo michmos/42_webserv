@@ -3,6 +3,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <sys/epoll.h>
 #include <unistd.h>
 
 // #######################     PUBLIC     ########################
@@ -47,17 +48,16 @@ bool	CGI::isReady(void) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
 
 bool	CGI::isTimeout(void) { return (timeout_); }
 
-void	CGI::handle(const SharedFd &fd) {
-
+void	CGI::handle(SharedFd fd, uint32_t events) {
 	switch (CGI_STATE_) {
 		case START_CGI:
 			execCGI();
 			return ;
 		case SEND_TO_CGI:
-			sendDataToCGI(fd);
+			sendDataToCGI(fd, events);
 			return ;
 		case RCV_FROM_CGI:
-			getResponseFromCGI(fd);
+			getResponseFromCGI(fd, events);
 			if (CGI_STATE_ == RCV_FROM_CGI)
 				return ;
 			[[fallthrough]];
@@ -192,12 +192,11 @@ void	CGI::execCGI() {
  * @brief writes body to stdin for CGI and closes write end pipe
  * @param post_data string with body
  */
-void	CGI::sendDataToCGI(const SharedFd &fd) {
+void	CGI::sendDataToCGI(SharedFd fd, uint32_t events) {
 	ssize_t				write_bytes;
 	const std::string& post_data_ = request_.body;
 
-	// check that ready fd is write end
-	if (fd.get() != pipes_[TO_CGI_WRITE].get())
+	if (fd.get() != pipes_[TO_CGI_WRITE].get() || !(events & EPOLLOUT))
 		return ;
 
 	if (!post_data_.empty())
@@ -297,12 +296,11 @@ static std::string	receiveBuffer(int fd) {
  * @brief checks response status from CGI and receives header (and body) from pipe
  * if statuscode is not set it wil generate a Internal Server Error
  */
-void	CGI::getResponseFromCGI(const SharedFd &fd) {
+void	CGI::getResponseFromCGI(SharedFd fd, uint32_t events) {
 	int status_code;
 
-	// check that fd ready is pipe read end
-	if (fd.get() != pipes_[FROM_CGI_READ].get())
-		return ;
+	// if (fd.get() != pipes_[FROM_CGI_READ].get() || !(events & EPOLLIN))
+	// 	return ;
 
 	std::string buffer = receiveBuffer(fd.get());
 	response_ += buffer;
