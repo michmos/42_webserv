@@ -299,6 +299,7 @@ static std::string	receiveBuffer(int fd) {
 void	CGI::getResponseFromCGI(const SharedFd &fd) {
 	int status_code;
 
+	(void) events;
 	// if (fd.get() != pipes_[FROM_CGI_READ].get() || !(events & EPOLLIN))
 	// 	return ;
 
