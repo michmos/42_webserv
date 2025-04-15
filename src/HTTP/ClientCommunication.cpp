@@ -78,7 +78,7 @@ void	HTTPClient::writeToClient(const SharedFd &fd, bool send_first_msg, bool cgi
 		if (response_.empty())
 			return ;
 		if (cgi_used)
-			isNPHscript = cgi_->isNPHscript(request_.request_target);
+			isNPHscript = cgi_->isNPHscript();
 	}
 	if (!isNPHscript && (response_.length() > WRITESIZE || !send_first_msg)) // IF CHUNKED
 	{

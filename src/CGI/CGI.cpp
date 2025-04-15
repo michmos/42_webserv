@@ -8,15 +8,35 @@
 // #######################     PUBLIC     ########################
 // ###############################################################
 
-CGI::CGI(const std::string &post_data,
+static bool	isNPH(const std::string& path) {
+	size_t		index;
+	std::string	filename = "";
+
+	index = path.find_last_of('/');
+	if (index != std::string::npos)
+		filename = path.substr(index + 1);
+	else
+		filename = path;
+	if (filename.size() > 4 && filename.substr(0, 4) == "nph_")
+		return (true);
+	else
+		return (false);
+}
+
+CGI::CGI(const HTTPRequest &request,
 		 CGIPipes pipes,
 		 std::function<void(int)> delFromEpoll_cb)
 	:
+	request_(request),
 	pipes_(pipes),
-	post_data_(post_data), 
 	CGI_STATE_(START_CGI),
 	delFromEpoll_cb_(delFromEpoll_cb)
 {
+	scriptPath_ = request_.request_target;
+	if (request_.method == "DELETE") {
+		scriptPath_ = "data/www/cgi-bin/nph_CGI_delete.py";
+	}
+	nph_ = isNPH(scriptPath_);
 }
 
 CGI::~CGI(void) {}
@@ -27,11 +47,11 @@ bool	CGI::isReady(void) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
 
 bool	CGI::isTimeout(void) { return (timeout_); }
 
-void	CGI::handle_cgi(HTTPRequest &request, const SharedFd &fd) {
+void	CGI::handle(const SharedFd &fd) {
 
 	switch (CGI_STATE_) {
 		case START_CGI:
-			execCGI(request);
+			execCGI();
 			return ;
 		case SEND_TO_CGI:
 			sendDataToCGI(fd);
@@ -41,6 +61,8 @@ void	CGI::handle_cgi(HTTPRequest &request, const SharedFd &fd) {
 			getResponseFromCGI(fd);
 			if (CGI_STATE_ == RCV_FROM_CGI)
 				return ;
+			if (!isNPHscript())
+				rewriteResonseFromCGI();
 		case CRT_RSPNS_CGI:
 		default:
 			return ;
@@ -80,26 +102,6 @@ void	CGI::rewriteResonseFromCGI(void) {
 }
 
 /**
- * @brief checks if the executable file starts with nph_
- * @param executable absolute path to request target
- * @return true if nhp_ file, else false
- */
-bool	CGI::isNPHscript(const std::string &executable) {
-	size_t		index;
-	std::string	filename = "";
-
-	index = executable.find_last_of('/');
-	if (index != std::string::npos)
-		filename = executable.substr(index + 1);
-	else
-		filename = executable;
-	if (filename.size() > 4 && filename.substr(0, 4) == "nph_")
-		return (true);
-	else
-		return (false);
-}
-
-/**
  * @brief static function that checks if executable is allowed and valid
  * @param path string with path and filename
  * @return bool if cgi script is valid
@@ -131,10 +133,9 @@ std::string CGI::getScriptExecutable(const std::string &path)
  * @brief forks the process to execve the CGI, with POST sends buffer to child
  * @param request HTTP request
  */
-void	CGI::execCGI(HTTPRequest& request) {
+void	CGI::execCGI() {
 	std::cout << std::flush;
 	start_time_ = time(NULL);
-	std::string executable = request.request_target;
 
 	pid_ = fork();
 	if (pid_ < 0)
@@ -153,10 +154,12 @@ void	CGI::execCGI(HTTPRequest& request) {
 		try {
 			redir(pipes_[TO_CGI_READ].get(), STDIN_FILENO);
 			redir(pipes_[FROM_CGI_WRITE].get(), STDOUT_FILENO);
-			std::vector<char*>	argv_vector = createArgvVector(executable);
-			std::vector<char*>	env_vector = createEnv(request);
-			if (execve(executable.c_str(), argv_vector.data(), env_vector.data()) == -1)
-				throw std::runtime_error("execve(): " +  executable + ": " + std::strerror(errno));
+
+			std::vector<char*>	env_vector = createEnv();
+			std::vector<char*>	argv_vector = std::vector<char*>{const_cast<char*>(scriptPath_.c_str()), NULL};
+
+			if (execve(scriptPath_.c_str(), argv_vector.data(), env_vector.data()) == -1)
+				throw std::runtime_error("execve(): " +  scriptPath_ + ": " + std::strerror(errno));
 		} catch (std::runtime_error) {
 			perror("execve(): ");
 			exit(1); // TODO: how to handle this case
@@ -176,6 +179,7 @@ void	CGI::execCGI(HTTPRequest& request) {
  */
 void	CGI::sendDataToCGI(const SharedFd &fd) {
 	ssize_t				write_bytes;
+	const std::string& post_data_ = request_.body;
 
 	// check that ready fd is write end
 	if (fd.get() != pipes_[TO_CGI_WRITE].get())
@@ -188,7 +192,7 @@ void	CGI::sendDataToCGI(const SharedFd &fd) {
 		if (write_bytes == -1) {
 			throw std::runtime_error("CGI write(): " + std::to_string(fd.get()) + " : " + strerror(errno));
 		} else if (write_bytes != (ssize_t)post_data_.size()) {
-			post_data_.erase(0, write_bytes);
+			// post_data_.erase(0, write_bytes);
 			std::cerr << "Could not written everything in once, remaining bytes:" <<  write_bytes << std::endl;
 			// TODO: probably needs to be handled differently
 			return ;
@@ -204,19 +208,18 @@ void	CGI::sendDataToCGI(const SharedFd &fd) {
  * @param request struct with all information that is gathered. 
  * @return vector<char*> with all env information
  */
-std::vector<char*> CGI::createEnv(HTTPRequest &request) {
+std::vector<char*> CGI::createEnv() {
 	envStrings_.push_back("GATEWAY=CGI/1.1");
 	envStrings_.push_back("SERVER_PROTOCOL=HTTP/1.1");
-	if (request.method == "DELETE")
+	if (request_.method == "DELETE")
 	{
-		envStrings_.push_back("DELETE_FILE=" + request.request_target);
-		request.request_target = "data/www/cgi-bin/nph_CGI_delete.py"; // TODO: why overwriting? and should this be hardcoded?
+		envStrings_.push_back("DELETE_FILE=" + request_.request_target);
 	}
-	envStrings_.push_back("REQUEST_TARGET=" + request.request_target);
-	envStrings_.push_back("REQUEST_METHOD=" + request.method);
-	envStrings_.push_back("CONTENT_LENGTH=" + std::to_string(request.body.size()));
+	envStrings_.push_back("REQUEST_TARGET=" + scriptPath_); // TODO: why hardcoded?
+	envStrings_.push_back("REQUEST_METHOD=" + request_.method);
+	envStrings_.push_back("CONTENT_LENGTH=" + std::to_string(request_.body.size()));
 
-	for (const auto& pair : request.headers)
+	for (const auto& pair : request_.headers)
 	{
 		if (*pair.second.end() == '\n')
 			envStrings_.push_back(pair.first + "=" + pair.second.substr(0, pair.second.size() - 1));
@@ -264,6 +267,17 @@ bool	CGI::isCGIProcessSuccessful(void) {
 // ####################     RCV_FROM_CGI     #####################
 // ###############################################################
 
+static std::string	receiveBuffer(int fd) {
+	char buffer[1024] = {'\0'};
+	
+	// TODO: replace 1024 by macro
+	ssize_t bytesRead = read(fd, buffer, 1024 - 1);
+	if (bytesRead == -1) {
+		throw std::runtime_error(std::string("CGI read(): ") + strerror(errno));
+	} 
+	return (buffer);
+}
+
 /**
  * @brief checks response status from CGI and receives header (and body) from pipe
  * if statuscode is not set it wil generate a Internal Server Error
@@ -275,7 +289,7 @@ void	CGI::getResponseFromCGI(const SharedFd &fd) {
 	if (fd.get() != pipes_[FROM_CGI_READ].get())
 		return ;
 
-	std::string buffer = receiveBuffer();
+	std::string buffer = receiveBuffer(fd.get());
 	response_ += buffer;
 	bool isFinished = isCGIProcessFinished();
 	bool timedOut = hasCGIProcessTimedOut();
@@ -294,28 +308,11 @@ void	CGI::getResponseFromCGI(const SharedFd &fd) {
 		if (kill(pid_, SIGKILL) == -1) // TODO: maybe use sigterm instead
 			throw std::runtime_error("kill() " + std::to_string(pid_) + " : " + strerror(errno));
 	}
-	std::cout << "CGI response: " << response_ << std::endl;
 	delFromEpoll_cb_(pipes_[FROM_CGI_READ].get());
 	pipes_[FROM_CGI_READ] = -1;
 	CGI_STATE_ = CRT_RSPNS_CGI;
 }
 
-/**
- * @brief read from pipe to CGI
- * @return string with read buffer
- * @THROW throws exception if read fails
- */
-std::string	CGI::receiveBuffer() {
-	char buffer[1024];
-	int fd = pipes_[FROM_CGI_READ].get();
-	
-	// TODO: replace 1024 by macro
-	ssize_t bytesRead = read(fd, buffer, 1024 - 1);
-	if (bytesRead == -1) {
-		throw std::runtime_error(std::string("CGI read(): ") + strerror(errno));
-	} 
-	return (buffer);
-}
 
 /**
  * @brief extract statuscode from CGI response

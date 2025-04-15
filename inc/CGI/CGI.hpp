@@ -36,47 +36,45 @@ enum e_cgi_state {
 
 class CGI {
 	private:
-		std::string 		path_;
-		std::vector<std::string>	envStrings_;
-		CGIPipes			pipes_;
-		pid_t				pid_;
-		int					status_;
-		std::string 		response_;
-		std::string			post_data_;
-		epoll_event			epoll_event_pipe_[2];
-		e_cgi_state			CGI_STATE_;
-		time_t				start_time_;
-		bool				timeout_;
-		std::function<void(int)> delFromEpoll_cb_;
+		int						status_;
+		bool					timeout_;
+		bool					nph_;
+		std::string 			scriptPath_;
+		std::string 			response_;
+		std::vector<std::string>envStrings_;
+		CGIPipes				pipes_;
+		pid_t					pid_;
+		e_cgi_state				CGI_STATE_;
+		time_t					start_time_;
+		std::function<void(int)>delFromEpoll_cb_;
+		const HTTPRequest&		request_;
 
 		// START_CGI
-		std::vector<char*>	createEnv(HTTPRequest &request );
-		void				execCGI(HTTPRequest &request);
-		bool				isCGIProcessFinished( void );
-		bool				isCGIProcessSuccessful( void );
-		bool				hasCGIProcessTimedOut(void);
+		std::vector<char*>	createEnv();
+		void				execCGI();
 
 		// SEND_TO_CGI
 		void				sendDataToCGI( const SharedFd &fd );
 
 		// RCV_FROM_CGI
 		void				getResponseFromCGI( const SharedFd &fd );
-		std::string			receiveBuffer();
 		int					getStatusCodeFromResponse( void );
+		bool				isCGIProcessFinished( void );
+		bool				isCGIProcessSuccessful( void );
+		bool				hasCGIProcessTimedOut(void);
 
-		// CGI UTILS
-		std::vector<char*>	createArgvVector( const std::string &executable );
 
 	public:
-		explicit CGI( const std::string &post_data, CGIPipes pipes, std::function<void(int)> delFromEpoll_cb );
+		explicit CGI(const HTTPRequest& request, CGIPipes pipes, std::function<void(int)> delFromEpoll_cb );
 		~CGI( void );
 		
-		std::string			getResponse( void );
-		bool				isReady( void );
-		bool				isTimeout(void);
-		void				handle_cgi( HTTPRequest &request, const SharedFd &fd );
-		bool				isNPHscript( const std::string &executable );
-		void				rewriteResonseFromCGI( void );
+		std::string					getResponse( void );
+		bool						isReady( void );
+		bool						isTimeout(void);
+		void						handle(const SharedFd &fd );
+		void						rewriteResonseFromCGI( void );
+		inline const std::string&	getScriptPath() const { return scriptPath_; }
+		inline bool					isNPHscript() { return nph_;}
 		
 		static bool			isCgiScript( const std::string &path );
 		static std::string	getScriptExecutable( const std::string &path );

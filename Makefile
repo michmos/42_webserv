@@ -21,7 +21,6 @@ SRC			:= $(SRCDIR)/main.cpp \
 				$(SRCDIR)/Config/Config.cpp \
 				$(SRCDIR)/Config/ConfigParser.cpp \
 				$(SRCDIR)/CGI/CGI.cpp \
-				$(SRCDIR)/CGI/CGI_utils.cpp \
 				$(SRCDIR)/CGI/CGIPipes.cpp
 
 INCL        :=   -I./inc

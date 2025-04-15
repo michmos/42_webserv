@@ -130,9 +130,9 @@ bool	HTTPClient::cgi(const SharedFd &fd) {
 		CGIPipes pipes;
 		pipes.setCallbackFunctions(clientSock_, addToEpoll_cb_, delFromEpoll_cb_);
 		pipes.addNewPipes();
-		cgi_ = std::make_unique<CGI>(request_.body, pipes, delFromEpoll_cb_);
+		cgi_ = std::make_unique<CGI>(request_, pipes, delFromEpoll_cb_);
 	}
-	cgi_->handle_cgi(request_, fd);
+	cgi_->handle(fd);
 	return (cgi_->isReady());
 }
 
@@ -150,11 +150,7 @@ void	HTTPClient::cgiResponse(void) {
 		message_que_.push_back(responseGenerator_.loadResponse());
 
 	}
-	else
-	{	if (!cgi_->isNPHscript(request_.request_target))
-			cgi_->rewriteResonseFromCGI();
-		else
-			std::cerr << "is cgi nph...\n";
+	else {	
 		message_que_.push_back(cgi_->getResponse());
 	}
 	std::cerr << "-------------------\nResponse: " << message_que_.back() \
