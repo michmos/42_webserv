@@ -72,10 +72,11 @@ void	Epoll::del(int fd) {
 const std::vector<struct epoll_event>&	Epoll::wait() {
 	int	ready;
 
+	_events.resize(MAX_EVENTS);
 	if ((ready = epoll_wait(_epFd.get(), _events.data(), MAX_EVENTS, _timeout)) == -1) {
 		throw std::runtime_error(std::string("epoll_wait(): ") + strerror(errno));
 	}
-	_events.erase(_events.begin() + ready, _events.end());
+	_events.resize(ready);
 	return (_events);
 }
 
