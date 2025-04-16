@@ -57,7 +57,7 @@ void	CGI::handle(const SharedFd &fd, uint32_t events) {
 			sendDataToCGI(fd, events);
 			return ;
 		case RCV_FROM_CGI:
-			getResponseFromCGI(fd);
+			getResponseFromCGI(fd, events);
 			if (CGI_STATE_ == RCV_FROM_CGI)
 				return ;
 			[[fallthrough]];
@@ -296,12 +296,11 @@ static std::string	receiveBuffer(int fd) {
  * @brief checks response status from CGI and receives header (and body) from pipe
  * if statuscode is not set it wil generate a Internal Server Error
  */
-void	CGI::getResponseFromCGI(const SharedFd &fd) {
+void	CGI::getResponseFromCGI(const SharedFd &fd, uint32_t events) {
 	int status_code;
 
-	(void) events;
-	// if (fd.get() != pipes_[FROM_CGI_READ].get() || !(events & EPOLLIN))
-	// 	return ;
+	if (fd.get() != pipes_[FROM_CGI_READ].get() || !(events & (EPOLLIN | EPOLLHUP)))
+		return ;
 
 	std::string buffer = receiveBuffer(fd.get());
 	response_ += buffer;

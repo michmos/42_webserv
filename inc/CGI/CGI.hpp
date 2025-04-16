@@ -57,7 +57,7 @@ class CGI {
 		void				sendDataToCGI( const SharedFd &fd, uint32_t events );
 
 		// RCV_FROM_CGI
-		void				getResponseFromCGI( const SharedFd &fd );
+		void				getResponseFromCGI( const SharedFd &fd, uint32_t events);
 		int					getStatusCodeFromResponse( void );
 		bool				isCGIProcessFinished( void );
 		bool				isCGIProcessSuccessful( void );
