@@ -80,7 +80,7 @@ class HTTPClient {
 		std::string	getHeaderInclChunked( void );
 		std::string	readFrom( int fd );
 
-		void			cgiResponse( void );
+		void				cgiResponse( void );
 		inline const Config	*getConfig( void ) const { return (config_); }
 		inline void			setConfig(std::vector<std::string> host) { config_ = getConfig_cb_(serverSock_, host[0]); }
 		inline bool			isDone( void ) const { return (STATE_ == DONE); }

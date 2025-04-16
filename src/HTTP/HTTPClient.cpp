@@ -136,7 +136,6 @@ void	HTTPClient::handleResponding(SharedFd fd, uint32_t events) {
 		writeToClient(fd, send_first_msg);
 	if (STATE_ == DONE)
 		send_first_msg = true;
-	STATE_ = DONE;
 }
 
 /// @brief checks if cgi header has to be rewritten and add response to que.

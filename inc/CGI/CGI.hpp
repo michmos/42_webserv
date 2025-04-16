@@ -54,7 +54,7 @@ class CGI {
 		void				execCGI();
 
 		// SEND_TO_CGI
-		void				sendDataToCGI( const SharedFd &fd );
+		void				sendDataToCGI( const SharedFd &fd, uint32_t events );
 
 		// RCV_FROM_CGI
 		void				getResponseFromCGI( const SharedFd &fd );
@@ -71,7 +71,7 @@ class CGI {
 		std::string					getResponse( void );
 		bool						isReady( void );
 		bool						isTimeout(void);
-		void						handle(const SharedFd &fd );
+		void						handle( const SharedFd &fd, uint32_t events );
 		void						rewriteResonseFromCGI( void );
 		inline const std::string&	getScriptPath() const { return scriptPath_; }
 		inline bool					isNPHscript() { return nph_;}

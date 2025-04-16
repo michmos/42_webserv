@@ -48,7 +48,7 @@ bool	CGI::isReady(void) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
 
 bool	CGI::isTimeout(void) { return (timeout_); }
 
-void	CGI::handle(SharedFd fd, uint32_t events) {
+void	CGI::handle(const SharedFd &fd, uint32_t events) {
 	switch (CGI_STATE_) {
 		case START_CGI:
 			execCGI();
@@ -57,7 +57,7 @@ void	CGI::handle(SharedFd fd, uint32_t events) {
 			sendDataToCGI(fd, events);
 			return ;
 		case RCV_FROM_CGI:
-			getResponseFromCGI(fd, events);
+			getResponseFromCGI(fd);
 			if (CGI_STATE_ == RCV_FROM_CGI)
 				return ;
 			[[fallthrough]];
@@ -192,7 +192,7 @@ void	CGI::execCGI() {
  * @brief writes body to stdin for CGI and closes write end pipe
  * @param post_data string with body
  */
-void	CGI::sendDataToCGI(SharedFd fd, uint32_t events) {
+void	CGI::sendDataToCGI( const SharedFd &fd, uint32_t events ) {
 	ssize_t				write_bytes;
 	const std::string& post_data_ = request_.body;
 
@@ -296,7 +296,7 @@ static std::string	receiveBuffer(int fd) {
  * @brief checks response status from CGI and receives header (and body) from pipe
  * if statuscode is not set it wil generate a Internal Server Error
  */
-void	CGI::getResponseFromCGI(SharedFd fd, uint32_t events) {
+void	CGI::getResponseFromCGI(const SharedFd &fd) {
 	int status_code;
 
 	// if (fd.get() != pipes_[FROM_CGI_READ].get() || !(events & EPOLLIN))
