@@ -5,8 +5,10 @@ std::atomic<bool> keepalive(true);
 
 void	signalhandler(int signum)
 {
-	if (signum == 13 || signum == 2)
+	if (signum == SIGINT || signum == SIGQUIT) {
+		std::cerr << "\n" << strsignal(signum) << " received" << std::endl;
 		keepalive = false;
+	}
 }
 
 static int	findExistingSocket(const std::vector<std::pair<struct sockaddr_storage, int>>& sockets, const struct addrinfo* temp) {
@@ -195,7 +197,8 @@ void	Webserv::_handleClientReady(const struct epoll_event& ev) {
 }
 
 void	Webserv::eventLoop() {
-	std::signal(2, signalhandler);
+	std::signal(SIGINT, signalhandler);
+	std::signal(SIGQUIT, signalhandler);
 	
 	while (keepalive)
 	{

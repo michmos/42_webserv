@@ -74,6 +74,10 @@ const std::vector<struct epoll_event>&	Epoll::wait() {
 
 	_events.resize(MAX_EVENTS);
 	if ((ready = epoll_wait(_epFd.get(), _events.data(), MAX_EVENTS, _timeout)) == -1) {
+		if (errno == EINTR) {
+			_events.resize(0);
+			return (_events);
+		}
 		throw std::runtime_error(std::string("epoll_wait(): ") + strerror(errno));
 	}
 	_events.resize(ready);
