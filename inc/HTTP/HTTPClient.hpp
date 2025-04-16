@@ -74,7 +74,7 @@ class HTTPClient {
 		void	handle( const epoll_event &event );
 
 		//ClientReadWrite
-		ssize_t		writeToFd( const SharedFd &fd, const std::string &response );
+		void		writeToFd( const SharedFd &fd, const std::string &response );
 		void		writeToClient( const SharedFd &fd, bool send_first_msg);
 		std::string	getChunk( bool first_msg );
 		std::string	getHeaderInclChunked( void );

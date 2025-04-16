@@ -4,22 +4,18 @@ std::string	HTTPClient::readFrom(int fd) {
 	char	buff[READSIZE + 1] = { '\0'};
 	int		bytes_read;
 
-	bytes_read = read(fd, buff, READSIZE);
+	bytes_read = recv(fd, buff, READSIZE, MSG_DONTWAIT);
 	if (bytes_read == -1)
-		return ("");
+		throw ClientException("Client: " + std::to_string(fd) + ": recv(): " + strerror(errno));
 	return (std::string(buff, bytes_read));
 }
 
-ssize_t	HTTPClient::writeToFd(const SharedFd &fd, const std::string &response) {
+void	HTTPClient::writeToFd(const SharedFd &fd, const std::string &response) {
 	ssize_t	bytes_write;
 
-	bytes_write = write(fd.get(), response.c_str(), response.size());
+	bytes_write = send(fd.get(), response.c_str(), response.size(), MSG_DONTWAIT);
 	if (bytes_write == -1)
-		throw std::runtime_error("write(): " + std::string(strerror(errno)));
-	else if (bytes_write != (ssize_t)response.size()) {
-		; // TODO: ... not really sure what to do here
-	}
-	return (bytes_write); // not needed to return
+		throw ClientException("Client: " + std::to_string(fd.get()) + ": send(): " + strerror(errno));
 }
 
 /**
