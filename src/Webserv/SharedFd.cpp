@@ -58,12 +58,3 @@ SharedFd::~SharedFd() {
 	}
 }
 
-// TODO: forbidden flag
-void	SharedFd::setNonBlock() const {
-	if (!this->isValid())
-		throw std::invalid_argument("setNonBlock(): _fd not set");
-	int	fd = this->get();
-	int flags = fcntl(fd, F_GETFL);
-	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
-		throw std::runtime_error(std::string("fcntl()") + strerror(errno));
-}

@@ -1,6 +1,4 @@
 #include "../../inc/CGI/CGIPipes.hpp"
-#include <stdexcept>
-#include <string>
 
 CGIPipes::CGIPipes( void ) {};
 
@@ -37,15 +35,19 @@ void	CGIPipes::addNewPipes(void) {
 		addPipe();
 		addPipe();
 
-		// set flags
-		auto setFlags = [](SharedFd& fd, int flags) {
-			if (fcntl(fd.get(), F_SETFL, flags) == -1)
-				throw std::runtime_error("fcntl(): " + std::string(strerror(errno)));
+		// set NONBLOCK and CLOEXEC flags
+		auto setFlags = [](SharedFd& fd) {
+			int statusFlags = fcntl(fd.get(), F_GETFL);
+			if (statusFlags == -1)
+				throw std::runtime_error("fcntl(F_GETFL): " + std::string(strerror(errno)));
+			if (fcntl(fd.get(), F_SETFL, statusFlags | O_NONBLOCK) == -1)
+				throw std::runtime_error("fcntl(F_SETFL): " + std::string(strerror(errno)));
+			if (fcntl(fd.get(), F_SETFD, FD_CLOEXEC) == -1)
+				throw std::runtime_error("fcntl(F_SETFD): " + std::string(strerror(errno)));
 		};
-		setFlags(pipes_[FROM_CGI_READ], O_NONBLOCK | FD_CLOEXEC);
-		setFlags(pipes_[FROM_CGI_WRITE], O_NONBLOCK | FD_CLOEXEC);
-		setFlags(pipes_[TO_CGI_READ], O_NONBLOCK | FD_CLOEXEC);
-		setFlags(pipes_[TO_CGI_WRITE], O_NONBLOCK);
+		for (auto fd: pipes_) {
+			setFlags(fd);
+		}
 	}
 	catch (std::runtime_error &e)
 	{
