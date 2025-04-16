@@ -1,10 +1,7 @@
 #include "../../inc/Webserv/Epoll.hpp"
-#include <stdexcept>
-#include <string>
-#include <unordered_map>
 
 Epoll::Epoll() : 
-	_epFd(epoll_create(EPOLL_START_SIZE)),
+	_epFd(epoll_create1(EPOLL_CLOEXEC)),
 	_timeout(TIMEOUT_DFLT)
 {
 	if (_epFd == -1) {

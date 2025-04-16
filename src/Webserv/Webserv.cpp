@@ -20,7 +20,7 @@ static int	findExistingSocket(const std::vector<std::pair<struct sockaddr_storag
 }
 
 static int	createBindListen(struct addrinfo* info) {
-	int fd = socket(info->ai_family, info->ai_socktype | SOCK_NONBLOCK, info->ai_protocol);
+	int fd = socket(info->ai_family, info->ai_socktype | SOCK_NONBLOCK | SOCK_CLOEXEC, info->ai_protocol);
 	if (fd == -1) {
 		return (-1);
 	}
@@ -162,7 +162,7 @@ void	Webserv::_delClient(const SharedFd& clientSock) {
 }
 
 void	Webserv::_handleServerReady(SharedFd fd) {
-	SharedFd clientSock = accept(fd.get(), nullptr, nullptr);
+	SharedFd clientSock = accept4(fd.get(), nullptr, nullptr, SOCK_CLOEXEC);
 	if (clientSock == -1)
 		throw std::runtime_error(std::string("accept(): ") + strerror(errno));
 	_addClient(clientSock, fd);
