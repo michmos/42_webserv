@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <vector>
 
-#define	TIMEOUT_DFLT 3
+#define	TIMEOUT_DFLT -1
 #define	MAX_EVENTS 5
 
 // since Linux 2.6.8 ignored anyways
