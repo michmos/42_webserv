@@ -157,11 +157,6 @@ void	CGI::execCGI() {
 		throw std::runtime_error("fork()");
 	else if (pid_ == 0) 
 	{
-		// reset refcount to 1 in child since independent process
-		for(int i = 0; i < 4; ++i) {
-			pipes_[i].resetRefCount();
-		}
-
 		auto redir = [](int fdA, int fdB) {
 			if (dup2(fdA, fdB) < 0)
 				throw std::runtime_error("dup2(): " + std::to_string(fdA) + ": " + strerror(errno));
@@ -175,9 +170,10 @@ void	CGI::execCGI() {
 
 			if (execve(scriptPath_.c_str(), argv_vector.data(), env_vector.data()) == -1)
 				throw std::runtime_error("execve(): " +  scriptPath_ + ": " + std::strerror(errno));
-		} catch (...) {
-			perror("execve(): "); // TODO: remove print
-			exit(1); // TODO: how to handle this case
+		} catch (std::runtime_error &e) {
+			close(STDIN_FILENO);
+			close(STDOUT_FILENO);
+			throw::CGIException(e.what());
 		}
 	}
 	pipes_[TO_CGI_READ] = -1;

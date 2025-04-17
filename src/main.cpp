@@ -37,6 +37,9 @@ int main (int argc, char **argv) {
 	catch (std::invalid_argument &e) {
 		std::cerr << "Invalid argument error occurred: " << e.what() << std::endl;
 	}
+	catch (CGIException &e) {
+		std::cerr << "CGI error occurred: " << e.what() << std::endl;
+	}
 	catch (std::exception &e) {
 		std::cerr << "Error occurred: " << e.what() << std::endl;
 	}
