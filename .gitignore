@@ -26,6 +26,9 @@
 *.a
 *.lib
 
+# Uploads
+data/uploads/*
+
 # Executables
 *.exe
 *.out
