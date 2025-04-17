@@ -69,7 +69,8 @@ class CGI {
 		~CGI( void );
 		
 		std::string					getResponse( void );
-		bool						isReady( void );
+		int							getStatusCode( void );
+		bool						isDone( void );
 		bool						isTimeout(void);
 		void						handle( const SharedFd &fd, uint32_t events );
 		void						rewriteResonseFromCGI( void );

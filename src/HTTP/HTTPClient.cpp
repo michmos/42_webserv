@@ -110,7 +110,7 @@ void	HTTPClient::handleCGI(SharedFd fd, uint32_t events) {
 	}
 
 	cgi_->handle(fd, events);
-	if (cgi_->isReady()) {// TODO: rename to isDone 
+	if (cgi_->isDone()) {
 		STATE_ = RESPONSE;
 		return ;
 	}
@@ -145,22 +145,20 @@ void	HTTPClient::handleResponding(SharedFd fd, uint32_t events) {
 
 /// @brief checks if cgi header has to be rewritten and add response to que.
 void	HTTPClient::cgiResponse(void) {
-	std::cerr << "is cgi response...\n";
-	if (cgi_->isTimeout())
+	if (cgi_->isTimeout() || cgi_->getStatusCode() == 500)
 	{
-		std::cerr << "is cgi timeout...\n";
-		HTTPRequest	timeout_request;
-		timeout_request.request_target = "timeout";
-		timeout_request.status_code = 408;
-		responseGenerator_.generateResponse(timeout_request);
+		std::cerr << "is cgi timeout or status code == 500...\n";
+		HTTPRequest	cgi_error_request;
+		cgi_error_request.request_target = "CGI_error";
+		cgi_error_request.status_code = 500;
+		responseGenerator_.generateResponse(cgi_error_request);
 		message_que_.push_back(responseGenerator_.loadResponse());
 
 	}
 	else {	
 		message_que_.push_back(cgi_->getResponse());
 	}
-	std::cerr << "-------------------\nResponse: " << message_que_.back() \
-	<< "\n-----------------" << std::endl;
-	// cgi_.reset(); // NEED?
+	std::cerr << "-------------------\nCGI Response: " << message_que_.back() \
+		<< "\n-----------------" << std::endl;
 }
 

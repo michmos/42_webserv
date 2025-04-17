@@ -44,7 +44,9 @@ CGI::~CGI(void) {}
 
 std::string CGI::getResponse(void) { return (response_); }
 
-bool	CGI::isReady(void) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
+int	CGI::getStatusCode( void ) { return (status_); };
+
+bool	CGI::isDone(void) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
 
 bool	CGI::isTimeout(void) { return (timeout_); }
 
@@ -305,13 +307,11 @@ void	CGI::getResponseFromCGI(const SharedFd &fd, uint32_t events) {
 	}
 	else if (isFinished && !isCGIProcessSuccessful()) {
 		response_ = CGI_ERR_RESPONSE;
-		
-		// TODO: compare with configfile error pages.
-		// -> if error it means that there is no message back from cgi so status code 500, check config after this
+		status_ = 500;
 	} else if (timedOut) {
-		// -> timeout gives also 500 back otherwise the browser is repeating the request over and over
 		std::cerr << "TIMEOUT, shutting down CGI...\n";
 		timeout_ = true;
+		status_ = 500;
 		if (kill(pid_, SIGKILL) == -1) // TODO: maybe use sigterm instead
 			throw std::runtime_error("kill() " + std::to_string(pid_) + " : " + strerror(errno));
 	}

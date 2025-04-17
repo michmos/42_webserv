@@ -62,7 +62,7 @@ std::string	HTTPResponse::loadResponse(void) {
  */
 std::string	HTTPResponse::searchErrorPage(const std::vector<std::string> &dir, const std::string &errorpage) {
 	struct stat	statbuf;
-	std::cerr << "search Error Page\n";
+
 	for (const std::string &path : dir)
 	{
 		std::string fullpath = path + errorpage;
