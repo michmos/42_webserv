@@ -48,8 +48,8 @@ std::string	HTTPClient::getChunk(bool first_msg) {
 		return (getHeaderInclChunked());
 
 	chunksize = response_.length();
-	if (chunksize > CHUNKSIZE)
-		chunksize = CHUNKSIZE;
+	if (chunksize > WRITESIZE)
+		chunksize = WRITESIZE;
 
 	chunk_os << std::hex << chunksize << "\r\n";
 	chunk_os << response_.substr(0, chunksize) << "\r\n";
@@ -64,8 +64,6 @@ std::string	HTTPClient::getChunk(bool first_msg) {
  * @param send_first_msg bool
  */
 void	HTTPClient::writeToClient(const SharedFd &fd, bool send_first_msg) {
-	static bool	isNPHscript = false;
-	
 	if (send_first_msg) // ONLY SEND HEADER
 	{
 		if (message_que_.empty())
@@ -74,10 +72,8 @@ void	HTTPClient::writeToClient(const SharedFd &fd, bool send_first_msg) {
 		message_que_.erase(message_que_.begin());
 		if (response_.empty())
 			return ;
-		if (isCgiRequ_)
-			isNPHscript = cgi_->isNPHscript();
 	}
-	if (!isNPHscript && (response_.length() > WRITESIZE || !send_first_msg)) // IF CHUNKED
+	if (response_.length() > WRITESIZE || !send_first_msg) // IF CHUNKED
 	{
 		std::string write_msg = getChunk(send_first_msg);
 		if (write_msg == "0\r\n\r\n")

@@ -68,14 +68,14 @@ void	printRequest(HTTPRequest request) {
 	std::cerr << "Target: " << request.request_target << "\n";
 	std::cerr << "Host: " << request.host[0] << "\n";
 	std::cerr << "StatusCode: " << request.status_code << "\n";
-	std::cerr <<  "Dir on/off: " << request.dir_list << "\n------------------\n";
+	std::cerr << "Dir on/off: " << request.dir_list << "\n------------------\n";
 }
 
 void	HTTPClient::initCGI() {
 	CGIPipes pipes;
 	pipes.setCallbackFunctions(clientSock_, addToEpoll_cb_, delFromEpoll_cb_);
 	pipes.addNewPipes();
-	cgi_ = std::make_unique<CGI>(request_, pipes, delFromEpoll_cb_);
+	cgi_ = std::make_unique<CGI>(request_, pipes, delFromEpoll_cb_, READSIZE, WRITESIZE);
 }
 
 /// @brief receives input, processes input, starts cgi if required
@@ -93,8 +93,7 @@ void	HTTPClient::handleReceiving(SharedFd fd, uint32_t events) {
 	request_ = parser_.getParsedRequest();
 	printRequest(request_); //TODO: REMOVE
 	responseGenerator_.setConfig(config_);
-	if (!CGI::isCGI(request_))
-	{
+	if (!CGI::isCGI(request_)) {
 		STATE_ = RESPONSE;
 		return ;
 	}

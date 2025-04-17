@@ -37,10 +37,9 @@
 # include "HTTPRequest.hpp"
 # include "HTTPParser.hpp"
 
-# define READSIZE 1000
-# define WRITESIZE 1000
+# define READSIZE 100
+# define WRITESIZE 100
 # define READY true
-# define CHUNKSIZE 500
 
 enum e_state {
 	RECEIVING,

@@ -48,6 +48,9 @@ class CGI {
 		time_t					start_time_;
 		std::function<void(int)>delFromEpoll_cb_;
 		const HTTPRequest&		request_;
+		const size_t			READSIZE_;
+		const size_t			WRITESIZE_;
+		std::string				send_data_;
 
 		// START_CGI
 		std::vector<char*>	createEnv();
@@ -65,7 +68,8 @@ class CGI {
 
 
 	public:
-		explicit CGI(const HTTPRequest& request, CGIPipes pipes, std::function<void(int)> delFromEpoll_cb );
+		explicit CGI(const HTTPRequest& request, CGIPipes pipes, \
+			std::function<void(int)> delFromEpoll_cb, const size_t readsize, const size_t writesize );
 		~CGI( void );
 		
 		std::string					getResponse( void );

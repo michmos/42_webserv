@@ -26,18 +26,22 @@ static bool	isNPH(const std::string& path) {
 
 CGI::CGI(const HTTPRequest &request,
 		 CGIPipes pipes,
-		 std::function<void(int)> delFromEpoll_cb)
+		 std::function<void(int)> delFromEpoll_cb,
+		 const size_t readsize, const size_t writesize)
 	:
 	pipes_(pipes),
 	CGI_STATE_(START_CGI),
 	delFromEpoll_cb_(delFromEpoll_cb),
-	request_(request)
+	request_(request),
+	READSIZE_(readsize),
+	WRITESIZE_(writesize)
 {
 	scriptPath_ = request_.request_target;
 	if (request_.method == "DELETE") {
 		scriptPath_ = "data/www/cgi-bin/nph_CGI_delete.py";
 	}
 	nph_ = isNPH(scriptPath_);
+	send_data_ = "";
 }
 
 CGI::~CGI(void) {}
@@ -192,21 +196,24 @@ void	CGI::execCGI() {
  */
 void	CGI::sendDataToCGI( const SharedFd &fd, uint32_t events ) {
 	ssize_t				write_bytes;
-	const std::string& post_data_ = request_.body;
+	ssize_t				writesize = WRITESIZE_;
 
 	if (fd.get() != pipes_[TO_CGI_WRITE].get() || !(events & EPOLLOUT))
 		return ;
 
-	if (!post_data_.empty())
+	if (!request_.body.empty())
 	{
-		// TODO: add write size and write in loop
-		write_bytes = write(fd.get(), post_data_.c_str(), post_data_.size());
+		if (send_data_.empty())
+			send_data_ = request_.body;
+		if (send_data_.size() < WRITESIZE_)
+			writesize = send_data_.size();
+
+		write_bytes = write(fd.get(), send_data_.c_str(), writesize);
 		if (write_bytes == -1) {
 			throw std::runtime_error("CGI write(): " + std::to_string(fd.get()) + " : " + strerror(errno));
-		} else if (write_bytes != (ssize_t)post_data_.size()) {
-			// post_data_.erase(0, write_bytes);
-			std::cerr << "Could not written everything in once, remaining bytes:" <<  write_bytes << std::endl;
-			// TODO: probably needs to be handled differently
+		} else if (write_bytes < (ssize_t)send_data_.size()) {
+			send_data_.erase(0, write_bytes);
+			std::cerr << "Remaining bytes after CGI write: " <<  write_bytes << std::endl;
 			return ;
 		}
 	}
@@ -279,11 +286,13 @@ bool	CGI::isCGIProcessSuccessful(void) {
 // ####################     RCV_FROM_CGI     #####################
 // ###############################################################
 
-static std::string	receiveBuffer(int fd) {
+static std::string	receiveBuffer(int fd, size_t readsize) {
 	char buffer[1024] = {'\0'};
 	
-	// TODO: replace 1024 by macro
-	ssize_t bytesRead = read(fd, buffer, 1024 - 1);
+	if (readsize >= 1024)
+		readsize = 1024;
+
+	ssize_t bytesRead = read(fd, buffer, readsize);
 	if (bytesRead == -1) {
 		throw std::runtime_error(std::string("CGI read(): ") + strerror(errno));
 	} 
@@ -298,7 +307,7 @@ void	CGI::getResponseFromCGI(const SharedFd &fd, uint32_t events) {
 	if (fd.get() != pipes_[FROM_CGI_READ].get() || !(events & (EPOLLIN | EPOLLHUP)))
 		return ;
 
-	std::string buffer = receiveBuffer(fd.get());
+	std::string buffer = receiveBuffer(fd.get(), READSIZE_);
 	response_ += buffer;
 	bool isFinished = isCGIProcessFinished();
 	bool timedOut = hasCGIProcessTimedOut();

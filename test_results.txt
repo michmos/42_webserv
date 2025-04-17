@@ -35,4 +35,3 @@ Content-Length: 824
 		</footer>
 	</body>
 
-</html>
