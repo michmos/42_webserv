@@ -1,5 +1,7 @@
 #include "../../inc/CGI/CGI.hpp"
+#include "../../inc/HTTP/HTTPClient.hpp"
 #include <csignal>
+#include <cstddef>
 #include <cstring>
 #include <stdexcept>
 #include <string>
@@ -26,15 +28,12 @@ static bool	isNPH(const std::string& path) {
 
 CGI::CGI(const HTTPRequest &request,
 		 CGIPipes pipes,
-		 std::function<void(int)> delFromEpoll_cb,
-		 const size_t readsize, const size_t writesize)
+		 std::function<void(int)> delFromEpoll_cb)
 	:
 	pipes_(pipes),
 	CGI_STATE_(START_CGI),
 	delFromEpoll_cb_(delFromEpoll_cb),
-	request_(request),
-	READSIZE_(readsize),
-	WRITESIZE_(writesize)
+	request_(request)
 {
 	scriptPath_ = request_.request_target;
 	if (request_.method == "DELETE") {
@@ -196,7 +195,6 @@ void	CGI::execCGI() {
  */
 void	CGI::sendDataToCGI( const SharedFd &fd, uint32_t events ) {
 	ssize_t				write_bytes;
-	ssize_t				writesize = WRITESIZE_;
 
 	if (fd.get() != pipes_[TO_CGI_WRITE].get() || !(events & EPOLLOUT))
 		return ;
@@ -205,8 +203,7 @@ void	CGI::sendDataToCGI( const SharedFd &fd, uint32_t events ) {
 	{
 		if (send_data_.empty())
 			send_data_ = request_.body;
-		if (send_data_.size() < WRITESIZE_)
-			writesize = send_data_.size();
+		size_t writesize = (send_data_.size() < WRITESIZE) ? send_data_.size() : WRITESIZE;
 
 		write_bytes = write(fd.get(), send_data_.c_str(), writesize);
 		if (write_bytes == -1) {
@@ -286,13 +283,11 @@ bool	CGI::isCGIProcessSuccessful(void) {
 // ####################     RCV_FROM_CGI     #####################
 // ###############################################################
 
-static std::string	receiveBuffer(int fd, size_t readsize) {
-	char buffer[1024] = {'\0'};
+static std::string	receiveBuffer(int fd) {
+	char buffer[READSIZE + 1] = {'\0'};
 	
-	if (readsize >= 1024)
-		readsize = 1024;
 
-	ssize_t bytesRead = read(fd, buffer, readsize);
+	ssize_t bytesRead = read(fd, buffer, READSIZE);
 	if (bytesRead == -1) {
 		throw std::runtime_error(std::string("CGI read(): ") + strerror(errno));
 	} 
@@ -307,7 +302,7 @@ void	CGI::getResponseFromCGI(const SharedFd &fd, uint32_t events) {
 	if (fd.get() != pipes_[FROM_CGI_READ].get() || !(events & (EPOLLIN | EPOLLHUP)))
 		return ;
 
-	std::string buffer = receiveBuffer(fd.get(), READSIZE_);
+	std::string buffer = receiveBuffer(fd.get());
 	response_ += buffer;
 	bool isFinished = isCGIProcessFinished();
 	bool timedOut = hasCGIProcessTimedOut();

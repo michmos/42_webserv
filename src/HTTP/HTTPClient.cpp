@@ -75,7 +75,7 @@ void	HTTPClient::initCGI() {
 	CGIPipes pipes;
 	pipes.setCallbackFunctions(clientSock_, addToEpoll_cb_, delFromEpoll_cb_);
 	pipes.addNewPipes();
-	cgi_ = std::make_unique<CGI>(request_, pipes, delFromEpoll_cb_, READSIZE, WRITESIZE);
+	cgi_ = std::make_unique<CGI>(request_, pipes, delFromEpoll_cb_);
 }
 
 /// @brief receives input, processes input, starts cgi if required

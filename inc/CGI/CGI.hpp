@@ -40,8 +40,6 @@ class CGI {
 		time_t					start_time_;
 		std::function<void(int)>delFromEpoll_cb_;
 		const HTTPRequest&		request_;
-		const size_t			READSIZE_;
-		const size_t			WRITESIZE_;
 		std::string				send_data_;
 
 		// START_CGI
@@ -61,7 +59,7 @@ class CGI {
 
 	public:
 		explicit CGI(const HTTPRequest& request, CGIPipes pipes, \
-			std::function<void(int)> delFromEpoll_cb, const size_t readsize, const size_t writesize );
+			std::function<void(int)> delFromEpoll_cb);
 		~CGI( void );
 		
 		std::string					getResponse( void );
@@ -76,9 +74,6 @@ class CGI {
 		static bool			isCGIScript( const std::string &path );
 		static bool			isCGI(const HTTPRequest& request );
 		static std::string	getScriptExecutable( const std::string &path );
-		
-
-		
 };
 
 class CGIException : public std::exception {
