@@ -163,8 +163,15 @@ void	Webserv::_delClient(const SharedFd& clientSock) {
 	_clients.erase(it);
 }
 
-void	Webserv::_handleServerReady(SharedFd fd) {
-	SharedFd clientSock = accept4(fd.get(), nullptr, nullptr, SOCK_CLOEXEC);
+void	Webserv::_handleServerReady(const struct epoll_event& ev) {
+	auto fd = Epoll::getEventData(ev).fd;
+
+	if (ev.events & EPOLLHUP || ev.events & EPOLLERR) {
+		_ep.del(fd);
+		return;
+	}
+
+	SharedFd clientSock = accept4(fd, nullptr, nullptr, SOCK_CLOEXEC);
 	if (clientSock == -1)
 		throw std::runtime_error(std::string("accept(): ") + strerror(errno));
 	_addClient(clientSock, fd);
@@ -212,7 +219,7 @@ void	Webserv::eventLoop() {
 			// #endif
 			SharedFd fd = Epoll::getEventData(ev).fd;
 			if (_servers.find(fd) != _servers.end()) {
-				_handleServerReady(fd);
+				_handleServerReady(ev);
 			} else {
 				_handleClientReady(ev);
 			}

@@ -42,6 +42,6 @@ private:
 	void	_addClient(const SharedFd& clientSock, const SharedFd& servSock);
 	void	_delClient(const SharedFd& fd);
 	void	_delPipes(std::vector<int> to_delete);
-	void	_handleServerReady(SharedFd fd);
+	void	_handleServerReady(const struct epoll_event& ev);
 	void	_handleClientReady(const struct epoll_event& ev);
 };
