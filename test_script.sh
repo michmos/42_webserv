@@ -109,10 +109,15 @@ siege -r 1000 -c 1 http://localhost:$PORT/empty.html
 echo ""
 
 echo -e "TEST 15: ${YEL} POST request with short body: ${RES}"
-curl -X POST localhost:$PORT -H "Content-Type: text/plain" --data "body"
+curl -s -i -X POST localhost:$PORT -H "Content-Type: text/plain" --data "body" -o test_results.txt
+echo ""
 
-echo -e "TEST 15: ${YEL} POST request with long body: ${RES}"
-curl -X POST localhost:$PORT -H "Content-Type: text/plain" --data @- << EOF
+echo -e "TEST 16: ${YEL} POST request with short body: ${RES}"
+curl -i -X POST localhost:$PORT/nph_CGI_upload.py -H "Content-Type: text/plain" --data "body"
+echo ""
+
+echo -e "TEST 17: ${YEL} POST request with long body: ${RES}"
+curl -i -X POST localhost:$PORT/nph_CGI_upload.py -H "Content-Type: text/plain" --data @- << EOF
 ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
 ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
 ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
