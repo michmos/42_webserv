@@ -22,7 +22,7 @@ bool	HTTPParser::isHeaderRead(void) {
 /// @brief splits the header and the (first part of) the body;
 void	HTTPParser::splitHeaderBody(void) {
 	size_t header_end;
-	
+
 	header_end = rawRequest_.find("\r\n\r\n");
 	header_ = rawRequest_.substr(0, header_end);
 	if (header_end != rawRequest_.size())
@@ -47,14 +47,14 @@ void	HTTPParser::parseContentLength(std::string str) {
 	size_t		cl_pos;
 	size_t		start;
 	size_t		end;
-	
+
 	cl_pos = str.find("Content-Length:");
 	if (cl_pos == std::string::npos)
 		throw InvalidRequestException("Invalid content length");
 	str_nr = str.substr(cl_pos + 15);
 	start = str_nr.find_first_not_of(" \n\r\t");
 	end = str_nr.find_last_not_of(" \n\r\t");
-	if (start == std::string::npos || start == end)
+	if (start == std::string::npos)
 		throw InvalidRequestException("Invalid content length");
 	try
 	{
@@ -64,7 +64,7 @@ void	HTTPParser::parseContentLength(std::string str) {
 	{
 		throw InvalidRequestException("Invalid content length");
 	}
-} 
+}
 
 /**
  * @brief header needs a method, target or protocol
@@ -121,8 +121,8 @@ void	HTTPParser::parseHTTPline(const std::string &str) {
 static std::string trimString(const std::string &str) {
 	size_t	start;
 	size_t	end;
-	
-	if (str.empty()) 
+
+	if (str.empty())
 		return ("");
 	start = str.find_first_not_of(' ');
 	end = str.find_last_not_of(' ');
@@ -215,7 +215,7 @@ void	HTTPParser::parseRequest(void) {
 	std::string			str;
 
 	while (std::getline(is, str))
-	{	
+	{
 		if (str.find("Host:") != std::string::npos)
 			result_.host = getHost(str);
 		else if (result_.method.empty() && str.find("HTTP/") != std::string::npos)
@@ -355,7 +355,7 @@ static bool	isAccesseble(const std::string &path, int &status_code) {
 }
 
 std::string	HTTPParser::handleRootDir(const Config *config) {
-	if (config->getAutoindex("/") == false) // AUTOINDEX OFF, so '/' returns 403 
+	if (config->getAutoindex("/") == false) // AUTOINDEX OFF, so '/' returns 403
 	{
 		result_.status_code = 403;
 		std::cerr << "auto index off, request / so statuscode 403\n";
@@ -378,7 +378,7 @@ std::string	HTTPParser::handleRootDir(const Config *config) {
 		{
 			std::string fullpath = addDir_Folder(dir, index);
 			if (stat((fullpath).c_str(), &statbuf) == 0)
-			{ 
+			{
 				if (S_ISDIR(statbuf.st_mode))
 					result_.dir_list = true;
 				else if (isAccesseble(fullpath, result_.status_code)) // TODO: typo
@@ -393,7 +393,7 @@ std::string	HTTPParser::handleRootDir(const Config *config) {
 
 static const std::vector<std::string>	getSubdirectories(const std::vector<std::string> &roots) {
 	std::vector<std::string>	subdir;
-	
+
 	for (const std::string &root: roots)
 	{
 		subdir.push_back(root);
@@ -404,7 +404,7 @@ static const std::vector<std::string>	getSubdirectories(const std::vector<std::s
 #include <filesystem>
 /**
  * @brief checks for paths (redir, root, access)
- * @param config pointer to Config 
+ * @param config pointer to Config
  */
 std::string	HTTPParser::generatePath(const Config *config) {
 	struct stat	statbuf;
