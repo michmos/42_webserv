@@ -103,3 +103,18 @@ echo -e "TEST 14: ${YEL} GET localhost:$PORT/notexistingfile -> status 404: ${RE
 curl -s --http1.1 -G localhost:$PORT/notexistingfile -i -o test_results.txt
 head -n 1 test_results.txt | grep -q "404" && echo -e "${GRE} Status is 404 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
 echo ""
+
+echo -e "TEST 15: ${YEL} Stresstest with siege -r 1000 -c 1 http://localhost:$PORT/empty.html: ${RES}"
+siege -r 1000 -c 1 http://localhost:$PORT/empty.html
+echo ""
+
+echo -e "TEST 15: ${YEL} POST request with short body: ${RES}"
+curl -X POST localhost:$PORT -H "Content-Type: text/plain" --data "body"
+
+echo -e "TEST 15: ${YEL} POST request with long body: ${RES}"
+curl -X POST localhost:$PORT -H "Content-Type: text/plain" --data @- << EOF
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+EOF
