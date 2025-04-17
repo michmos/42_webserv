@@ -17,14 +17,6 @@
 # define CGI_ERR_RESPONSE "HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\n\r\n<html>\n\
 	<head><title>Server Error</title></head><body><h1>500: Internal Server Error</h1><h2>Something went wrong</h2></body></html>";
 
-#ifndef READ
-# define READ 0
-#endif
-
-#ifndef WRITE
-# define WRITE 1
-#endif
-
 # define TIMEOUT 3
 
 enum e_cgi_state {
