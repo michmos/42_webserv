@@ -297,8 +297,6 @@ static std::string	receiveBuffer(int fd) {
  * if statuscode is not set it wil generate a Internal Server Error
  */
 void	CGI::getResponseFromCGI(const SharedFd &fd, uint32_t events) {
-	int status_code;
-
 	if (fd.get() != pipes_[FROM_CGI_READ].get() || !(events & (EPOLLIN | EPOLLHUP)))
 		return ;
 
@@ -310,12 +308,12 @@ void	CGI::getResponseFromCGI(const SharedFd &fd, uint32_t events) {
 		return;
 	}
 	else if (isFinished && !isCGIProcessSuccessful()) {
-		std::cerr << "exit code cgi: " << WEXITSTATUS(status_) << std::endl;
 		response_ = CGI_ERR_RESPONSE;
-		status_code = getStatusCodeFromResponse(); // TODO: doesn't make sense in this order - first overwriting response and then getting status code from it
-		std::cerr << "status_code; " << status_code << std::endl;
+		
 		// TODO: compare with configfile error pages.
+		// -> if error it means that there is no message back from cgi so status code 500, check config after this
 	} else if (timedOut) {
+		// -> timeout gives also 500 back otherwise the browser is repeating the request over and over
 		std::cerr << "TIMEOUT, shutting down CGI...\n";
 		timeout_ = true;
 		if (kill(pid_, SIGKILL) == -1) // TODO: maybe use sigterm instead
@@ -334,15 +332,13 @@ void	CGI::getResponseFromCGI(const SharedFd &fd, uint32_t events) {
 int	CGI::getStatusCodeFromResponse(void) {
 	std::regex	status_code_regex(R"(HTTP/1.1 (\d+))");
 	std::smatch	match;
-	int			status_code = 0;
+	int			status_code = 500;
 
 	if (!response_.empty() && std::regex_search(response_, match, status_code_regex))
 	{
 		std::string to_string = match[1];
 		if (to_string.size() < 9)
 			status_code = std::stoi(match[1]);
-		else
-			status_code = 500;
 	}
 	else
 		std::cerr << "Error: No response or statuscode is found in response" << std::endl;
