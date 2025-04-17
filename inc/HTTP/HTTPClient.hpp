@@ -68,7 +68,7 @@ class HTTPClient {
 			std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb,
 			std::function<void(const SharedFd&)> delFromEpoll_cd
 		);
-		HTTPClient(const HTTPClient &other);
+		HTTPClient(const HTTPClient &&other);
 		~HTTPClient( void );
 
 		void	handle( const epoll_event &event );

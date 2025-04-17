@@ -132,7 +132,6 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 	
 	_ep.add(clientSock.get(),  EPOLLIN | EPOLLOUT);
 	_clients.emplace(
-		std::make_pair(
 		clientSock,
 		HTTPClient (
 			clientSock,
@@ -149,7 +148,7 @@ void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
 			[this](const SharedFd& fd) {
 				_ep.del(fd.get());
 			}
-		))
+		)
 	);
 }
 

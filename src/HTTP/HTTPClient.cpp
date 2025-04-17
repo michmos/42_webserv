@@ -18,17 +18,16 @@ HTTPClient::HTTPClient(
 	response_ = "";
 }
 
-// TODO: why do we need copy constructor?
-HTTPClient::HTTPClient(const HTTPClient& other) :
-	STATE_(other.STATE_),
-	clientSock_(other.clientSock_),
-	serverSock_(other.serverSock_),
-	responseGenerator_(other.responseGenerator_),
-	config_(other.config_),
-	isCgiRequ_(other.isCgiRequ_),
-	addToEpoll_cb_(other.addToEpoll_cb_),
-	getConfig_cb_(other.getConfig_cb_),
-	delFromEpoll_cb_(other.delFromEpoll_cb_)
+HTTPClient::HTTPClient(const HTTPClient&& other) :
+	STATE_(std::move(other.STATE_)),
+	clientSock_(std::move(other.clientSock_)),
+	serverSock_(std::move(other.serverSock_)),
+	responseGenerator_(std::move(other.responseGenerator_)),
+	config_(std::move(other.config_)),
+	isCgiRequ_(std::move(other.isCgiRequ_)),
+	addToEpoll_cb_(std::move(other.addToEpoll_cb_)),
+	getConfig_cb_(std::move(other.getConfig_cb_)),
+	delFromEpoll_cb_(std::move(other.delFromEpoll_cb_))
 {
 }
 
