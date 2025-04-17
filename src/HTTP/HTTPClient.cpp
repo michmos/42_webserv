@@ -52,10 +52,10 @@ void	HTTPClient::handle(const epoll_event &event) {
 			handleReceiving(fd, event.events);
 			break;
 		case PROCESS_CGI:
-			handleCGI(fd, event.events); // TODO: why only checking fd and not flags?
+			handleCGI(fd, event.events);
 			break;
 		case RESPONSE:
-			handleResponding(fd, event.events);  // TODO: why only checking fd and not flags?
+			handleResponding(fd, event.events);
 			break;
 		case DONE:
 			return ;
