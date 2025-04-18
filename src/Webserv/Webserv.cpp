@@ -97,15 +97,19 @@ Webserv::Webserv(const std::string& confPath) {
 	std::unordered_set<int>	sockets;
 
 	for (auto& config : ConfigParser(confPath).getConfigs()) {
-		SharedFd serverFd = resolveSocket(config.getHost(), std::to_string(config.getPort()));
+		for (auto hostPorts : config.getHostPort()) {
+			for (auto port : hostPorts.second) {
+				SharedFd serverFd = resolveSocket(hostPorts.first, std::to_string(port));
 
-		// if new - add to epoll
-		if (sockets.find(serverFd.get()) == sockets.end()) {
-			sockets.insert(serverFd.get());
-			_ep.add(serverFd.get(), EPOLLIN);
+				// if new - add to epoll
+				if (sockets.find(serverFd.get()) == sockets.end()) {
+					sockets.insert(serverFd.get());
+					_ep.add(serverFd.get(), EPOLLIN);
+				}
+				// map config to fd
+				_servers[serverFd].push_back(config);
+			}
 		}
-		// map config to fd
-		_servers[serverFd].push_back(config);
 	}
 }
 
