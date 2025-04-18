@@ -27,6 +27,12 @@ static int	createBindListen(struct addrinfo* info) {
 		return (-1);
 	}
 
+	int reuse = 1;
+	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
+		close(fd);
+		return (-1);
+	}
+
 	if (bind(fd, info->ai_addr, sizeof(struct addrinfo)) == -1) {
 		close(fd);
 		return (-1);
