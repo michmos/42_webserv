@@ -104,16 +104,11 @@ void	HTTPClient::handleReceiving(SharedFd fd, uint32_t events) {
 
 /// @brief redirects epoll event to cgi object to handle it
 void	HTTPClient::handleCGI(SharedFd fd, uint32_t events) {
-	if (fd == clientSock_.get()) {
-		return ;
-	}
-
 	cgi_->handle(fd, events);
 	if (cgi_->isDone()) {
 		STATE_ = RESPONSE;
 		return ;
 	}
-	STATE_ = PROCESS_CGI;
 }
 
 /// @brief regenerates response and add this one to the que.
@@ -144,7 +139,7 @@ void	HTTPClient::handleResponding(SharedFd fd, uint32_t events) {
 
 /// @brief checks if cgi header has to be rewritten and add response to que.
 void	HTTPClient::cgiResponse(void) {
-	if (cgi_->isTimeout() || cgi_->getStatusCode() == 500)
+	if (cgi_->timedOut() || cgi_->getStatusCode() == 500)
 	{
 		std::cerr << "is cgi timeout or status code == 500...\n";
 		HTTPRequest	cgi_error_request;

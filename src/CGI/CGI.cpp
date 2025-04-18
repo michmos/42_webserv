@@ -33,7 +33,9 @@ CGI::CGI(const HTTPRequest &request,
 	pipes_(pipes),
 	CGI_STATE_(START_CGI),
 	delFromEpoll_cb_(delFromEpoll_cb),
-	request_(request)
+	request_(request),
+	timeout_(false),
+	finished_(false)
 {
 	scriptPath_ = request_.request_target;
 	if (request_.method == "DELETE") {
@@ -49,11 +51,15 @@ std::string CGI::getResponse(void) { return (response_); }
 
 int	CGI::getStatusCode( void ) { return (status_); };
 
-bool	CGI::isDone(void) { return (CGI_STATE_ == CRT_RSPNS_CGI); }
-
-bool	CGI::isTimeout(void) { return (timeout_); }
+bool	CGI::isDone(void) { return (CGI_STATE_ == CGI_DONE); }
 
 void	CGI::handle(const SharedFd &fd, uint32_t events) {
+	if (CGI_STATE_ != START_CGI && CGI_STATE_ != CGI_DONE && timedOut()) {
+		handleTimeOut();
+		CGI_STATE_ = CGI_DONE;
+		return;
+	}
+
 	switch (CGI_STATE_) {
 		case START_CGI:
 			execCGI();
@@ -62,13 +68,8 @@ void	CGI::handle(const SharedFd &fd, uint32_t events) {
 			sendDataToCGI(fd, events);
 			return ;
 		case RCV_FROM_CGI:
-			getResponseFromCGI(fd, events);
-			if (CGI_STATE_ == RCV_FROM_CGI)
-				return ;
-			[[fallthrough]];
-		case CRT_RSPNS_CGI:
-			if (!isNPHscript())
-				rewriteResonseFromCGI();
+			handleCGIResponse(fd, events);
+			return;
 		default:
 			return ;
 	}
@@ -256,15 +257,34 @@ std::vector<char*> CGI::createEnv() {
 bool	CGI::isCGIProcessFinished(void) {
 	pid_t	result;
 
-	// check finished
-	result = waitpid(pid_, &status_, WNOHANG);
-	if (result == pid_)
+	if (finished_)
 		return (true);
+
+	result = waitpid(pid_, &status_, WNOHANG);
+	if (result == pid_) {
+		finished_ = true;
+		return (true);
+	}
 	return (false);
 }
 
-bool	CGI::hasCGIProcessTimedOut(void) {
-	timeout_ = false;
+void	CGI::handleTimeOut() {
+	std::cerr << "TIMEOUT, shutting down CGI...\n";
+	timeout_ = true;
+	status_ = 500;
+	finished_ = true;
+	if (!isCGIProcessFinished()) {
+		if (kill(pid_, SIGKILL) == -1) // TODO: maybe use sigterm instead
+			throw std::runtime_error("kill() " + std::to_string(pid_) + " : " + strerror(errno));
+	}
+}
+
+bool	CGI::timedOut(void) {
+	if (timeout_)
+		return (true);
+	if (isCGIProcessFinished())
+		return (false);
+
 	time_t current_time = time(NULL);
 	if (current_time - start_time_ > TIMEOUT) {
 		timeout_ = true;
@@ -304,24 +324,26 @@ void	CGI::getResponseFromCGI(const SharedFd &fd, uint32_t events) {
 
 	std::string buffer = receiveBuffer(fd.get());
 	response_ += buffer;
-	bool isFinished = isCGIProcessFinished();
-	bool timedOut = hasCGIProcessTimedOut();
-	if (!isFinished && !timedOut) {
+	if (!isCGIProcessFinished()) {
 		return;
 	}
-	else if (isFinished && !isCGIProcessSuccessful()) {
+
+	if (!isCGIProcessSuccessful()) {
 		response_ = CGI_ERR_RESPONSE;
 		status_ = 500;
-	} else if (timedOut) {
-		std::cerr << "TIMEOUT, shutting down CGI...\n";
-		timeout_ = true;
-		status_ = 500;
-		if (kill(pid_, SIGKILL) == -1) // TODO: maybe use sigterm instead
-			throw std::runtime_error("kill() " + std::to_string(pid_) + " : " + strerror(errno));
-	}
+	}	
 	delFromEpoll_cb_(pipes_[FROM_CGI_READ].get());
 	pipes_[FROM_CGI_READ] = -1;
-	CGI_STATE_ = CRT_RSPNS_CGI;
+	CGI_STATE_ = CGI_DONE;
+}
+
+void	CGI::handleCGIResponse(const SharedFd &fd, uint32_t events) {
+	getResponseFromCGI(fd, events);
+	if (CGI_STATE_ == RCV_FROM_CGI)
+		return ;
+	if (!isNPHscript())
+		rewriteResonseFromCGI();
+	CGI_STATE_ = CGI_DONE;
 }
 
 
