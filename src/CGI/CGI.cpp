@@ -200,6 +200,10 @@ void	CGI::sendDataToCGI( const SharedFd &fd, uint32_t events ) {
 	if (fd.get() != pipes_[TO_CGI_WRITE].get() || !(events & EPOLLOUT))
 		return ;
 
+	if (events & (EPOLLHUP | EPOLLERR)) {
+		throw ClientException("sendDataToCGI(): received EPOLLHUP or EPOLLERR on fd: " + std::to_string(fd.get()));
+	}
+
 	if (!request_.body.empty())
 	{
 		if (send_data_.empty())
@@ -321,6 +325,10 @@ static std::string	receiveBuffer(int fd) {
 void	CGI::getResponseFromCGI(const SharedFd &fd, uint32_t events) {
 	if (fd.get() != pipes_[FROM_CGI_READ].get() || !(events & (EPOLLIN | EPOLLHUP)))
 		return ;
+
+	if (events & EPOLLERR) {
+		throw ClientException("getResponseFromCGI(): received EPOLLERR on fd: " + std::to_string(fd.get()));
+	}
 
 	std::string buffer = receiveBuffer(fd.get());
 	response_ += buffer;
