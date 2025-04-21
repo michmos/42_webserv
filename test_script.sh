@@ -104,22 +104,42 @@ curl -s --http1.1 -G localhost:$PORT/notexistingfile -i -o test_results.txt
 head -n 1 test_results.txt | grep -q "404" && echo -e "${GRE} Status is 404 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
 echo ""
 
+echo "" > test_results.txt
 echo -e "TEST 15: ${YEL} Stresstest with siege -r 1000 -c 1 http://localhost:$PORT/empty.html: ${RES}"
 siege -r 1000 -c 1 http://localhost:$PORT/empty.html
 echo ""
 
-echo -e "TEST 15: ${YEL} POST request with short body: ${RES}"
-curl -s -i -X POST localhost:$PORT -H "Content-Type: text/plain" --data "body" -o test_results.txt
+# Content type is not accepted: application/octet-stream, only no multipart/form-data
+echo "" > test_results.txt
+echo -e "TEST 15: ${YEL} POST request with short body to upload: ${RES}"
+curl -s -i localhost:$PORT/nph_CGI_upload.py -H "Content-Type: text/plain" -o test_results.txt --data "body" 
+head -n 1 test_results.txt | grep -q "400" && echo -e "${GRE} Status is 400 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
 echo ""
 
-echo -e "TEST 16: ${YEL} POST request with short body: ${RES}"
-curl -i -X POST localhost:$PORT/nph_CGI_upload.py -H "Content-Type: text/plain" --data "body"
-echo ""
-
-echo -e "TEST 17: ${YEL} POST request with long body: ${RES}"
-curl -i -X POST localhost:$PORT/nph_CGI_upload.py -H "Content-Type: text/plain" --data @- << EOF
+echo "" > test_results.txt
+echo -e "TEST 16: ${YEL} POST request with long body to upload: ${RES}"
+curl -s -i -X POST localhost:$PORT/nph_CGI_upload.py -H "Content-Type: text/plain" -o test_results.txt --data @- << EOF
 ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
 ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
 ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
 ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
 EOF
+head -n 1 test_results.txt | grep -q "400" && echo -e "${GRE} Status is 400 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
+echo ""
+
+echo "" > test_results.txt
+echo -e "TEST 17: ${YEL} POST request with short body to root: ${RES}"
+curl -s -i localhost:$PORT -H "Content-Type: text/plain" -o test_results.txt --data "body" 
+head -n 1 test_results.txt | grep -q "200" && echo -e "${GRE} Status is 200 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
+echo ""
+
+echo "" > test_results.txt
+echo -e "TEST 18: ${YEL} POST request with long body to root: ${RES}"
+curl -s -i -X POST localhost:$PORT -H "Content-Type: text/plain" -o test_results.txt --data @- << EOF
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+EOF
+head -n 1 test_results.txt | grep -q "200" && echo -e "${GRE} Status is 200 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
+echo ""
