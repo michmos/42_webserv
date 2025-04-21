@@ -139,12 +139,18 @@ void	HTTPClient::handleResponding(SharedFd fd, uint32_t events) {
 
 /// @brief checks if cgi header has to be rewritten and add response to que.
 void	HTTPClient::cgiResponse(void) {
-	if (cgi_->timedOut() || cgi_->getStatusCode() == 500)
+	int	status =  cgi_->getStatusCode();
+
+	if (cgi_->timedOut() || status >= 400)
 	{
-		std::cerr << "is cgi timeout or status code == 500...\n";
 		HTTPRequest	cgi_error_request;
-		cgi_error_request.request_target = "CGI_error";
-		cgi_error_request.status_code = 500;
+		if (status >= 500)
+		cgi_error_request.request_target = "Server Error";
+		else if (status >= 400)
+		cgi_error_request.request_target = "Client Error";
+		std::cerr << "is cgi timeout or " << cgi_error_request.request_target << ": " << status << std::endl;
+		cgi_error_request.status_code = status;
+		cgi_error_request.subdir.push_back("data/www/");
 		responseGenerator_.generateResponse(cgi_error_request);
 		message_que_.push_back(responseGenerator_.loadResponse());
 

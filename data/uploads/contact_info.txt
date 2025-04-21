@@ -1,11 +1,1 @@
 name = Testname Doe; email = test@email.com; message = Hello!; 
-name = Testname Doe; email = test@email.com; message = Hello!; 
-name = Testname Doe; email = test@email.com; message = Hello!; 
-name = Testname Doe; email = test@email.com; message = Hello!; 
-name = Testname Doe; email = test@email.com; message = Hello!; 
-name = Testname Doe; email = test@email.com; message = Hello!; 
-name = Testname Doe; email = test@email.com; message = Hello!; 
-name = Testname Doe; email = test@email.com; message = Hello!; 
-name = Testname Doe; email = test@email.com; message = Hello!; 
-name = Testname Doe; email = test@email.com; message = Hello!; 
-name = Testname Doe; email = test@email.com; message = Hello!; 

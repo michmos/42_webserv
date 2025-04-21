@@ -32,10 +32,13 @@ void	HTTPResponse::generateResponse(const HTTPRequest request) {
 	}
 	if (!request.invalidRequest && request.status_code == 200)
 		filename_ = request.request_target;
-	else if (isRedirectStatusCode(request.status_code)) // redirect
+	else if (isRedirectStatusCode(request.status_code))
 		header_ = request.body;
 	else if (isCustomErrorPages(filename, request.status_code))
+	{
 		filename_ = searchErrorPage(request.subdir, filename);
+		std::cerr << "is customerrorpage" << std::endl;
+	}
 	else
 		status_code_ = request.status_code;
 }
@@ -66,6 +69,7 @@ std::string	HTTPResponse::searchErrorPage(const std::vector<std::string> &dir, c
 	for (const std::string &path : dir)
 	{
 		std::string fullpath = path + errorpage;
+		std::cerr << "path: " << path << " page: " << errorpage << std::endl;
 		if (stat(fullpath.c_str(), &statbuf) == 0)
 		{
 			if (access(fullpath.c_str(), F_OK) != -1)
@@ -76,6 +80,7 @@ std::string	HTTPResponse::searchErrorPage(const std::vector<std::string> &dir, c
 					status_code_ = 403;
 					return "";
 				}
+				std::cerr << "fullpath: " << fullpath << std::endl;
 				return (fullpath);
 			}
 			break ;
@@ -89,6 +94,8 @@ bool	HTTPResponse::isCustomErrorPages(std::string &filename, int status_code) {
 	std::string error_page = config_->getErrorPage(status_code);
 	if (error_page.empty())
 		return (false);
+	
+	std::cerr << "status code: " << status_code << " filename: " << error_page << std::endl;
 	filename = error_page;
 	status_code_ = status_code;
 	return (true);
@@ -193,11 +200,12 @@ void	HTTPResponse::getHttpStatusMessages(void) {
 		httpStatusMessages_ = it->second;
 	else
 		httpStatusMessages_ = "500 Internal Server Error";
+
 	if (status_code_ != 200 && status_code_ != 404 && !body_.empty()) // Do we want this?
 	{
-		size_t index = body_.find("<h1>Error 404: Not found</h1>");
-		if (index != body_.size())
-			body_.replace(index, 30, "Error " + httpStatusMessages_);
+		size_t index = body_.find("Error 404 Not found");
+		if (index != std::string::npos)
+			body_.replace(index, 19, "Error " + httpStatusMessages_);
 		content_type_ = "text/html";
 	}
 }

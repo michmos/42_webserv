@@ -36,7 +36,10 @@ void	CGI::getResponseFromCGI(const SharedFd &fd, uint32_t events) {
 	if (!isCGIProcessSuccessful()) {
 		response_ = CGI_ERR_RESPONSE;
 		status_ = 500;
-	}	
+	}
+	else
+		status_ = getStatusCodeFromResponse();
+
 	delFromEpoll_cb_(pipes_[FROM_CGI_READ].get());
 	pipes_[FROM_CGI_READ] = -1;
 	CGI_STATE_ = CGI_DONE;
