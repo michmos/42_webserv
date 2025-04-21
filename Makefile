@@ -20,8 +20,11 @@ SRC			:= $(SRCDIR)/main.cpp \
 				$(SRCDIR)/HTTP/ClientCommunication.cpp \
 				$(SRCDIR)/Config/Config.cpp \
 				$(SRCDIR)/Config/ConfigParser.cpp \
-				$(SRCDIR)/CGI/CGI.cpp \
-				$(SRCDIR)/CGI/CGIPipes.cpp
+				$(SRCDIR)/CGI/CGIPipes.cpp \
+				$(SRCDIR)/CGI/CGIResponse.cpp \
+				$(SRCDIR)/CGI/CGISendData.cpp \
+				$(SRCDIR)/CGI/CGIStart.cpp \
+				$(SRCDIR)/CGI/CGI.cpp
 
 INCL        :=   -I./inc
 

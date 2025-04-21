@@ -5,6 +5,10 @@
 # include <vector>
 # include <regex>
 # include <cassert>
+# include <cstddef>
+# include <cstring>
+# include <stdexcept>
+# include <string>
 
 # include <unistd.h>
 # include <sys/wait.h>
@@ -12,7 +16,7 @@
 
 # include "../HTTP/HTTPRequest.hpp"
 # include "../Webserv/SharedFd.hpp"
-#include "CGIPipes.hpp"
+# include "CGIPipes.hpp"
 
 # define CGI_ERR_RESPONSE "HTTP/1.1 500 Internal Server Error\nContent-Type: text/html\n\r\n<html>\n\
 	<head><title>Server Error</title></head><body><h1>500: Internal Server Error</h1><h2>Something went wrong</h2></body></html>";

@@ -52,7 +52,7 @@ std::string	HTTPClient::getChunk(bool first_msg) {
 
 	chunk_os << std::hex << chunksize << "\r\n";
 	chunk_os << response_.substr(0, chunksize) << "\r\n";
-	chunk_response = std::move(chunk_os.str());
+	chunk_response = chunk_os.str();
 	response_.erase(0,chunksize);
 	return (chunk_response);
 }
