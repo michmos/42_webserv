@@ -46,19 +46,12 @@ class Parser:
 	# With POST request, reads the input from STDIN, extract header and body
 	def parse_stdin_data( self ) -> None:
 		self.body = b""
-		start_time = time.time()
 		length = int(self.content_length)
-		i = 0
 		while len(self.body) < length:
 			chunk = sys.stdin.buffer.read(length - len(self.body))
 			if not chunk:
 				break
 			self.body += chunk
-			i += 1
-			if i % 20 == 0 and time.time() - start_time > 5:
-				self.status_code = 404
-				print("Error: timeout", file=sys.stderr)
-				break
 
 	def get_field_information( self ) -> None:
 		if isinstance(self.body, bytes):
