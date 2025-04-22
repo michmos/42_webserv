@@ -6,16 +6,17 @@ HTTPClient::HTTPClient(
 	std::function<void(struct epoll_event, const SharedFd&)>  addToEpoll_cb,
 	std::function<const Config* (const SharedFd&, const std::string&)> getConfig_cb,
 	std::function<void(const SharedFd&)> delFromEpoll_cb
-	) : clientSock_(clientFd),
+	) : STATE_(RECEIVING),
+		clientSock_(clientFd),
 		serverSock_(serverFd),
 		responseGenerator_(),
-		isCgiRequ_(false),
+		config_(NULL),
+		response_(""),
+		is_cgi_requ_(false),
+		first_response_(true),
 		addToEpoll_cb_(addToEpoll_cb),
 		getConfig_cb_(getConfig_cb),
 		delFromEpoll_cb_(delFromEpoll_cb) {
-	STATE_ = RECEIVING;
-	config_ = NULL;
-	response_ = "";
 }
 
 HTTPClient::HTTPClient(const HTTPClient&& other) :
@@ -24,7 +25,7 @@ HTTPClient::HTTPClient(const HTTPClient&& other) :
 	serverSock_(std::move(other.serverSock_)),
 	responseGenerator_(std::move(other.responseGenerator_)),
 	config_(std::move(other.config_)),
-	isCgiRequ_(std::move(other.isCgiRequ_)),
+	is_cgi_requ_(std::move(other.is_cgi_requ_)),
 	addToEpoll_cb_(std::move(other.addToEpoll_cb_)),
 	getConfig_cb_(std::move(other.getConfig_cb_)),
 	delFromEpoll_cb_(std::move(other.delFromEpoll_cb_))
@@ -83,21 +84,21 @@ void	HTTPClient::handleReceiving(SharedFd fd, uint32_t events) {
 	if (fd != clientSock_.get() || !(events & EPOLLIN)) {
 		return ;
 	}
-
 	std::string data = readFrom(fd.get());
 	parser_.processData(data, this);
 	if (!parser_.isDone()) {
 		return ;
 	}
-
+	
 	request_ = parser_.getParsedRequest();
 	printRequest(request_); //TODO: REMOVE
 	responseGenerator_.setConfig(config_);
+	first_response_ = true;
 	if (!CGI::isCGI(request_)) {
 		STATE_ = RESPONSE;
 		return ;
 	}
-	isCgiRequ_  = true;
+	is_cgi_requ_ = true;
 	initCGI();
 	STATE_ = PROCESS_CGI;
 }
@@ -113,28 +114,26 @@ void	HTTPClient::handleCGI(SharedFd fd, uint32_t events) {
 
 /// @brief regenerates response and add this one to the que.
 void	HTTPClient::handleResponding(SharedFd fd, uint32_t events) {
-	static bool	send_first_msg = true ;
-
 	if (fd != clientSock_.get() || !(events & EPOLLOUT)) {
 		return ;
 	}
 
-	if (send_first_msg)
+	if (first_response_)
 	{
-		if (isCgiRequ_)
+		if (is_cgi_requ_)
 			cgiResponse();
 		else
 		{
 			responseGenerator_.generateResponse(request_);
 			message_que_.push_back(responseGenerator_.loadResponse());
 		}
-		writeToClient(fd, send_first_msg);
-		send_first_msg = false;
+		writeToClient(fd);
+		first_response_ = false;
 	}
 	else
-		writeToClient(fd, send_first_msg);
+		writeToClient(fd);
 	if (STATE_ == DONE)
-		send_first_msg = true;
+		first_response_ = true;
 }
 
 /// @brief checks if cgi header has to be rewritten and add response to que.

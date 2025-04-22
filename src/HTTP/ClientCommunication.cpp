@@ -37,15 +37,14 @@ std::string	HTTPClient::getHeaderInclTransferEncoding() {
 
 /**
  * @brief subtract header if first_msg, else adds hexsize and makes chunk
- * @param first_msg bool if first msg has to be send
  * @return string with chunk
  */
-std::string	HTTPClient::getChunk(bool first_msg) {
+std::string	HTTPClient::getChunk(void) {
 	size_t				chunksize;
 	std::ostringstream	chunk_os;
-	std::string			chunk_response;
+	std::string			chunk_response = "";
 
-	if (first_msg)
+	if (first_response_)
 		return (getHeaderInclTransferEncoding());
 
 	if (WRITESIZE < response_.length())
@@ -53,9 +52,12 @@ std::string	HTTPClient::getChunk(bool first_msg) {
 	else
 		chunksize = response_.length();
 
-	chunk_os << std::hex << chunksize << "\r\n";
-	chunk_os << response_.substr(0, chunksize) << "\r\n";
-	chunk_response = chunk_os.str();
+	if (chunksize != 0)
+	{
+		chunk_os << std::hex << chunksize << "\r\n";
+		chunk_os << response_.substr(0, chunksize) << "\r\n";
+		chunk_response = chunk_os.str();
+	}
 	response_.erase(0,chunksize);
 	if (response_.empty())
 	{
@@ -68,10 +70,9 @@ std::string	HTTPClient::getChunk(bool first_msg) {
 /**
  * @brief writes response to Client (in chunks or not)
  * @param fd SharedFd from Client
- * @param send_first_msg bool
  */
-void	HTTPClient::writeToClient(const SharedFd &fd, bool send_first_msg) {
-	if (send_first_msg) // ONLY SEND HEADER
+void	HTTPClient::writeToClient(const SharedFd &fd) {
+	if (first_response_) // ONLY SEND HEADER
 	{
 		if (message_que_.empty())
 			return ;
@@ -80,9 +81,10 @@ void	HTTPClient::writeToClient(const SharedFd &fd, bool send_first_msg) {
 		if (response_.empty())
 			return ;
 	}
-	if (response_.length() > WRITESIZE || !send_first_msg) // IF CHUNKED
+
+	if (response_.length() > WRITESIZE || !first_response_) // IF CHUNKED
 	{
-		std::string write_msg = getChunk(send_first_msg);
+		std::string write_msg = getChunk();
 		writeToFd(fd, write_msg);
 	}
 	else // ALL IN ONCE

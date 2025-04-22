@@ -37,8 +37,8 @@
 # include "HTTPRequest.hpp"
 # include "HTTPParser.hpp"
 
-# define READSIZE 100
-# define WRITESIZE 100
+# define READSIZE 500
+# define WRITESIZE 500
 # define READY true
 
 enum e_state {
@@ -74,8 +74,8 @@ class HTTPClient {
 
 		//ClientReadWrite
 		void		writeToFd( const SharedFd &fd, const std::string &response );
-		void		writeToClient( const SharedFd &fd, bool send_first_msg);
-		std::string	getChunk( bool first_msg );
+		void		writeToClient( const SharedFd &fd);
+		std::string	getChunk( void );
 		std::string	getHeaderInclTransferEncoding( void );
 		std::string	readFrom( int fd );
 
@@ -95,7 +95,8 @@ class HTTPClient {
 		HTTPResponse				responseGenerator_;
 		const Config				*config_;
 		std::string					response_;
-		bool						isCgiRequ_;
+		bool						is_cgi_requ_;
+		bool						first_response_;
 
 		std::function<void(struct epoll_event, const SharedFd&)> addToEpoll_cb_;
 		std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb_;
