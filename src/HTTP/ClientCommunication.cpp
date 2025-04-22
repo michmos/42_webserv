@@ -32,7 +32,6 @@ std::string	HTTPClient::getHeaderInclTransferEncoding() {
 		return ("");
 	header = response_.substr(0,split) + "\r\nTransfer-Encoding: chunked\r\n\r\n";
 	response_.erase(0, split + 4);
-	std::cerr << "header: " << header << std::endl;
 	return (header);
 }
 
@@ -53,13 +52,16 @@ std::string	HTTPClient::getChunk(bool first_msg) {
 		chunksize = WRITESIZE;
 	else
 		chunksize = response_.length();
+
 	chunk_os << std::hex << chunksize << "\r\n";
-	if (chunksize == 0)
-		chunk_os << "\r\n";
-	else
-		chunk_os << response_.substr(0, chunksize) << "\r\n";
+	chunk_os << response_.substr(0, chunksize) << "\r\n";
 	chunk_response = chunk_os.str();
 	response_.erase(0,chunksize);
+	if (response_.empty())
+	{
+		chunk_response += "0\r\n\r\n";
+		STATE_ = DONE;
+	}
 	return (chunk_response);
 }
 
@@ -81,8 +83,6 @@ void	HTTPClient::writeToClient(const SharedFd &fd, bool send_first_msg) {
 	if (response_.length() > WRITESIZE || !send_first_msg) // IF CHUNKED
 	{
 		std::string write_msg = getChunk(send_first_msg);
-		if (write_msg == TERMINATOR_CHUNK)
-			STATE_ = DONE;
 		writeToFd(fd, write_msg);
 	}
 	else // ALL IN ONCE
