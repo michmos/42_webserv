@@ -32,6 +32,7 @@ std::string	HTTPClient::getHeaderInclTransferEncoding() {
 		return ("");
 	header = response_.substr(0,split) + "\r\nTransfer-Encoding: chunked\r\n\r\n";
 	response_.erase(0, split + 4);
+	std::cerr << "header: " << header << std::endl;
 	return (header);
 }
 
@@ -48,10 +49,15 @@ std::string	HTTPClient::getChunk(bool first_msg) {
 	if (first_msg)
 		return (getHeaderInclTransferEncoding());
 
-	chunksize = (WRITESIZE < response_.length()) ? WRITESIZE : response_.length();
-
+	if (WRITESIZE < response_.length())
+		chunksize = WRITESIZE;
+	else
+		chunksize = response_.length();
 	chunk_os << std::hex << chunksize << "\r\n";
-	chunk_os << response_.substr(0, chunksize) << "\r\n";
+	if (chunksize == 0)
+		chunk_os << "\r\n";
+	else
+		chunk_os << response_.substr(0, chunksize) << "\r\n";
 	chunk_response = chunk_os.str();
 	response_.erase(0,chunksize);
 	return (chunk_response);
