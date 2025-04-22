@@ -145,9 +145,9 @@ void	HTTPClient::cgiResponse(void) {
 	{
 		HTTPRequest	cgi_error_request;
 		if (status >= 500)
-		cgi_error_request.request_target = "Server Error";
+			cgi_error_request.request_target = "Server Error";
 		else if (status >= 400)
-		cgi_error_request.request_target = "Client Error";
+			cgi_error_request.request_target = "Client Error";
 		std::cerr << "is cgi timeout or " << cgi_error_request.request_target << ": " << status << std::endl;
 		cgi_error_request.status_code = status;
 		cgi_error_request.subdir.push_back("data/www/");
