@@ -1,5 +1,6 @@
 
 #include "../../inc/Webserv/Webserv.hpp"
+#include <memory>
 
 std::atomic<bool> keepalive(true);
 
@@ -96,8 +97,9 @@ static int	resolveSocket(const std::string& host, const std::string& port) {
 Webserv::Webserv(const std::string& confPath) {
 	std::unordered_set<int>	sockets;
 
-	for (auto& config : ConfigParser(confPath).getConfigs()) {
-		for (auto hostPorts : config.getHostPort()) {
+	for (auto& temp : ConfigParser(confPath).getConfigs()) {
+		auto config = std::make_shared<Config>(std::move(temp));
+		for (auto hostPorts : config->getHostPort()) {
 			for (auto port : hostPorts.second) {
 				SharedFd serverFd = resolveSocket(hostPorts.first, std::to_string(port));
 
@@ -118,7 +120,7 @@ Webserv::~Webserv() {
 
 // used for lambda in Client Constructor - see addClient
 static const Config* getConfig (
-	const std::unordered_map<SharedFd, std::vector<Config>>& servers,
+	const std::unordered_map<SharedFd, std::vector<std::shared_ptr<Config>>>& servers,
 	const SharedFd& socket, 
 	const std::string& servName
 	)
@@ -129,11 +131,11 @@ static const Config* getConfig (
 	}
 
 	for (auto& server : it->second) {
-		if (server.getServerName() == servName) {
-			return (&server);
+		if (server->getServerName() == servName) {
+			return (server.get());
 		}
 	}
-	return(&(it->second[0]));
+	return(it->second[0].get());
 }
 
 void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
