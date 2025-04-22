@@ -1,5 +1,6 @@
 
 #include "../../inc/Webserv/Webserv.hpp"
+#include <memory>
 
 std::atomic<bool> keepalive(true);
 
@@ -96,16 +97,21 @@ static int	resolveSocket(const std::string& host, const std::string& port) {
 Webserv::Webserv(const std::string& confPath) {
 	std::unordered_set<int>	sockets;
 
-	for (auto& config : ConfigParser(confPath).getConfigs()) {
-		SharedFd serverFd = resolveSocket(config.getHost(), std::to_string(config.getPort()));
+	for (auto& temp : ConfigParser(confPath).getConfigs()) {
+		auto config = std::make_shared<Config>(std::move(temp));
+		for (auto hostPorts : config->getHostPort()) {
+			for (auto port : hostPorts.second) {
+				SharedFd serverFd = resolveSocket(hostPorts.first, std::to_string(port));
 
-		// if new - add to epoll
-		if (sockets.find(serverFd.get()) == sockets.end()) {
-			sockets.insert(serverFd.get());
-			_ep.add(serverFd.get(), EPOLLIN);
+				// if new - add to epoll
+				if (sockets.find(serverFd.get()) == sockets.end()) {
+					sockets.insert(serverFd.get());
+					_ep.add(serverFd.get(), EPOLLIN);
+				}
+				// map config to fd
+				_servers[serverFd].push_back(config);
+			}
 		}
-		// map config to fd
-		_servers[serverFd].push_back(config);
 	}
 }
 
@@ -113,8 +119,8 @@ Webserv::~Webserv() {
 }
 
 // used for lambda in Client Constructor - see addClient
-static const Config* getConfig (
-	const std::unordered_map<SharedFd, std::vector<Config>>& servers,
+static std::shared_ptr<Config> getConfig (
+	const std::unordered_map<SharedFd, std::vector<std::shared_ptr<Config>>>& servers,
 	const SharedFd& socket, 
 	const std::string& servName
 	)
@@ -125,11 +131,11 @@ static const Config* getConfig (
 	}
 
 	for (auto& server : it->second) {
-		if (server.getServerName() == servName) {
-			return (&server);
+		if (server->getServerName() == servName) {
+			return (server);
 		}
 	}
-	return(&(it->second[0]));
+	return(it->second[0]);
 }
 
 void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {

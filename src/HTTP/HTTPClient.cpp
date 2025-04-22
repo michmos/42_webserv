@@ -1,10 +1,11 @@
 #include "../../inc/HTTP/HTTPClient.hpp"
+#include <memory>
 
 HTTPClient::HTTPClient(
 	SharedFd clientFd, 
 	SharedFd serverFd, 
 	std::function<void(struct epoll_event, const SharedFd&)>  addToEpoll_cb,
-	std::function<const Config* (const SharedFd&, const std::string&)> getConfig_cb,
+	std::function<std::shared_ptr<Config> (const SharedFd&, const std::string&)> getConfig_cb,
 	std::function<void(const SharedFd&)> delFromEpoll_cb
 	) : STATE_(RECEIVING),
 		clientSock_(clientFd),
@@ -26,6 +27,7 @@ HTTPClient::HTTPClient(const HTTPClient&& other) :
 	responseGenerator_(std::move(other.responseGenerator_)),
 	config_(std::move(other.config_)),
 	is_cgi_requ_(std::move(other.is_cgi_requ_)),
+	first_response_(std::move(other.first_response_)),
 	addToEpoll_cb_(std::move(other.addToEpoll_cb_)),
 	getConfig_cb_(std::move(other.getConfig_cb_)),
 	delFromEpoll_cb_(std::move(other.delFromEpoll_cb_))
@@ -93,7 +95,7 @@ void	HTTPClient::handleReceiving(SharedFd fd, uint32_t events) {
 	request_ = parser_.getParsedRequest();
 	printRequest(request_); //TODO: REMOVE
 	responseGenerator_.setConfig(config_);
-	first_response_ = true;
+	// first_response_ = true;
 	if (!CGI::isCGI(request_)) {
 		STATE_ = RESPONSE;
 		return ;

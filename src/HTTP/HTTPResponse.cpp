@@ -15,7 +15,7 @@ HTTPResponse::HTTPResponse(void) {
 
 HTTPResponse::~HTTPResponse(void) { }
 
-void	HTTPResponse::setConfig(const Config *conf) { config_ = conf; }
+void	HTTPResponse::setConfig(const std::shared_ptr<Config> config) { config_ = config; }
 
 static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 && status_code <= 308); }
 
@@ -28,7 +28,7 @@ void	HTTPResponse::generateResponse(const HTTPRequest request) {
 	if (request.dir_list)
 	{
 		dir_list_ = true ;
-		std::cerr << "dirlist is one" << std::endl;
+		std::cerr << "dirlist is on" << std::endl;
 	}
 	if (!request.invalidRequest && request.status_code == 200)
 		filename_ = request.request_target;
