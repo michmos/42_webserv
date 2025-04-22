@@ -474,7 +474,7 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 			{
 				parseRequest();
 				client->setConfig(result_.host);
-				result_.request_target = generatePath(client->getConfig()); // TODO: @micha: look into again
+				result_.request_target = generatePath(client->getConfig().get()); // TODO: @micha: look into again
 				verifyRequestLine(*client->getConfig());
 				[[fallthrough]];
 			}
@@ -491,7 +491,7 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 			else
 				result_.body += buff;
 
-			if (checkBodySizeLimit(result_.body.size(), client->getConfig(), result_.request_target))
+			if (checkBodySizeLimit(result_.body.size(), client->getConfig().get(), result_.request_target))
 				result_.status_code = 413;
 			if (!isBodyComplete())
 				return;

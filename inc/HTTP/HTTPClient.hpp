@@ -64,7 +64,7 @@ class HTTPClient {
 			SharedFd clientFd,
 			SharedFd serverFd,
 			std::function<void(struct epoll_event, const SharedFd&)> addToEpoll_cb,
-			std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb,
+			std::function<std::shared_ptr<Config> (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb,
 			std::function<void(const SharedFd&)> delFromEpoll_cd
 		);
 		HTTPClient(const HTTPClient &&other);
@@ -80,25 +80,25 @@ class HTTPClient {
 		std::string	readFrom( int fd );
 
 		void				cgiResponse( void );
-		inline const Config	*getConfig( void ) const { return (config_); }
+		inline const std::shared_ptr<Config>	getConfig( void ) const { return (config_); }
 		inline void			setConfig(std::vector<std::string> host) { config_ = getConfig_cb_(serverSock_, host[0]); }
 		inline bool			isDone( void ) const { return (STATE_ == DONE); }
 	private:
 		e_state						STATE_;
 
-		SharedFd					clientSock_;
-		SharedFd					serverSock_;
-		std::vector<std::string>	message_que_;
-		HTTPParser					parser_;
-		HTTPRequest					request_;
-		std::unique_ptr<CGI> 		cgi_;
-		HTTPResponse				responseGenerator_;
-		const Config				*config_;
-		std::string					response_;
-		bool						isCgiRequ_;
+		SharedFd						clientSock_;
+		SharedFd						serverSock_;
+		std::vector<std::string>		message_que_;
+		HTTPParser						parser_;
+		HTTPRequest						request_;
+		std::unique_ptr<CGI> 			cgi_;
+		HTTPResponse					responseGenerator_;
+		std::shared_ptr<Config>	config_;
+		std::string						response_;
+		bool							isCgiRequ_;
 
 		std::function<void(struct epoll_event, const SharedFd&)> addToEpoll_cb_;
-		std::function<const Config* (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb_;
+		std::function<std::shared_ptr<Config> (const SharedFd& serverSock, const std::string& serverName)> getConfig_cb_;
 		std::function<void(const SharedFd&)> delFromEpoll_cb_;
 
 		void	handleResponding(SharedFd fd, uint32_t events);

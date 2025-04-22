@@ -1,10 +1,11 @@
 #include "../../inc/HTTP/HTTPClient.hpp"
+#include <memory>
 
 HTTPClient::HTTPClient(
 	SharedFd clientFd, 
 	SharedFd serverFd, 
 	std::function<void(struct epoll_event, const SharedFd&)>  addToEpoll_cb,
-	std::function<const Config* (const SharedFd&, const std::string&)> getConfig_cb,
+	std::function<std::shared_ptr<Config> (const SharedFd&, const std::string&)> getConfig_cb,
 	std::function<void(const SharedFd&)> delFromEpoll_cb
 	) : clientSock_(clientFd),
 		serverSock_(serverFd),

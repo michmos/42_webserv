@@ -15,7 +15,7 @@ HTTPResponse::HTTPResponse(void) {
 
 HTTPResponse::~HTTPResponse(void) { }
 
-void	HTTPResponse::setConfig(const Config *conf) { config_ = conf; }
+void	HTTPResponse::setConfig(std::shared_ptr<Config> config) { config_ = config; }
 
 static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 && status_code <= 308); }
 

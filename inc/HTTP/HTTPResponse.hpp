@@ -2,6 +2,7 @@
 
 # include <iostream>
 # include <fstream>
+#include <memory>
 # include <sstream>
 # include <filesystem>
 # include <unordered_map>
@@ -28,7 +29,7 @@ class HTTPResponse {
 
 		void		generateResponse( const HTTPRequest request );
 		std::string loadResponse( void );
-		void		setConfig( const Config *conf ) ;
+		void		setConfig(std::shared_ptr<Config> config) ;
 
 	private:
 		// Generate Response
@@ -42,16 +43,16 @@ class HTTPResponse {
 		void		getHttpStatusMessages( void );
 		void		createHeader( void );
 
-		std::vector<char *> env_;
-		std::string			filename_;
-		std::string			header_;
-		std::string			body_;
-		std::string			content_type_;
-		std::string			httpStatusMessages_;
-		std::string			response_;
-		int					status_code_;
-		bool				dir_list_;
-		const Config		*config_;
+		std::vector<char *> 	env_;
+		std::string				filename_;
+		std::string				header_;
+		std::string				body_;
+		std::string				content_type_;
+		std::string				httpStatusMessages_;
+		std::string				response_;
+		int						status_code_;
+		bool					dir_list_;
+		std::shared_ptr<Config>	config_;
 };
 
 # include "HTTPClient.hpp"

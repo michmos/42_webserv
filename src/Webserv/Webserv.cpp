@@ -119,7 +119,7 @@ Webserv::~Webserv() {
 }
 
 // used for lambda in Client Constructor - see addClient
-static const Config* getConfig (
+static std::shared_ptr<Config> getConfig (
 	const std::unordered_map<SharedFd, std::vector<std::shared_ptr<Config>>>& servers,
 	const SharedFd& socket, 
 	const std::string& servName
@@ -132,10 +132,10 @@ static const Config* getConfig (
 
 	for (auto& server : it->second) {
 		if (server->getServerName() == servName) {
-			return (server.get());
+			return (server);
 		}
 	}
-	return(it->second[0].get());
+	return(it->second[0]);
 }
 
 void	Webserv::_addClient(const SharedFd& clientSock, const SharedFd& servSock) {
