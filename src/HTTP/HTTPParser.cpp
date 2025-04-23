@@ -1,4 +1,5 @@
 # include "../../inc/HTTP/HTTPParser.hpp"
+#include <cstddef>
 
 HTTPParser::HTTPParser(void) : \
 	content_length_(0), chunked_(false) {
@@ -161,6 +162,11 @@ static std::vector<std::string>	getHost(std::string &host_string) {
 	size_t						split;
 	std::string					hostname;
 	std::string					port;
+
+	size_t find = host_string.find_last_of("\r");
+	if (find != std::string::npos && find == host_string.length() - 1) {
+		host_string.erase(find);
+	}
 
 	if (host_string.find(":") != std::string::npos)
 		host_string.erase(0, 5);
