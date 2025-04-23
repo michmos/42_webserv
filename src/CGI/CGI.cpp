@@ -128,6 +128,8 @@ std::string CGI::getScriptExecutable(const std::string &path)
 {
 	if (path.size() >= 3 && path.substr(path.size() - 3) == ".py")
 		return "/usr/bin/python3";
+	if (path.size() >= 3 && path.substr(path.size() - 3) == ".rb")
+		return "/usr/bin/ruby";
 	// if (path.size() >= 4 && path.substr(path.size() - 4) == ".php")
 	// 	return "/usr/bin/php";
 	return "";

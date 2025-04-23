@@ -46,6 +46,39 @@ nav a:hover {
 	background-color: #3b5bdb;
 }
 
+.highlight {
+	background-color: #b12121;
+}
+.highlight:hover {
+	background-color: #fd1a1a;
+}
+
+.button-link {
+	background-color: #4c6ef5;
+	color: white;
+	padding: 0.75rem 1.5rem;
+	text-decoration: none;
+	border-radius: 8px;
+	transition: background-color 0.3s;
+}
+
+.button-link:hover {
+	background-color: #3b5bdb;
+}
+
+.button-link-red {
+	background-color: #b12121;
+	color: white;
+	padding: 0.75rem 1.5rem;
+	text-decoration: none;
+	border-radius: 8px;
+	transition: background-color 0.3s;
+}
+
+.button-link-red:hover {
+	background-color: #fd1a1a;
+}
+
 main {
 	flex: 1;
 	max-width: 80%;
