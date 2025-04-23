@@ -29,7 +29,7 @@ class HTTPResponse {
 
 		void		generateResponse( const HTTPRequest request );
 		std::string loadResponse( void );
-		void		setConfig(const std::shared_ptr<Config> config) ;
+		void		setConfig( std::shared_ptr<Config> config ) ;
 
 	private:
 		// Generate Response

@@ -33,7 +33,7 @@ class CGI:
 
 	def process_request( self ) -> None:
 		body1 = "<!DOCTYPE html><html><body><h1>Uploaded files:</h1><ul>"
-		body2 = "</ul><br><a href=\"index.html\" class=\"button\">Go back</a></body></html>"
+		body2 = "</ul><br><a href=\"../index.html\" class=\"button\">Go back</a></body></html>"
 		upload_dir = "data/uploads"
 
 		files = os.listdir(upload_dir)

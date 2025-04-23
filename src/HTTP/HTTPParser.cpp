@@ -269,7 +269,7 @@ bool	HTTPParser::isAllwdMeth(const std::string& method, const Config& conf) {
 }
 
 bool	HTTPParser::isRedirection(std::string &endpoint, const std::vector<std::string> &redir) {
-	if (redir.size() == 2)
+	if (redir.size() >= 2)
 	{
 		try
 		{
@@ -331,7 +331,8 @@ static void	getSubdirRecursive(const std::string &path, std::vector<std::string>
 			continue ;
 		else if (folderExists(path, std::string(d->d_name), fullpath))
 		{
-			subdirs.push_back(fullpath);
+			if (std::find(subdirs.begin(), subdirs.end(), fullpath) == subdirs.end())
+				subdirs.push_back(fullpath);
 			getSubdirRecursive(fullpath, subdirs);
 		}
 	}
@@ -391,17 +392,25 @@ std::string	HTTPParser::handleRootDir(const Config *config) {
 	return ("");
 }
 
-static const std::vector<std::string>	getSubdirectories(const std::vector<std::string> &roots) {
+static const std::vector<std::string>	getSubdirectories(const Config *config, std::string target) {
 	std::vector<std::string>	subdir;
+	bool autoindex = config->getAutoindex(target);
+	const std::vector<std::string> &roots = config->getRoot(target);
+	const std::unordered_map<std::string, Location> &locations = config->getLocations();
 
+	for (const auto& pair : locations)
+	{
+		subdir.push_back(pair.first);
+	}
 	for (const std::string &root: roots)
 	{
 		subdir.push_back(root);
-		getSubdirRecursive(root, subdir);
+		if (autoindex)
+			getSubdirRecursive(root, subdir);
 	}
 	return (subdir);
 }
-#include <filesystem>
+
 /**
  * @brief checks for paths (redir, root, access)
  * @param config pointer to Config
@@ -410,7 +419,7 @@ std::string	HTTPParser::generatePath(const Config *config) {
 	struct stat	statbuf;
 	std::string	full_path;
 
-	result_.subdir = getSubdirectories(config->getRoot(result_.request_target));
+	result_.subdir = getSubdirectories(config, result_.request_target);
 	if (isRedirection(result_.request_target, config->getRedirect(result_.request_target)))
 		return ("");
 	else if (result_.request_target == "/")

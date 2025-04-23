@@ -1,3 +1,4 @@
+
 # include "../../inc/HTTP/HTTPResponse.hpp"
 
 // #######################     PUBLIC     ########################
@@ -23,12 +24,18 @@ static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 &
  * @brief generates Response by processing the request Header
  * @param request struct that contains all the parsed header info
  */
-void	HTTPResponse::generateResponse(const HTTPRequest request) {
+void	HTTPResponse::generateResponse(HTTPRequest request) {
 	std::string	filename(request.request_target);
+
 	if (request.dir_list)
 	{
-		dir_list_ = true ;
-		std::cerr << "dirlist is on" << std::endl;
+		std::cerr << "filename: " << filename << std::endl;
+		std::cerr << "autoindex on/off: " << config_->getAutoindex(filename) << std::endl;
+		if (!config_->getAutoindex(filename))
+			request.status_code = 404;
+		else
+			dir_list_ = true ;
+		std::cerr << dir_list_ << "dirlist is on " << request.status_code << std::endl;
 	}
 	if (!request.invalidRequest && request.status_code == 200)
 		filename_ = request.request_target;

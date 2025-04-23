@@ -28,9 +28,9 @@ class ResponseGenerator:
 		if self.status_code not in good_status_codes:
 			return self.nph_error_status_code_header()
 		elif self.request_method == "POST":
-			return self.nph_redirection_header("successupload.html")
+			return self.nph_redirection_header("../http/successupload.html")
 		elif self.request_method == "DELETE":
-			return self.nph_redirection_header("successdelete.html")
+			return self.nph_redirection_header("../http/successdelete.html")
 		else:
 			return self.nph_success_header()
 
@@ -42,9 +42,9 @@ class ResponseGenerator:
 		else:
 			if self.status_code in good_status_codes:
 				if self.request_method == "POST":
-					return self.local_location("successupload.html")
+					return self.local_location("../http/successupload.html")
 				elif script_name == "delete.py":
-					return self.local_location("succesdelete.html")
+					return self.local_location("../http/succesdelete.html")
 				else:
 					return document_response()
 			else:

@@ -55,7 +55,6 @@ class HTTPParser
 		bool	isRedirection(std::string &endpoint, const std::vector<std::string> &redir);
 		std::string	handleRootDir( const Config *config );
 		std::string	generatePath(const Config *config);
-		std::string searchThroughIndices(std::vector<std::string> indices, bool autoindex);
 
 		// Parsing header
 		void	parseContentLength( std::string str );
