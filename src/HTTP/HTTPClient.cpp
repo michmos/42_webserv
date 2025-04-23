@@ -117,33 +117,36 @@ void	HTTPClient::handleCGI(SharedFd fd, uint32_t events) {
 	}
 }
 
+void	HTTPClient::generateResponse() {
+	std::string response;
+	if (is_cgi_requ_) {
+		response = cgiResponse();
+	} else
+	{
+		responseGenerator_.generateResponse(request_);
+		response = responseGenerator_.loadResponse();
+	}
+	HTTPResponse::insertHeader("Connection", "close", response);
+	message_que_.push_back(response);
+}
+
 /// @brief regenerates response and add this one to the que.
 void	HTTPClient::handleResponding(SharedFd fd, uint32_t events) {
 	if (fd != clientSock_.get() || !(events & EPOLLOUT)) {
 		return ;
 	}
 
-	if (first_response_)
-	{
-		if (is_cgi_requ_)
-			cgiResponse();
-		else
-		{
-			responseGenerator_.generateResponse(request_);
-			message_que_.push_back(responseGenerator_.loadResponse());
-		}
-		writeToClient(fd);
-		first_response_ = false;
+	if (first_response_) {
+		generateResponse();
 	}
-	else
-		writeToClient(fd);
-	if (STATE_ == DONE)
-		first_response_ = true;
+
+	writeToClient(fd);
 }
 
-/// @brief checks if cgi header has to be rewritten and add response to que.
-void	HTTPClient::cgiResponse(void) {
+/// @brief rewrite cgi header if necessary and return response
+std::string	HTTPClient::cgiResponse(void) {
 	int	status =  cgi_->getStatusCode();
+	std::string	response;
 
 	if (cgi_->timedOut() || status >= 400)
 	{
@@ -156,13 +159,13 @@ void	HTTPClient::cgiResponse(void) {
 		cgi_error_request.status_code = status;
 		cgi_error_request.subdir.push_back("data/www/");
 		responseGenerator_.generateResponse(cgi_error_request);
-		message_que_.push_back(responseGenerator_.loadResponse());
-
+		response = responseGenerator_.loadResponse();
 	}
 	else {	
-		message_que_.push_back(cgi_->getResponse());
+		response = cgi_->getResponse();
 	}
-	std::cerr << "-------------------\nCGI Response: " << message_que_.back() \
+	std::cerr << "-------------------\nCGI Response: " << response \
 		<< "\n-----------------" << std::endl;
+	return (response);
 }
 

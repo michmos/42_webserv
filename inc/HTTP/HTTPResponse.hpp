@@ -30,6 +30,7 @@ class HTTPResponse {
 		void		generateResponse( const HTTPRequest request );
 		std::string loadResponse( void );
 		void		setConfig( std::shared_ptr<Config> config ) ;
+		static void	insertHeader(const std::string& key, const std::string& value, std::string& rspns);
 
 	private:
 		// Generate Response

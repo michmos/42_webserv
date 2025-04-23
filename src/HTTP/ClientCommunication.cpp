@@ -96,5 +96,6 @@ void	HTTPClient::writeToClient(const SharedFd &fd) {
 		response_.clear();
 		STATE_ = DONE;
 	}
+	first_response_ = false;
 	return ;
 }

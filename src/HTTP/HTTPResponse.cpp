@@ -53,6 +53,23 @@ void	HTTPResponse::generateResponse(HTTPRequest request) {
 	status_code_ = request.status_code;
 }
 
+/**
+ * @brief insert "key: value\r\n" after first linebreak or first line
+ */
+void	HTTPResponse::insertHeader(const std::string& key, const std::string& value, std::string& response) {
+	size_t	insertPos;
+	size_t	firstLineBreak = response.find("\r\n");
+	if (firstLineBreak != std::string::npos) {
+		insertPos = firstLineBreak + 2;
+	} else {
+		response += "\r\n";
+		insertPos = response.size();
+	}
+
+	std::string headerLine = key + ": " + value + "\r\n";
+	response.insert(insertPos, headerLine);
+}
+
 std::string	HTTPResponse::loadResponse(void) {
 	if (isRedirectStatusCode(status_code_))
 		return (header_);
@@ -222,7 +239,7 @@ void	HTTPResponse::getHttpStatusMessages(void) {
 
 /// @brief combines all parts of HTTP header and adds right values
 void	HTTPResponse::createHeader(void) {
-	header_ = "HTTP/1.1 " + httpStatusMessages_ + "\r\n" \
+	header_ = "HTTP/1.1 " + httpStatusMessages_ + "\r\n"
 			+ "Content-Type: " + content_type_ + "\r\n";
 	if (!body_.empty())
 		header_ += "Content-Length: " + std::to_string(body_.size()); // what if chunked?

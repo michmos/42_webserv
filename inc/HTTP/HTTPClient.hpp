@@ -79,7 +79,7 @@ class HTTPClient {
 		std::string	getHeaderInclTransferEncoding( void );
 		std::string	readFrom( int fd );
 
-		void				cgiResponse( void );
+		std::string			cgiResponse( void );
 		inline void			setConfig(std::vector<std::string> host) { config_ = getConfig_cb_(serverSock_, host[0]); }
 		inline bool			isDone( void ) const { return (STATE_ == DONE); }
 		inline const std::shared_ptr<Config>	getConfig( void ) const { return (config_); }
@@ -103,6 +103,7 @@ class HTTPClient {
 		std::function<void(const SharedFd&)> delFromEpoll_cb_;
 
 		void	handleResponding(SharedFd fd, uint32_t events);
+		void	generateResponse();
 		void	handleCGI( SharedFd fd, uint32_t events );
 		void	initCGI();
 		void	handleReceiving(SharedFd fd, uint32_t events);
