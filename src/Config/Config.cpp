@@ -151,15 +151,15 @@ const std::unordered_map<std::string, std::vector<int>> Config::getHostPort() co
 				throw Config::ConfigException("Port is out of range!");
 			}
 			// Adding host/port combination
-			if (strHost.empty() || strHost == "[::]" || strHost == "0.0.0.0") {
+			if (strHost.empty() || strHost == "[::]" || strHost == "0.0.0.0")
 				defaultPorts.push_back(stoi(strPort));
-			} else {
-				if (hostPort.find(strHost) == hostPort.end()) {
-					hostPort[strHost] = std::vector<int>();
-				}
-				if (!strPort.empty())
-					hostPort[strHost].push_back(stoi(strPort));
+			// } else {
+			if (hostPort.find(strHost) == hostPort.end()) {
+				hostPort[strHost] = std::vector<int>();
 			}
+			if (!strPort.empty())
+				hostPort[strHost].push_back(stoi(strPort));
+			// }
 		}
 		// Add all default ports to all hosts
 		for (int port : defaultPorts) {
