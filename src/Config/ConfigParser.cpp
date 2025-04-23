@@ -44,7 +44,7 @@ void debugConfigPrint(std::vector<Config> &configs) {
 		}
 		std::cout << RESET << std::endl;
 		std::cout << BOLD << "getRedirect(\"/old_file\"): ";
-		std::vector<std::string> redirect1 = config.getRedirect("/old_file");
+		std::vector<std::string> redirect1 = config.getRedirect("/old-page");
 		for (std::vector<std::string>::iterator it = redirect1.begin(); it != redirect1.end(); ++it) {
 			std::cout << *it << " ";
 		}
@@ -57,10 +57,10 @@ ConfigParser::ConfigParser(const std::string& filepath) {
 	std::cout << filepath << std::endl;
 	readConfigToInput();
 	parseInputToTokens();
-	printTokens(this->_tokens);
+	// printTokens(this->_tokens);
 	parseTokenToConfig();
 	this->_configs[0].setMimeTypes(this->_mimeTypes);
-	debugConfigPrint(this->_configs);
+	// debugConfigPrint(this->_configs);
 }
 
 ConfigParser::~ConfigParser() {

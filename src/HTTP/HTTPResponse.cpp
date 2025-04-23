@@ -37,17 +37,20 @@ void	HTTPResponse::generateResponse(HTTPRequest request) {
 			dir_list_ = true ;
 		std::cerr << dir_list_ << "dirlist is on " << request.status_code << std::endl;
 	}
+
 	if (!request.invalidRequest && request.status_code == 200)
 		filename_ = request.request_target;
 	else if (isRedirectStatusCode(request.status_code))
+	{
 		header_ = request.body;
+		std::cerr << "header: " << header_ << std::endl;
+	}
 	else if (isCustomErrorPages(filename, request.status_code))
 	{
 		filename_ = searchErrorPage(request.subdir, filename);
 		std::cerr << "is customerrorpage" << std::endl;
 	}
-	else
-		status_code_ = request.status_code;
+	status_code_ = request.status_code;
 }
 
 std::string	HTTPResponse::loadResponse(void) {
