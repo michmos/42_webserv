@@ -62,8 +62,11 @@ static int	resolveSocket(const std::string& host, const std::string& port) {
 	};
 
 	// get addrinfo list
+	const char* c_host_str = NULL;
+	if (!host.empty())
+		c_host_str = host.c_str();
 	struct addrinfo *results;
-	int err_code = getaddrinfo(host.c_str(), port.c_str(), &hints, &results);
+	int err_code = getaddrinfo(c_host_str, port.c_str(), &hints, &results);
 	if (err_code != 0)
 		throw std::runtime_error("Socket could not be created for host: " + host + " and port: " 
 						   + port + " : " + gai_strerror(err_code));
