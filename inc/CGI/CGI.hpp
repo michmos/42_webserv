@@ -27,6 +27,7 @@ enum e_cgi_state {
 	START_CGI,
 	SEND_TO_CGI,
 	RCV_FROM_CGI,
+	HANDLE_RSPNS_CGI,
 	CGI_DONE
 };
 
@@ -55,7 +56,7 @@ class CGI {
 		void				sendDataToCGI( const SharedFd &fd, uint32_t events );
 
 		// RCV_FROM_CGI
-		void				handleCGIResponse(const SharedFd &fd, uint32_t events);
+		void				handleCGIResponse();
 		void				getResponseFromCGI( const SharedFd &fd, uint32_t events);
 		int					getStatusCodeFromResponse( void );
 		bool				isCGIProcessFinished( void );
@@ -72,7 +73,7 @@ class CGI {
 		int							getStatusCode( void );
 		bool						isDone( void );
 		void						handle( const SharedFd &fd, uint32_t events );
-		void						rewriteResonseFromCGI( void );
+		void						rewriteResponseFromCGI( void );
 		inline const std::string&	getScriptPath() const { return scriptPath_; }
 		inline bool					isNPHscript() { return nph_;}
 		bool						timedOut(void);

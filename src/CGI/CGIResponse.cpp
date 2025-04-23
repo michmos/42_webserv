@@ -7,11 +7,10 @@
 static std::string	receiveBuffer(int fd) {
 	char buffer[READSIZE + 1] = {'\0'};
 	
-
 	ssize_t bytesRead = read(fd, buffer, READSIZE);
 	if (bytesRead == -1) {
-		throw std::runtime_error(std::string("CGI read(): ") + strerror(errno));
-	} 
+		throw ClientException(std::string("CGI read(): ") + strerror(errno));
+	}
 	return (buffer);
 }
 
@@ -29,20 +28,11 @@ void	CGI::getResponseFromCGI(const SharedFd &fd, uint32_t events) {
 
 	std::string buffer = receiveBuffer(fd.get());
 	response_ += buffer;
-	if (!isCGIProcessFinished()) {
-		return;
+	if (buffer.empty()) {
+		delFromEpoll_cb_(pipes_[FROM_CGI_READ].get());
+		pipes_[FROM_CGI_READ] = -1;
+		CGI_STATE_ = HANDLE_RSPNS_CGI;
 	}
-
-	if (!isCGIProcessSuccessful()) {
-		response_ = CGI_ERR_RESPONSE;
-		status_ = 500;
-	}
-	else
-		status_ = getStatusCodeFromResponse();
-
-	delFromEpoll_cb_(pipes_[FROM_CGI_READ].get());
-	pipes_[FROM_CGI_READ] = -1;
-	CGI_STATE_ = CGI_DONE;
 }
 
 bool	CGI::isCGIProcessFinished(void) {
@@ -81,7 +71,7 @@ bool	CGI::timedOut(void) {
 
 /// @brief Set up a response for the client after receiving the header from the CGI
 /// saves the result again in response_
-void	CGI::rewriteResonseFromCGI(void) {
+void	CGI::rewriteResponseFromCGI(void) {
 	std::smatch	match;
 	std::string	new_response = "";
 	std::regex	r_content_type = std::regex(R"(Content-Type:\s+([^\r\n]+)\r\n)");

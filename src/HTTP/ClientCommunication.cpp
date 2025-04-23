@@ -6,8 +6,11 @@ std::string	HTTPClient::readFrom(int fd) {
 	int		bytes_read;
 
 	bytes_read = recv(fd, buff, READSIZE, MSG_DONTWAIT);
-	if (bytes_read == -1)
+	if (bytes_read == -1) {
 		throw ClientException("Client: " + std::to_string(fd) + ": recv(): " + strerror(errno));
+	} else if (bytes_read == 0) {
+		throw ClientException("Client closed socket");
+	}
 	return (std::string(buff, bytes_read));
 }
 

@@ -73,8 +73,7 @@ bool	CGI::isCGI(const HTTPRequest& request) {
 void	CGI::handle(const SharedFd &fd, uint32_t events) {
 	if (CGI_STATE_ != START_CGI && CGI_STATE_ != CGI_DONE && timedOut()) {
 		handleTimeOut();
-		CGI_STATE_ = CGI_DONE;
-		return;
+		CGI_STATE_ = HANDLE_RSPNS_CGI;
 	}
 
 	switch (CGI_STATE_) {
@@ -85,19 +84,29 @@ void	CGI::handle(const SharedFd &fd, uint32_t events) {
 			sendDataToCGI(fd, events);
 			return ;
 		case RCV_FROM_CGI:
-			handleCGIResponse(fd, events);
+			getResponseFromCGI(fd, events);
+			[[fallthrough]];
+		case HANDLE_RSPNS_CGI:
+			handleCGIResponse();
 			return;
 		default:
 			return ;
 	}
 }
 
-void	CGI::handleCGIResponse(const SharedFd &fd, uint32_t events) {
-	getResponseFromCGI(fd, events);
-	if (CGI_STATE_ == RCV_FROM_CGI)
+void	CGI::handleCGIResponse() {
+	if (!isCGIProcessFinished())
 		return ;
-	if (!isNPHscript())
-		rewriteResonseFromCGI();
+
+	if (!isCGIProcessSuccessful()) {
+		response_ = CGI_ERR_RESPONSE;
+		status_ = 500;
+	} else {
+		status_ = getStatusCodeFromResponse();
+		if (!isNPHscript()) {
+			rewriteResponseFromCGI();
+		}
+	}
 	CGI_STATE_ = CGI_DONE;
 }
 
