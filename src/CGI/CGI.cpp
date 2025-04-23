@@ -99,7 +99,6 @@ void	CGI::handleCGIResponse() {
 		return ;
 
 	if (!isCGIProcessSuccessful()) {
-		response_ = CGI_ERR_RESPONSE;
 		status_ = 500;
 	} else {
 		status_ = getStatusCodeFromResponse();
