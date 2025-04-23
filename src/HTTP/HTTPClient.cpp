@@ -96,7 +96,7 @@ void	HTTPClient::handleReceiving(SharedFd fd, uint32_t events) {
 	printRequest(request_); //TODO: REMOVE
 	responseGenerator_.setConfig(config_);
 	// first_response_ = true;
-	if (!CGI::isCGI(request_)) {
+	if (request_.status_code != 200 || !CGI::isCGI(request_)) {
 		STATE_ = RESPONSE;
 		return ;
 	}

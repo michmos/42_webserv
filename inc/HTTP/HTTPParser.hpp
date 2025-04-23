@@ -46,7 +46,7 @@ class HTTPParser
 		e_parse_state	PARSE_STATE_;
 		
 		bool	isHeaderRead( void );
-		bool	isBodyComplete( void );
+		bool	isBodyComplete( size_t size );
 
 		void	splitHeaderBody( void );
 		void	addIfProcessIsChunked( const std::string &buff );

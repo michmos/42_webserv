@@ -29,7 +29,6 @@ void	CGI::sendDataToCGI( const SharedFd &fd, uint32_t events ) {
 			throw std::runtime_error("CGI write(): " + std::to_string(fd.get()) + " : " + strerror(errno));
 		} else if (write_bytes < (ssize_t)send_data_.size()) {
 			send_data_.erase(0, write_bytes);
-			std::cerr << "Remaining bytes after CGI write: " <<  write_bytes << std::endl;
 			return ;
 		}
 	}

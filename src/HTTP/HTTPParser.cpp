@@ -30,9 +30,9 @@ void	HTTPParser::splitHeaderBody(void) {
 }
 
 /// @brief if available, checks if content length is same as size body
-bool	HTTPParser::isBodyComplete(void) {
+bool	HTTPParser::isBodyComplete(size_t size) {
 	if (content_length_ > 0)
-		return (result_.body.size() == content_length_);
+		return (size == content_length_);
 	else
 		return (true);
 }
@@ -460,6 +460,11 @@ bool	HTTPParser::checkBodySizeLimit(size_t body_size, const Config *config, std:
 void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 	if (buff.empty())
 		return ;
+	if (result_.status_code == 413) // too big
+	{
+		if (buff.size() > 4 && buff.find("\r\n\r\n", buff.size() - 4) != std::string::npos)
+			PARSE_STATE_ = DONE_PARSING;
+	}
 	switch (PARSE_STATE_) {
 		case RCV_HEADER:
 			rawRequest_ += buff;
@@ -493,7 +498,7 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 
 			if (checkBodySizeLimit(result_.body.size(), client->getConfig().get(), result_.request_target))
 				result_.status_code = 413;
-			if (!isBodyComplete())
+			if (!isBodyComplete(result_.body.size()))
 				return;
 			[[fallthrough]];
 		default:
