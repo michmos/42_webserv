@@ -211,6 +211,8 @@ void	ConfigParser::errorToken(token token, std::string msg) {
 void	ConfigParser::checkConfig(Config &config) {
 	size_t indexConf = _configs.size() + 1;
 	try {
+		if (config.getHostPort().empty())
+			throw ConfigParser::ConfigParserException("Host and port are not defined.");
 		for (std::vector<Config>::iterator it = this->_configs.begin(); it != this->_configs.end(); ++it) {
 			if (it->getServerName() == config.getServerName()) {
 				for (auto &host: it->getHostPort()) {
@@ -228,7 +230,6 @@ void	ConfigParser::checkConfig(Config &config) {
 				}
 			}
 		}
-
 		if (config.getRoot("/").empty())
 			throw ConfigParser::ConfigParserException("Root is not defined.");
 	} catch (ConfigParser::ConfigParserException &e) {

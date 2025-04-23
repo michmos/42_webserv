@@ -122,7 +122,7 @@ const std::unordered_map<std::string, std::vector<std::string>> Config::getLocDi
 
 const std::unordered_map<std::string, std::vector<int>> Config::getHostPort() const{
 	std::unordered_map<std::string, std::vector<int>> hostPort;
-	std::vector<int> defaultPorts;
+	// std::vector<int> defaultPorts;
 	std::string strHost;
 	std::string strPort;
 	auto it = this->_directives.find("listen");
@@ -151,24 +151,22 @@ const std::unordered_map<std::string, std::vector<int>> Config::getHostPort() co
 				throw Config::ConfigException("Port is out of range!");
 			}
 			// Adding host/port combination
-			if (strHost.empty() || strHost == "[::]" || strHost == "0.0.0.0")
-				defaultPorts.push_back(stoi(strPort));
-			// } else {
+			// if (strHost.empty() || strHost == "[::]" || strHost == "0.0.0.0")
+			// 	defaultPorts.push_back(stoi(strPort));
 			if (hostPort.find(strHost) == hostPort.end()) {
 				hostPort[strHost] = std::vector<int>();
 			}
 			if (!strPort.empty())
 				hostPort[strHost].push_back(stoi(strPort));
-			// }
 		}
 		// Add all default ports to all hosts
-		for (int port : defaultPorts) {
-			for (auto &entry : hostPort) {
-				if (std::find(entry.second.begin(), entry.second.end(), port) == entry.second.end()) {
-					entry.second.push_back(port);
-				}
-			}
-		}
+		// for (int port : defaultPorts) {
+		// 	for (auto &entry : hostPort) {
+		// 		if (std::find(entry.second.begin(), entry.second.end(), port) == entry.second.end()) {
+		// 			entry.second.push_back(port);
+		// 		}
+		// 	}
+		// }
 	}
 	return (hostPort);
 }
