@@ -87,6 +87,19 @@ const std::unordered_map<std::string, std::vector<std::string>> Config::getLocDi
 		pos = locKey.find('/', pos + 1);
 		key = locKey.substr(0, pos + 1);
 	}
+	if (pos == std::string::npos && locKey.back() != '/') {
+		pos = locKey.find_last_of('/');
+		key = locKey.substr(pos, locKey.size());
+	}
+	auto it = this->_locations.find(key);
+	if (it != this->_locations.end()) {
+		Location loc = it->second;
+		if (loc.strict_match == false || pos + 1 == locKey.size()) {
+			for (auto it_loc = loc.directives.begin(); it_loc != loc.directives.end(); it_loc++) {
+				locMap[it_loc->first] = it_loc->second;
+			}
+		}
+	}
 	return (locMap);
 }
 // ####################     GET RAW DATA     #####################
