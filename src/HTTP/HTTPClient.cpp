@@ -44,10 +44,13 @@ void	HTTPClient::handle(const epoll_event &event) {
 
 	auto fd = Epoll::getEventData(event).fd;
 
-	if (event.events & EPOLLERR) {
-		throw ClientException("Client received EPOLLER: " + std::to_string(fd));
-	} else if (fd == clientSock_.get() && event.events & EPOLLHUP) {
-		throw ClientException("Client received EPOLLHUP: " + std::to_string(fd));
+	if (STATE_ != DONE)
+	{
+		if (event.events & EPOLLERR) {
+			throw ClientException("Client received EPOLLER: " + std::to_string(fd));
+		} else if (fd == clientSock_.get() && event.events & EPOLLHUP) {
+			throw ClientException("Client received EPOLLHUP: " + std::to_string(fd));
+		}
 	}
 	
 	switch (STATE_) {
