@@ -139,6 +139,7 @@ EOF
 head -n 1 test_results.txt | grep -q "200" && echo -e "${GRE} Status is 200 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
 echo ""
 
+echo "" > test_results.txt
 echo -e "TEST 19: ${YEL} GET redirect localhost:$PORT/old-page: ${RES}"
 curl -s --http1.1 -G localhost:$PORT/old-page -i -o test_results.txt
 head -n 1 test_results.txt | grep -q "301" && echo -e "${GRE} Status is 301 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
