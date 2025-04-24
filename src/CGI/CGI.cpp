@@ -35,7 +35,16 @@ CGI::CGI(const HTTPRequest &request,
 	send_data_ = "";
 }
 
-CGI::~CGI(void) {}
+CGI::~CGI(void) {
+	if (pipes_[TO_CGI_WRITE] != -1) {
+		delFromEpoll_cb_(pipes_[TO_CGI_WRITE].get());
+		pipes_[TO_CGI_WRITE] = -1;
+	}
+	if (pipes_[FROM_CGI_READ] != -1) {
+		delFromEpoll_cb_(pipes_[FROM_CGI_READ].get());
+		pipes_[FROM_CGI_READ] = -1;
+	}
+}
 
 // ###############################################################
 // ####################### IS BOOL ###############################

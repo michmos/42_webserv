@@ -200,8 +200,8 @@ void	Webserv::_handleClientReady(const struct epoll_event& ev) {
 		// check whether client pipe is ready
 		fd = eventData.data;
 		it = _clients.find(fd);
-		if (it == _clients.end()) {
-			throw std::runtime_error("_handleClientReady(): unvalid fd");
+		if (it == _clients.end()) { // client pipe of client that just has been deleted
+			return;
 		}
 	}
 
