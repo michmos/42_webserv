@@ -139,7 +139,6 @@ void	HTTPClient::handleResponding(SharedFd fd, uint32_t events) {
 	if (first_response_) {
 		generateResponse();
 	}
-
 	writeToClient(fd);
 }
 

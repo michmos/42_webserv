@@ -23,7 +23,6 @@ void	CGIPipes::setCallbackFunctions( const SharedFd& client_fd, \
 /// @THROW throws exception if syscall fails
 void	CGIPipes::addNewPipes(void) {
 	try {
-		// create pipes
 		auto addPipe = [this](){
 			int fds[2];
 			if (::pipe(fds) == -1) {
@@ -36,18 +35,19 @@ void	CGIPipes::addNewPipes(void) {
 		addPipe();
 
 		// set NONBLOCK and CLOEXEC flags
-		auto setFlags = [](SharedFd& fd) {
+		auto setFlags = [](SharedFd& fd, bool nonblock) {
 			int statusFlags = fcntl(fd.get(), F_GETFL);
 			if (statusFlags == -1)
 				throw std::runtime_error("fcntl(F_GETFL): " + std::string(strerror(errno)));
-			if (fcntl(fd.get(), F_SETFL, statusFlags | O_NONBLOCK) == -1)
+			if (nonblock && fcntl(fd.get(), F_SETFL, statusFlags | O_NONBLOCK) == -1)
 				throw std::runtime_error("fcntl(F_SETFL): " + std::string(strerror(errno)));
 			if (fcntl(fd.get(), F_SETFD, FD_CLOEXEC) == -1)
 				throw std::runtime_error("fcntl(F_SETFD): " + std::string(strerror(errno)));
 		};
-		for (auto fd: pipes_) {
-			setFlags(fd);
-		}
+		setFlags(pipes_[0], false);
+		setFlags(pipes_[1], true);
+		setFlags(pipes_[2], true);
+		setFlags(pipes_[3], false);
 	}
 	catch (std::runtime_error &e)
 	{

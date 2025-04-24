@@ -94,6 +94,8 @@ void	CGI::handle(const SharedFd &fd, uint32_t events) {
 			return ;
 		case RCV_FROM_CGI:
 			getResponseFromCGI(fd, events);
+			if (CGI_STATE_ != HANDLE_RSPNS_CGI)
+				return ;
 			[[fallthrough]];
 		case HANDLE_RSPNS_CGI:
 			handleCGIResponse();
