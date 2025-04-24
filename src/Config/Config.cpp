@@ -147,7 +147,7 @@ const std::unordered_map<std::string, std::vector<int>> Config::getHostPort() co
 					strPort = "";
 				} else
 					throw Config::ConfigException("Port is not a number!");
-			} else if (strPort.length() > 5) {
+			} else if (strPort.length() > 5 || strPort[0] == '0' || stoi(strPort) > 65536) {
 				throw Config::ConfigException("Port is out of range!");
 			}
 			// Adding host/port combination
