@@ -46,7 +46,7 @@ void	SharedFd::closeFd() {
 	if (_fd >= 0)
 	{
 		if(close(_fd) == -1)
-			throw std::runtime_error("close " + std::to_string(_fd) + " : " + strerror(errno));
+			std::cerr << "Close() failed: " << _fd <<  " : " << strerror(errno) << std::endl;
 	}
 }
 
