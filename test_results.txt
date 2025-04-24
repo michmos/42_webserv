@@ -1,41 +1,5 @@
-HTTP/1.1 200 OK
+HTTP/1.1 301 Found
 Connection: close
+Location: /http/contact.html
 Content-Type: text/html
-Content-Length: 921
-Transfer-Encoding: chunked
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-	<!-- No favicon tag -->
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
-	<title>Webserv</title>
-	<link rel="stylesheet" href="css/styles.css">
-	</head>
-	<body>
-		<header>
-			<h1>Webserv</h1>
-		</header>
-
-		<nav>
-			<a href="index.html">Home</a>
-			<a href="/http/upload.html">Upload</a>
-			<a href="/http/contact.html">Contact</a>
-			<a href="/http/error-testing.html" class="highlight">CGI error tests</a>
-		</nav>
-
-		<main>
-			<h1>Welcome</h1>
-			<img src="images/welcome.jpg" alt="Picture">
-			<p><a class="button-link" href="/cgi-bin/nph_CGI_upload_list.py">View Uploaded Files</a></p>
-		</main>
-
-		<footer>
-			<p>&copy; 2025 Webserv. All rights reserved.</p>
-		</footer>
-	</body>
-
-</html>

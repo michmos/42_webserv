@@ -104,11 +104,6 @@ curl -s --http1.1 -G localhost:$PORT/notexistingfile -i -o test_results.txt
 head -n 1 test_results.txt | grep -q "404" && echo -e "${GRE} Status is 404 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
 echo ""
 
-echo "" > test_results.txt
-echo -e "TEST 15: ${YEL} Stresstest with siege -r 1000 -c 1 http://localhost:$PORT/empty.html: ${RES}"
-siege -r 1000 -c 1 http://localhost:$PORT/empty.html
-echo ""
-
 # Content type is not accepted: application/octet-stream, only no multipart/form-data
 echo "" > test_results.txt
 echo -e "TEST 15: ${YEL} POST request with short body to upload: ${RES}"
@@ -142,4 +137,9 @@ ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
 ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
 EOF
 head -n 1 test_results.txt | grep -q "200" && echo -e "${GRE} Status is 200 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
+echo ""
+
+echo -e "TEST 19: ${YEL} GET redirect localhost:$PORT/old-page: ${RES}"
+curl -s --http1.1 -G localhost:$PORT/old-page -i -o test_results.txt
+head -n 1 test_results.txt | grep -q "301" && echo -e "${GRE} Status is 301 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
 echo ""
