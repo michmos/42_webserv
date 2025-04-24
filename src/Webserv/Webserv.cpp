@@ -232,7 +232,7 @@ void	Webserv::eventLoop() {
 			// 	<< ((ev.events & EPOLLOUT) ? "EPOLLOUT " : " ")
 			// 	<< ((ev.events & (EPOLLHUP | EPOLLERR)) ? "EPOLLHUP | EPOLLERR" : "") << std::endl;
 			// #endif
-			SharedFd fd = Epoll::getEventData(ev).fd;
+			SharedFd fd(Epoll::getEventData(ev).fd, true);
 			if (_servers.find(fd) != _servers.end()) {
 				_handleServerReady(ev);
 			} else {

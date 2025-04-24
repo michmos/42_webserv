@@ -15,6 +15,7 @@ class	SharedFd {
 public:
 	SharedFd();
 	SharedFd(int fd);
+	SharedFd(int fd, bool temp);
 	SharedFd(const SharedFd& other);
 	SharedFd& operator=(const SharedFd& other);
 	SharedFd& operator=(int fd);
@@ -43,6 +44,7 @@ public:
 
 private:
 	int	_fd;
+	bool _temp;
 	static std::unordered_map<int, int> _refCounts;
 	void	closeFd();
 };

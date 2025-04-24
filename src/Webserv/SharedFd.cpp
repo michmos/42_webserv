@@ -6,8 +6,12 @@ std::unordered_map<int, int> SharedFd::_refCounts;
 SharedFd::SharedFd() : SharedFd(UNVALID_FD) {
 }
 
-SharedFd::SharedFd(int fd) : _fd(fd) {
-	_refCounts[fd]++;
+SharedFd::SharedFd(int fd) : SharedFd(fd, false) {
+}
+
+SharedFd::SharedFd(int fd, bool temp) : _fd(fd), _temp(temp) {
+	if (!_temp)
+		_refCounts[fd]++;
 }
 
 SharedFd::SharedFd(const SharedFd& other) : SharedFd() {
@@ -22,13 +26,15 @@ SharedFd& SharedFd::operator=(const SharedFd& other) {
 
 SharedFd& SharedFd::operator=(int fd) {
 	if (this->_fd != fd) {
-		_refCounts[this->_fd]--;
+		if (!_temp)
+			_refCounts[this->_fd]--;
 		if (_refCounts[_fd] == 0)
 		{
 			closeFd();
 		}
 		this->_fd = fd;
-		_refCounts[this->_fd]++;
+		if (!_temp)
+			_refCounts[this->_fd]++;
 	}
 	return (*this);
 }
@@ -43,7 +49,7 @@ void	SharedFd::printOpenFds() {
 }
 
 void	SharedFd::closeFd() {
-	if (_fd >= 0)
+	if (_fd >= 0 && !_temp)
 	{
 		if(close(_fd) == -1)
 			std::cerr << "Close() failed: " << _fd <<  " : " << strerror(errno) << std::endl;
@@ -51,7 +57,8 @@ void	SharedFd::closeFd() {
 }
 
 SharedFd::~SharedFd() {
-	_refCounts[_fd]--;
+	if (!_temp)
+		_refCounts[_fd]--;
 	if (_refCounts[_fd] == 0)
 	{
 		closeFd();
