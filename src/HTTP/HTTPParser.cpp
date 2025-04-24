@@ -400,7 +400,6 @@ std::string	HTTPParser::generatePath(const Config *config) {
 	for (const std::string &root : config->getRoot(result_.request_target))
 	{
 		full_path = addDir_Folder(root, "", result_.request_target);
-		std::cerr << "full path: " << full_path << std::endl;
 		bool autoindex = config->getAutoindex(full_path);
 		if (isAccessible(full_path, result_.dir_list, result_.status_code, autoindex)) {
 			return (full_path);
@@ -497,3 +496,4 @@ void	HTTPParser::clearParser(void) {
 	chunked_ = false;
 }
 
+const HTTPRequest HTTPParser::getParsedRequest(void) { return (result_); }
