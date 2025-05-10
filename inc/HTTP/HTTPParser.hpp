@@ -52,7 +52,7 @@ class HTTPParser
 		void	addIfProcessIsChunked( const std::string &buff );
 		bool	isAllwdMeth( const std::string& method, const Config& conf );
 		bool	checkBodySizeLimit( size_t body_size, const Config *config, std::string path );
-		bool	isRedirection(std::string &endpoint, const std::vector<std::string> &redir);
+		bool	isRedirection(const std::vector<std::string> &redir);
 		std::string	handleRootDir( const Config *config );
 		std::string	generatePath(const Config *config);
 

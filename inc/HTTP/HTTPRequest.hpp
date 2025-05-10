@@ -13,6 +13,7 @@ struct HTTPRequest
 	std::string 				body;
 	bool						invalidRequest = false;
 	bool						dir_list = false;
+	bool						redir_ = false;
 	int							status_code = 0;
 	std::unordered_map<std::string, std::string> headers;
 };

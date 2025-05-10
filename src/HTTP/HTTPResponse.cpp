@@ -45,8 +45,10 @@ void	HTTPResponse::generateResponse(HTTPRequest request) {
 			filename_ = searchErrorPage(config_->getRoot("/"), errPage);
 		}
 	}
-	else if (isRedirectStatusCode(request.status_code)) { // Redirect file serving
-		header_ = request.body;
+	else if (request.redir_ && isRedirectStatusCode(request.status_code)) { // Redirect response
+		header_ = "HTTP/1.1 " + std::to_string(request.status_code) 
+				+ " Found\r\nLocation: " + request.request_target 
+				+ "\r\nContent-Type: text/html\r\n\r\n";
 		std::cerr << "header: " << header_ << std::endl;
 	}
 	status_code_ = request.status_code;

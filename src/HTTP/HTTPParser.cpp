@@ -274,28 +274,16 @@ bool	HTTPParser::isAllwdMeth(const std::string& method, const Config& conf) {
 	return (std::find(allwdMeth.begin(), allwdMeth.end(), method) != allwdMeth.end());
 }
 
-bool	HTTPParser::isRedirection(std::string &endpoint, const std::vector<std::string> &redir) {
-	if (redir.size() >= 2)
-	{
-		try
-		{
-			if (std::all_of(redir[0].begin(), redir[0].end(), ::isdigit))
-				result_.status_code = std::stoi(redir[0]);
-			else
-				return (false);
-		}
-		catch (...)
-		{
-			return (false);
-		}
-		endpoint = redir[1];
-		result_.body = \
-			"HTTP/1.1 " + redir[0] + " Found\r\nLocation: " + result_.request_target + \
-			"\r\nContent-Type: text/html\r\n\r\n";
-		PARSE_STATE_ = DONE_PARSING;
-		return (true);
+bool	HTTPParser::isRedirection(const std::vector<std::string> &redir) {
+	if (redir.size() < 2)
+		return (false);
+
+	try {
+		result_.status_code = std::stoi(redir[0]);
+	} catch (...) {
+		return (false);
 	}
-	return (false);
+	return (true);
 }
 
 
@@ -392,8 +380,14 @@ std::string	HTTPParser::generatePath(const Config *config) {
 
 	if (result_.method == "DELETE")
 		return (result_.request_target);
-	if (isRedirection(result_.request_target, config->getRedirect(result_.request_target)))
+
+	auto redir = config->getRedirect(result_.request_target);
+	if (isRedirection(redir)) {
+		result_.redir_ = true;
+		result_.request_target = redir[1];
+		PARSE_STATE_ = DONE_PARSING;
 		return ("");
+	}
 	else if (result_.request_target == "/")
 		return (handleRootDir(config));
 
