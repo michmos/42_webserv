@@ -10,9 +10,9 @@ HTTPClient::HTTPClient(
 	) : STATE_(RECEIVING),
 		clientSock_(clientFd),
 		serverSock_(serverFd),
+		response_(""),
 		responseGenerator_(),
 		config_(NULL),
-		response_(""),
 		is_cgi_requ_(false),
 		first_response_(true),
 		addToEpoll_cb_(addToEpoll_cb),
@@ -118,14 +118,12 @@ void	HTTPClient::handleCGI(SharedFd fd, uint32_t events) {
 }
 
 void	HTTPClient::generateResponse() {
-	std::string response;
 	if (is_cgi_requ_) {
-		response = cgiResponse();
+		response_ = cgiResponse();
 	} else {
-		response = responseGenerator_.generateResponse(request_);
+		response_ = responseGenerator_.generateResponse(request_);
 	}
-	HTTPResponse::insertHeader("Connection", "close", response);
-	message_que_.push_back(response);
+	HTTPResponse::insertHeader("Connection", "close", response_);
 }
 
 /// @brief regenerates response and add this one to the que.

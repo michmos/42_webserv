@@ -75,7 +75,7 @@ class HTTPClient {
 		//ClientReadWrite
 		void		writeToFd( const SharedFd &fd, const std::string &response );
 		void		writeToClient( const SharedFd &fd );
-		std::string	getChunk( void );
+		std::string	extractChunk( void );
 		std::string	getHeaderInclTransferEncoding( void );
 		std::string	readFrom( int fd );
 
@@ -88,13 +88,12 @@ class HTTPClient {
 
 		SharedFd						clientSock_;
 		SharedFd						serverSock_;
-		std::vector<std::string>		message_que_;
+		std::string						response_;
 		HTTPParser						parser_;
 		HTTPRequest						request_;
 		std::unique_ptr<CGI> 			cgi_;
 		HTTPResponse					responseGenerator_;
 		std::shared_ptr<Config>			config_;
-		std::string						response_;
 		bool							is_cgi_requ_;
 		bool							first_response_;
 

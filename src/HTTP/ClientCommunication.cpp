@@ -1,4 +1,5 @@
 #include "../../inc/HTTP/HTTPClient.hpp"
+
 #define TERMINATOR_CHUNK "0\r\n\r\n"
 
 std::string	HTTPClient::readFrom(int fd) {
@@ -42,7 +43,7 @@ std::string	HTTPClient::getHeaderInclTransferEncoding() {
  * @brief subtract header if first_msg, else adds hexsize and makes chunk
  * @return string with chunk
  */
-std::string	HTTPClient::getChunk(void) {
+std::string	HTTPClient::extractChunk(void) {
 	size_t				chunksize;
 	std::ostringstream	chunk_os;
 	std::string			chunk_response = "";
@@ -75,20 +76,10 @@ std::string	HTTPClient::getChunk(void) {
  * @param fd SharedFd from Client
  */
 void	HTTPClient::writeToClient(const SharedFd &fd) {
-	if (first_response_) // ONLY SEND HEADER
-	{
-		if (message_que_.empty())
-			return ;
-		response_ = message_que_.front();
-		message_que_.erase(message_que_.begin());
-		if (response_.empty())
-			return ;
-	}
-
 	if (response_.length() > WRITESIZE || !first_response_) // IF CHUNKED
 	{
-		std::string write_msg = getChunk();
-		writeToFd(fd, write_msg);
+		std::string chunk = extractChunk();
+		writeToFd(fd, chunk);
 	}
 	else // ALL IN ONCE
 	{
