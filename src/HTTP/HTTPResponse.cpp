@@ -27,28 +27,27 @@ static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 &
 void	HTTPResponse::generateResponse(HTTPRequest request) {
 	std::string	filename(request.request_target);
 
-	if (request.dir_list)
-	{
-		std::cerr << "filename: " << filename << std::endl;
-		std::cerr << "autoindex on/off: " << config_->getAutoindex(filename) << std::endl;
-		if (!config_->getAutoindex(filename))
+	if (request.dir_list) { 	// check directory listing 
+		if (!config_->getAutoindex(filename)) {
 			request.status_code = 404;
-		else
+		} else {
 			dir_list_ = true ;
-		std::cerr << dir_list_ << "dirlist is on " << request.status_code << std::endl;
+		}
+		Logger::getInstance().log(LOG_DEBUG, "is directory listing");
 	}
 
-	if (!request.invalidRequest && request.status_code == 200)
+	if (!request.invalidRequest && request.status_code == 200) {	// Normal file serving
 		filename_ = request.request_target;
-	else if (isRedirectStatusCode(request.status_code))
-	{
+	}
+	else if (request.status_code >= 400){  // Custom err page file serving
+		std::string errPage = config_->getErrorPage(request.status_code);
+		if (!errPage.empty()) {
+			filename_ = searchErrorPage(config_->getRoot("/"), errPage);
+		}
+	}
+	else if (isRedirectStatusCode(request.status_code)) { // Redirect file serving
 		header_ = request.body;
 		std::cerr << "header: " << header_ << std::endl;
-	}
-	else if (isCustomErrorPages(filename, request.status_code))
-	{
-		filename_ = searchErrorPage(config_->getRoot("/"), filename);
-		// std::cerr << "is customerrorpage" << std::endl;
 	}
 	status_code_ = request.status_code;
 }
@@ -115,17 +114,6 @@ std::string	HTTPResponse::searchErrorPage(const std::vector<std::string> &dir, c
 	}
 	status_code_ = 404;
 	return ("");
-}
-
-bool	HTTPResponse::isCustomErrorPages(std::string &filename, int status_code) {
-	std::string error_page = config_->getErrorPage(status_code);
-	if (error_page.empty())
-		return (false);
-	
-	std::cerr << "status code: " << status_code << " filename: " << error_page << std::endl;
-	filename = error_page;
-	status_code_ = status_code;
-	return (true);
 }
 
 // ################     PRIVATE LOAD RESPONSE     ################
