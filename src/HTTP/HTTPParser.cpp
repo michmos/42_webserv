@@ -310,7 +310,6 @@ static bool	hasRightPermission(const std::string &path, int &status_code) {
 	{
 		if (access(path.c_str(), R_OK) == -1)
 		{
-			std::cerr << "No permission" << std::endl;
 			status_code = 403;
 			return (false);
 		}
@@ -328,7 +327,6 @@ bool	isAccessible(std::string &fullpath, bool &dir_list, int &statuscode, bool a
 	{
 		if (S_ISDIR(statbuf.st_mode))
 		{
-			std::cerr << "index: " << autoindex << std::endl;
 			if (fullpath.back() == '/' && autoindex)
 			{
 				dir_list = true;

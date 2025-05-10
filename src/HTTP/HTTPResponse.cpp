@@ -1,5 +1,6 @@
 
 # include "../../inc/HTTP/HTTPResponse.hpp"
+# include "../../inc/Webserv/Logger.hpp"
 #include <cstddef>
 #include <functional>
 #include <string>
@@ -100,18 +101,15 @@ std::string	HTTPResponse::searchErrorPage(const std::vector<std::string> &dir, c
 	for (const std::string &path : dir)
 	{
 		std::string fullpath = path + errorpage;
-		std::cerr << "path: " << path << " page: " << errorpage << std::endl;
 		if (stat(fullpath.c_str(), &statbuf) == 0)
 		{
 			if (access(fullpath.c_str(), F_OK) != -1)
 			{
 				if (access(fullpath.c_str(), R_OK) == -1)
 				{
-					std::cerr << "No permission" << std::endl;
 					status_code_ = 403;
 					return "";
 				}
-				std::cerr << "fullpath: " << fullpath << std::endl;
 				return (fullpath);
 			}
 			break ;
