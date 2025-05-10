@@ -1,5 +1,7 @@
 #include "../../inc/HTTP/HTTPClient.hpp"
+#include "../../inc/Webserv/Logger.hpp"
 #include <memory>
+#include <string>
 
 HTTPClient::HTTPClient(
 	SharedFd clientFd, 
@@ -68,15 +70,6 @@ void	HTTPClient::handle(const epoll_event &event) {
 	}
 }
 
-void	printRequest(HTTPRequest request) {
-	std::cerr << "------------------\nRequest:\n";
-	std::cerr << "Method: " << request.method << "\n";
-	std::cerr << "Target: " << request.request_target << "\n";
-	std::cerr << "Host: " << request.host[0] << "\n";
-	std::cerr << "StatusCode: " << request.status_code << "\n";
-	std::cerr << "Dir on/off: " << request.dir_list << "\n------------------\n";
-}
-
 void	HTTPClient::initCGI() {
 	CGIPipes pipes;
 	pipes.setCallbackFunctions(clientSock_, addToEpoll_cb_, delFromEpoll_cb_);
@@ -96,7 +89,7 @@ void	HTTPClient::handleReceiving(SharedFd fd, uint32_t events) {
 	}
 	
 	request_ = parser_.getParsedRequest();
-	printRequest(request_); //TODO: REMOVE
+	Logger::getInstance().log(LOG_REQUEST, request_.method + " " + request_.request_target);
 	responseGenerator_.setConfig(config_);
 	// first_response_ = true;
 	if (request_.status_code != 200 || !CGI::isCGI(request_)) {

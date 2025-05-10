@@ -5,7 +5,7 @@ CPPFLAGS	:=	-Wall -Wextra -Werror -std=c++17
 DEBUG 		?= 0
 ifeq ($(DEBUG), 1)
 CPP			:= g++
-CPPFLAGS	:= -g -std=c++17
+CPPFLAGS	:= -g -std=c++17 -DDEBUG
 endif
 
 SRCDIR		:=	src
@@ -13,6 +13,7 @@ SRC			:= $(SRCDIR)/main.cpp \
 				$(SRCDIR)/Webserv/Epoll.cpp \
 				$(SRCDIR)/Webserv/SharedFd.cpp \
 				$(SRCDIR)/Webserv/Webserv.cpp \
+				$(SRCDIR)/Webserv/Logger.cpp \
 				$(SRCDIR)/HTTP/HTTPClient.cpp \
 				$(SRCDIR)/HTTP/HTTPParser.cpp \
 				$(SRCDIR)/HTTP/HTTPResponse.cpp \

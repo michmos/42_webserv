@@ -1,5 +1,6 @@
 
 #include "../../inc/Webserv/Webserv.hpp"
+#include "../../inc/Webserv/Logger.hpp"
 #include <memory>
 
 std::atomic<bool> keepalive(true);
@@ -7,7 +8,7 @@ std::atomic<bool> keepalive(true);
 void	signalhandler(int signum)
 {
 	if (signum == SIGINT || signum == SIGQUIT) {
-		std::cerr << "\n" << strsignal(signum) << " received" << std::endl;
+		Logger::getInstance().log(LOG_INFO, std::string(strsignal(signum)) + " received");
 		keepalive = false;
 	}
 }
@@ -226,12 +227,6 @@ void	Webserv::eventLoop() {
 	{
 		const auto& events = _ep.wait();
 		for (const auto& ev : events) {
-			// #ifdef DEBUG
-			// std::cout << "|SERVER| client: " << ev.data.fd << " "
-			// 	<< ((ev.events & EPOLLIN) ? "EPOLLIN " : " ")
-			// 	<< ((ev.events & EPOLLOUT) ? "EPOLLOUT " : " ")
-			// 	<< ((ev.events & (EPOLLHUP | EPOLLERR)) ? "EPOLLHUP | EPOLLERR" : "") << std::endl;
-			// #endif
 			SharedFd fd(Epoll::getEventData(ev).fd, true);
 			if (_servers.find(fd) != _servers.end()) {
 				_handleServerReady(ev);
@@ -240,5 +235,5 @@ void	Webserv::eventLoop() {
 			}
 		}
 	}
-	std::cerr << "Webserver is shutting down" << std::endl;
+	Logger::getInstance().log(LOG_INFO, "Webserver is shutting down");
 }

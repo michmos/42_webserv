@@ -1,5 +1,6 @@
 #include "../../inc/CGI/CGI.hpp"
 #include "../../inc/HTTP/HTTPClient.hpp"
+#include "../../inc/Webserv/Logger.hpp"
 
 // #################     RESPONSE_FROM_CGI     ###################
 // ###############################################################
@@ -86,7 +87,7 @@ void	CGI::rewriteResponseFromCGI(void) {
 		new_response += "Content-Type: " + std::string(match[1]) + "\r\n";
 	if (new_response.empty())
 	{
-		std::cerr << "Error: Received wrong formated header from CGI" << std::endl;
+		Logger::getInstance().log(LOG_DEBUG, "Error: Received wrong formated header from CGI");
 		response_ = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
 		return ;
 	}
@@ -116,7 +117,8 @@ int	CGI::getStatusCodeFromResponse(void) {
 		if (to_string.size() < 9)
 			status_code = std::stoi(match[1]);
 	}
-	else
-		std::cerr << "Error: No response or statuscode is found in response" << std::endl;
+	else {
+		Logger::getInstance().log(LOG_DEBUG, "Error: No response or statuscode is found in response");
+	}
 	return (status_code);
 }

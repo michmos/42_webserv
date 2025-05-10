@@ -1,4 +1,5 @@
 #include "../../inc/CGI/CGI.hpp"
+#include "../../inc/Webserv/Logger.hpp"
 
 // ######################     START_CGI     ######################
 // ###############################################################
@@ -35,6 +36,8 @@ void	CGI::execCGI() {
 			throw::CGIException(e.what());
 		}
 	}
+
+	Logger::getInstance().log(LOG_DEBUG, "CGI started. pid: " + std::to_string(pid_));
 	pipes_[TO_CGI_READ] = -1;
 	pipes_[FROM_CGI_WRITE] = -1;
 	CGI_STATE_ = SEND_TO_CGI;

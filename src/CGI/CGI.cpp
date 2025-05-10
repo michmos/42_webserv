@@ -1,4 +1,5 @@
 #include "../../inc/CGI/CGI.hpp"
+#include "../../inc/Webserv/Logger.hpp"
 #include "../../inc/HTTP/HTTPClient.hpp"
 
 static bool	isNPH(const std::string& path) {
@@ -121,7 +122,7 @@ void	CGI::handleCGIResponse() {
 }
 
 void	CGI::handleTimeOut() {
-	std::cerr << "TIMEOUT, shutting down CGI...\n";
+	Logger::getInstance().log(LOG_DEBUG, "TIMEOUT, shutting down CGI: " + std::to_string(pid_));
 	timeout_ = true;
 	status_ = 500;
 	finished_ = true;

@@ -1,5 +1,5 @@
 #include "../inc/Webserv/Webserv.hpp"
-#include <cstdlib>
+#include "../inc/Webserv/Logger.hpp"
 
 std::atomic<bool> keep_alive(true);
 
@@ -11,7 +11,7 @@ void	signal_handler(int signum)
 
 int	save_main(int argc, char **argv) {
 	if (argc > 2) {
-		std::cerr << "Usage: ./webserv <path_to_config>" << std::endl;
+		Logger::getInstance().log(LOG_ERROR, "Usage: ./webserv <path_to_config>");
 		exit(EXIT_FAILURE);
 	}
 
@@ -19,32 +19,38 @@ int	save_main(int argc, char **argv) {
 
 	std::signal(SIGINT, signal_handler);
 
-	std::cerr << "Webserver starting ... with config: " << path << std::endl;
+	Logger::getInstance().log(LOG_INFO, "Webserver starting ... with config: " + path);
 	Webserv	webserver(path);
-	std::cerr << "Webserver has started" << std::endl;
+	Logger::getInstance().log(LOG_INFO, "Webserver has started");
 	webserver.eventLoop();
 	return (0);
 }
 
+
 int main (int argc, char **argv) {
 	try
 	{
+		Logger::getInstance().setLogLevel(LOG_ERROR);
+		#ifdef DEBUG
+		Logger::getInstance().setLogLevel(LOG_DEBUG);
+		Logger::getInstance().log(LOG_DEBUG, "Debugging info active");
+		#endif
 		return (save_main(argc, argv));
 	}
 	catch (std::runtime_error &e) {
-		std::cerr << "Runtime error occurred: " << e.what() << std::endl;
+		Logger::getInstance().log(LOG_FATAL, "Runtime error occurred: " + std::string(e.what()));
 	}
 	catch (std::invalid_argument &e) {
-		std::cerr << "Invalid argument error occurred: " << e.what() << std::endl;
+		Logger::getInstance().log(LOG_ERROR, "Invalid argument error occurred: " + std::string(e.what()));
 	}
 	catch (CGIException &e) {
-		std::cerr << "CGI error occurred: " << e.what() << std::endl;
+		Logger::getInstance().log(LOG_ERROR, "CGI error occurred: " + std::string(e.what()));
 	}
 	catch (std::exception &e) {
-		std::cerr << "Error occurred: " << e.what() << std::endl;
+		Logger::getInstance().log(LOG_FATAL, "Error occurred: " + std::string(e.what()));
 	}
 	catch (...) {
-		std::cerr << "Error: Something else went wrong" << std::endl;
+		Logger::getInstance().log(LOG_FATAL, "Unknown error occurred");
 	}
-	return (01);
+	return (1);
 }
