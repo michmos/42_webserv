@@ -45,30 +45,25 @@ std::string	HTTPClient::getHeaderInclTransferEncoding() {
  */
 std::string	HTTPClient::extractChunk(void) {
 	size_t				chunksize;
-	std::ostringstream	chunk_os;
-	std::string			chunk_response = "";
+	std::ostringstream	chunk;
 
 	if (first_response_)
 		return (getHeaderInclTransferEncoding());
 
-	if (WRITESIZE < response_.length())
-		chunksize = WRITESIZE;
-	else
-		chunksize = response_.length();
+	chunksize = (WRITESIZE < response_.length()) ? WRITESIZE : response_.length();
 
 	if (chunksize != 0)
 	{
-		chunk_os << std::hex << chunksize << "\r\n";
-		chunk_os << response_.substr(0, chunksize) << "\r\n";
-		chunk_response = chunk_os.str();
+		chunk << std::hex << chunksize << "\r\n";
+		chunk << response_.substr(0, chunksize) << "\r\n";
 	}
 	response_.erase(0,chunksize);
 	if (response_.empty())
 	{
-		chunk_response += "0\r\n\r\n";
+		chunk << "0\r\n\r\n";
 		STATE_ = DONE;
 	}
-	return (chunk_response);
+	return (chunk.str());
 }
 
 /**
