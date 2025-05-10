@@ -27,8 +27,8 @@ class HTTPResponse {
 		HTTPResponse( void );
 		~HTTPResponse( void );
 
-		void		generateResponse( const HTTPRequest request );
-		std::string loadResponse( void );
+		void		procsRequHeader( const HTTPRequest request );
+		std::string generateResponse( const HTTPRequest& request );
 		void		setConfig( std::shared_ptr<Config> config ) ;
 		static void	insertHeader(const std::string& key, const std::string& value, std::string& rspns);
 
@@ -39,10 +39,10 @@ class HTTPResponse {
 
 		
 		// Load Response
-		void		getBody( void );
-		void		getContentType( void );
-		void		getHttpStatusMessages( void );
-		void		createHeader( void );
+		void		setBody( void );
+		void		setContentType( void );
+		void		setHttpStatusMessages( void );
+		void		setHeader( void );
 
 		std::vector<char *> 	env_;
 		std::string				filename_;

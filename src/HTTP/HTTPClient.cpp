@@ -121,10 +121,8 @@ void	HTTPClient::generateResponse() {
 	std::string response;
 	if (is_cgi_requ_) {
 		response = cgiResponse();
-	} else
-	{
-		responseGenerator_.generateResponse(request_);
-		response = responseGenerator_.loadResponse();
+	} else {
+		response = responseGenerator_.generateResponse(request_);
 	}
 	HTTPResponse::insertHeader("Connection", "close", response);
 	message_que_.push_back(response);
@@ -154,16 +152,13 @@ std::string	HTTPClient::cgiResponse(void) {
 			cgi_error_request.request_target = "Server Error";
 		else if (status >= 400)
 			cgi_error_request.request_target = "Client Error";
-		std::cerr << "is cgi timeout or " << cgi_error_request.request_target << ": " << status << std::endl;
 		cgi_error_request.status_code = status;
-		responseGenerator_.generateResponse(cgi_error_request);
-		response = responseGenerator_.loadResponse();
+		response = responseGenerator_.generateResponse(cgi_error_request);
 	}
 	else {	
 		response = cgi_->getResponse();
+		Logger::getInstance().log(LOG_RESPONSE, "CGI response " + std::to_string(status));
 	}
-	std::cerr << "-------------------\nCGI Response: " << response \
-		<< "\n-----------------" << std::endl;
 	return (response);
 }
 

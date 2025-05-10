@@ -1,5 +1,8 @@
 
 # include "../../inc/HTTP/HTTPResponse.hpp"
+#include <cstddef>
+#include <functional>
+#include <string>
 
 // #######################     PUBLIC     ########################
 // ###############################################################
@@ -21,10 +24,10 @@ void	HTTPResponse::setConfig(const std::shared_ptr<Config> config) { config_ = c
 static bool	isRedirectStatusCode(int status_code) { return (status_code >= 300 && status_code <= 308); }
 
 /**
- * @brief generates Response by processing the request Header
+ * @brief processes request header
  * @param request struct that contains all the parsed header info
  */
-void	HTTPResponse::generateResponse(HTTPRequest request) {
+void	HTTPResponse::procsRequHeader(HTTPRequest request) {
 	std::string	filename(request.request_target);
 
 	if (request.dir_list) { 	// check directory listing 
@@ -46,11 +49,11 @@ void	HTTPResponse::generateResponse(HTTPRequest request) {
 		}
 	}
 	else if (request.redir_ && isRedirectStatusCode(request.status_code)) { // Redirect response
-		header_ = "HTTP/1.1 " + std::to_string(request.status_code) 
-				+ " Found\r\nLocation: " + request.request_target 
+		header_ = "HTTP/1.1 " + std::to_string(request.status_code)
+				+ " Found\r\nLocation: " + request.request_target
 				+ "\r\nContent-Type: text/html\r\n\r\n";
-		std::cerr << "header: " << header_ << std::endl;
 	}
+
 	status_code_ = request.status_code;
 }
 
@@ -71,14 +74,14 @@ void	HTTPResponse::insertHeader(const std::string& key, const std::string& value
 	response.insert(insertPos, headerLine);
 }
 
-std::string	HTTPResponse::loadResponse(void) {
+std::string	HTTPResponse::generateResponse(const HTTPRequest& request) {
+	procsRequHeader(request);
 	if (isRedirectStatusCode(status_code_))
 		return (header_);
-	getBody();
-	getContentType();
-	getHttpStatusMessages();
-	createHeader();
-	std::cerr << "Response: \n" << header_ << "body size: " << body_.size() << "\n" << std::endl;
+
+	setBody();
+	setHeader();
+	Logger::getInstance().log(LOG_RESPONSE, httpStatusMessages_ + " " + content_type_);
 	return (header_ + body_);
 }
 
@@ -122,11 +125,11 @@ std::string	HTTPResponse::searchErrorPage(const std::vector<std::string> &dir, c
 // ###############################################################
 
 /**
- * @brief sums up all the directives from the given directory
+ * @brief creates a directory listing in html format
  * @param path const char * with dir name
- * @return string with all the directories, seperated with a '\n'
+ * @return string with all the directories in html syntax
  */
-static std::string	getAllDirNames(const char *path) {
+static std::string	createDirListingHtml(const char *path) {
 	struct dirent 	*d;
 	std::string		list;
 	DIR 			*dir = opendir(path);
@@ -136,55 +139,51 @@ static std::string	getAllDirNames(const char *path) {
 	list = "<!DOCTYPE html><head><title>" + std::string(path) + \
 		"Folder:</title></head><body><p>" \
 		+ std::string(path) + "</p><br><ul>";
-	while (true)
-	{
+	do {
 		d = readdir(dir);
 		if (d != nullptr)
 			list += "<li>" + std::string(d->d_name) + "</li>";
-		else
-			break ;
-	}
-	closedir(dir);
+	} while (d);
 	list += "</ul></body></html>";
+
+	closedir(dir);
 	return (list);
 }
 
 /// @brief get body from request target
-void	HTTPResponse::getBody(void) {
-	if (dir_list_ == true)
-		body_ = getAllDirNames(filename_.c_str());
-	else if (!filename_.empty())
+void	HTTPResponse::setBody(void) {
+	if (dir_list_ == true) { // create directory listing html page
+		body_ = createDirListingHtml(filename_.c_str());
+	}
+	else if (!filename_.empty()) // copy file content to body
 	{
-		std::ifstream 		myfile(filename_, std::ios::binary);
-		std::ostringstream	buffer;
-
-		buffer.clear();
+		std::ifstream	myfile(filename_, std::ios::binary);
 		if (!myfile)
 			throw std::runtime_error("Failed to open file: " + filename_);
+
 		body_.assign((std::istreambuf_iterator<char>(myfile)), std::istreambuf_iterator<char>());
 	}
-	else
-		body_ = "";
 }
 
 /// @brief search through mimetypes to set the right content type based on the extension
-void	HTTPResponse::getContentType( void )
+void	HTTPResponse::setContentType( void )
 {
 	std::string	extension;
-	size_t		index;
 
 	if (dir_list_)
 	{
 		content_type_ = "text/html";
-		std::cerr << "dir list on\n";
 		return ;
 	}
-	index = filename_.find_last_of('.');
+
+	// get file extension
+	size_t index = filename_.find_last_of('.');
 	if (index == std::string::npos)
 		return ;
-
 	extension = filename_.substr(index + 1);
 	std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+
+	// find mime type
 	for (const auto &type : config_->getMimeTypes())
 	{
 		for(const std::string &mimetype : type.second)
@@ -199,7 +198,7 @@ void	HTTPResponse::getContentType( void )
 }
 
 /// @brief checks the status and get the right httpstatus message to add it to the default error page
-void	HTTPResponse::getHttpStatusMessages(void) {
+void	HTTPResponse::setHttpStatusMessages(void) {
 	static const std::unordered_map<int, std::string> httpStatusMessages = {
 		{100, "100 Continue"}, {101, "101 Switching Protocols"}, {102, "102 Processing"},
 		{200, "200 OK"}, {201, "201 Created"}, {202, "202 Accepted"}, {204, "204 No Content"},
@@ -212,13 +211,14 @@ void	HTTPResponse::getHttpStatusMessages(void) {
 		{501, "501 Not Implemented"}, {502, "502 Bad Gateway"}, {503, "503 Service Unavailable"},
 		{504, "504 Gateway Timeout"}, {505, "505 HTTP Version Not Supported"}
 	};
+
 	auto it = httpStatusMessages.find(status_code_);
 	if (it != httpStatusMessages.end())
 		httpStatusMessages_ = it->second;
 	else
 		httpStatusMessages_ = "500 Internal Server Error";
 
-	if (status_code_ != 200 && status_code_ != 404 && !body_.empty()) // Do we want this?
+	if (status_code_ != 200 && status_code_ != 404 && !body_.empty()) // TODO: test whether this is required
 	{
 		size_t index = body_.find("Error 404 Not found");
 		if (index != std::string::npos)
@@ -228,10 +228,13 @@ void	HTTPResponse::getHttpStatusMessages(void) {
 }
 
 /// @brief combines all parts of HTTP header and adds right values
-void	HTTPResponse::createHeader(void) {
+void	HTTPResponse::setHeader(void) {
+	setContentType();
+	setHttpStatusMessages();
+
 	header_ = "HTTP/1.1 " + httpStatusMessages_ + "\r\n"
 			+ "Content-Type: " + content_type_ + "\r\n";
 	if (!body_.empty())
-		header_ += "Content-Length: " + std::to_string(body_.size()); // what if chunked?
+		header_ += "Content-Length: " + std::to_string(body_.size()); // TODO: what if chunked?
 	header_ += "\r\n\r\n";
 }
