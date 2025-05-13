@@ -92,13 +92,13 @@ void	HTTPClient::handleReceiving(SharedFd fd, uint32_t events) {
 	Logger::getInstance().log(LOG_REQUEST, request_.method + " " + request_.request_target);
 	responseGenerator_.setConfig(config_);
 	// first_response_ = true;
-	if (request_.status_code != 200 || !CGI::isCGI(request_)) {
-		STATE_ = RESPONSE;
+	if (request_.status_code == 200 && CGI::isCGI(request_)) {
+		is_cgi_requ_ = true;
+		initCGI();
+		STATE_ = PROCESS_CGI;
 		return ;
 	}
-	is_cgi_requ_ = true;
-	initCGI();
-	STATE_ = PROCESS_CGI;
+	STATE_ = RESPONSE;
 }
 
 /// @brief redirects epoll event to cgi object to handle it
