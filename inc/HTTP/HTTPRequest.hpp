@@ -9,6 +9,7 @@ struct HTTPRequest
 	std::vector<std::string>	host;
 	std::string 				method;
 	std::string 				request_target;
+	std::string 				request_uri;
 	std::string 				protocol;
 	std::string 				body;
 	bool						invalidRequest = false;

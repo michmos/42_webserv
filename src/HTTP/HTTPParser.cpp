@@ -1,4 +1,5 @@
 # include "../../inc/HTTP/HTTPParser.hpp"
+# include "../../inc/Webserv/Logger.hpp"
 #include <cstddef>
 
 HTTPParser::HTTPParser(void) : \
@@ -95,22 +96,29 @@ void	HTTPParser::parseHTTPline(const std::string &str) {
 	size_t	second_space;
 	size_t	query_index;
 
+	// get method
 	split = str.find(" ");
 	if (split == std::string::npos)
 		throw InvalidRequestException("Invalid request line");
 	result_.method = str.substr(0, split);
+
+	// get request uri
 	second_space = str.find(" ", split + 1);
 	if (second_space == std::string::npos)
 		throw InvalidRequestException("Invalid request line");
-	result_.request_target = str.substr(split + 1, second_space - split - 1);
-	query_index = result_.request_target.find("?");
+	result_.request_uri = str.substr(split + 1, second_space - split - 1);
+
+	// extract request_target and query string from request_uri
+	query_index = result_.request_uri.find("?");
 	if (query_index != std::string::npos)
 	{
-		result_.headers["QUERY_STRING"] = result_.request_target.substr(query_index + 1);
-		result_.request_target = result_.request_target.substr(0, query_index);
-	}
-	else
+		result_.headers["QUERY_STRING"] = result_.request_uri.substr(query_index + 1);
+		result_.request_target = result_.request_uri.substr(0, query_index);
+	} else {
 		result_.headers["QUERY_STRING"] = "";
+		result_.request_target = result_.request_uri;
+
+	}
 	result_.protocol = str.substr(second_space + 1);
 }
 
@@ -216,7 +224,7 @@ static void	validateTransferEncoding(std::string str) {
  * @brief extract all info from header and validate
  * @THROW if invalidRequest
  */
-void	HTTPParser::parseRequest(void) {
+void	HTTPParser::parseHeader(void) {
 	std::istringstream 	is(header_);
 	std::string			str;
 
@@ -273,19 +281,6 @@ bool	HTTPParser::isAllwdMeth(const std::string& method, const Config& conf) {
 	allwdMeth = conf.getMethods(result_.request_target);
 	return (std::find(allwdMeth.begin(), allwdMeth.end(), method) != allwdMeth.end());
 }
-
-bool	HTTPParser::isRedirection(const std::vector<std::string> &redir) {
-	if (redir.size() < 2)
-		return (false);
-
-	try {
-		result_.status_code = std::stoi(redir[0]);
-	} catch (...) {
-		return (false);
-	}
-	return (true);
-}
-
 
 static std::string	addDir_Folder(std::string root, std::string path, std::string folder) {
 	std::string	full_path = "";
@@ -380,14 +375,17 @@ std::string	HTTPParser::generatePath(const Config *config) {
 		return (result_.request_target);
 
 	auto redir = config->getRedirect(result_.request_target);
-	if (isRedirection(redir)) {
+	if (!redir.empty()) {
+		result_.status_code = std::stoi(redir[0]);
 		result_.redir_ = true;
 		result_.request_target = redir[1];
 		PARSE_STATE_ = DONE_PARSING;
 		return ("");
 	}
-	else if (result_.request_target == "/")
+	
+	if (result_.request_target == "/") {
 		return (handleRootDir(config));
+	}
 
 	for (const std::string &root : config->getRoot(result_.request_target))
 	{
@@ -451,7 +449,8 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 			result_.invalidRequest = false;
 			try
 			{
-				parseRequest();
+				parseHeader();
+				Logger::getInstance().log(LOG_REQUEST, result_.method + " " + result_.request_uri);
 				client->setConfig(result_.host);
 				result_.request_target = generatePath(client->getConfig().get()); // TODO: @micha: look into again
 				verifyRequestLine(*client->getConfig());

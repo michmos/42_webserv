@@ -89,7 +89,6 @@ void	HTTPClient::handleReceiving(SharedFd fd, uint32_t events) {
 	}
 	
 	request_ = parser_.getParsedRequest();
-	Logger::getInstance().log(LOG_REQUEST, request_.method + " " + request_.request_target);
 	responseGenerator_.setConfig(config_);
 	// first_response_ = true;
 	if (request_.status_code == 200 && CGI::isCGI(request_)) {

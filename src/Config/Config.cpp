@@ -207,12 +207,18 @@ std::uint64_t	Config::getClientBodySize(const std::string locKey) const{
 	return (size);
 }
 
+static bool	isRedir(const std::vector<std::string> &redir) {
+	if (redir.size() > 1 && std::all_of(redir[0].begin(), redir[0].end(), ::isdigit) )
+		return (true);
+	return (false);
+}
+
 // return 301 http://example.com/newpage;
 const std::vector<std::string>	Config::getRedirect(const std::string locKey) const{
 	std::unordered_map<std::string, std::vector<std::string>> dirMap = this->getLocDirectives(locKey);
 	auto it = dirMap.find("return");
 	if (it != dirMap.end()) {
-		if (it->second.size() > 0) {
+		if (isRedir(it->second)) {
 			return it->second;
 		}
 	}

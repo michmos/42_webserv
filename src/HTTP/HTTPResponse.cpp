@@ -77,12 +77,12 @@ void	HTTPResponse::insertHeader(const std::string& key, const std::string& value
 
 std::string	HTTPResponse::generateResponse(const HTTPRequest& request) {
 	procsRequHeader(request);
+	Logger::getInstance().log(LOG_RESPONSE, std::to_string(status_code_) + " " + httpStatusMessages_ + " " + content_type_);
 	if (isRedirectStatusCode(status_code_))
 		return (header_);
 
 	setBody();
 	setHeader();
-	Logger::getInstance().log(LOG_RESPONSE, httpStatusMessages_ + " " + content_type_);
 	return (header_ + body_);
 }
 

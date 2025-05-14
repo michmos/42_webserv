@@ -60,7 +60,7 @@ class HTTPParser
 		void	parseContentLength( std::string str );
 		void	parseExtraHeaderInformation( const std::string &str );
 		void	parseHTTPline( const std::string &str );
-		void	parseRequest( void );
+		void	parseHeader( void );
 		void	verifyRequestLine(const Config& config);
 };
 
