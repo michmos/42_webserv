@@ -460,7 +460,7 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 			{
 				result_.invalidRequest = true;
 				PARSE_STATE_ = DONE_PARSING;
-				return; // TODO: @micha maybe even catch the exception one level before in handle function
+				return;
 			}
 		case RCV_BODY:
 			PARSE_STATE_ = RCV_BODY;

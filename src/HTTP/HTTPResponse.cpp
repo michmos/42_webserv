@@ -77,12 +77,9 @@ void	HTTPResponse::insertHeader(const std::string& key, const std::string& value
 
 std::string	HTTPResponse::generateResponse(const HTTPRequest& request) {
 	procsRequHeader(request);
-	Logger::getInstance().log(LOG_RESPONSE, std::to_string(status_code_) + " " + httpStatusMessages_ + " " + content_type_);
-	if (isRedirectStatusCode(status_code_))
-		return (header_);
-
 	setBody();
 	setHeader();
+	Logger::getInstance().log(LOG_RESPONSE, httpStatusMessages_ + ", " + content_type_);
 	return (header_ + body_);
 }
 
@@ -196,7 +193,7 @@ void	HTTPResponse::setContentType( void )
 }
 
 /// @brief checks the status and get the right httpstatus message to add it to the default error page
-void	HTTPResponse::setHttpStatusMessages(void) {
+std::string	HTTPResponse::getHttpStatusMessages(int statusCode) {
 	static const std::unordered_map<int, std::string> httpStatusMessages = {
 		{100, "100 Continue"}, {101, "101 Switching Protocols"}, {102, "102 Processing"},
 		{200, "200 OK"}, {201, "201 Created"}, {202, "202 Accepted"}, {204, "204 No Content"},
@@ -210,25 +207,16 @@ void	HTTPResponse::setHttpStatusMessages(void) {
 		{504, "504 Gateway Timeout"}, {505, "505 HTTP Version Not Supported"}
 	};
 
-	auto it = httpStatusMessages.find(status_code_);
+	auto it = httpStatusMessages.find(statusCode);
 	if (it != httpStatusMessages.end())
-		httpStatusMessages_ = it->second;
-	else
-		httpStatusMessages_ = "500 Internal Server Error";
-
-	if (status_code_ != 200 && status_code_ != 404 && !body_.empty()) // TODO: test whether this is required
-	{
-		size_t index = body_.find("Error 404 Not found");
-		if (index != std::string::npos)
-			body_.replace(index, 19, "Error " + httpStatusMessages_);
-		content_type_ = "text/html";
-	}
+		return(it->second);
+	return("500 Internal Server Error");
 }
 
 /// @brief combines all parts of HTTP header and adds right values
 void	HTTPResponse::setHeader(void) {
 	setContentType();
-	setHttpStatusMessages();
+	httpStatusMessages_ = getHttpStatusMessages(status_code_);
 
 	header_ = "HTTP/1.1 " + httpStatusMessages_ + "\r\n"
 			+ "Content-Type: " + content_type_ + "\r\n";

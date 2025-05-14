@@ -1,5 +1,6 @@
 #include "../../inc/HTTP/HTTPClient.hpp"
 #include "../../inc/Webserv/Logger.hpp"
+#include "../../inc/HTTP/HTTPResponse.hpp"
 #include <memory>
 #include <string>
 
@@ -147,7 +148,7 @@ std::string	HTTPClient::cgiResponse(void) {
 	}
 	else {	
 		response = cgi_->getResponse();
-		Logger::getInstance().log(LOG_RESPONSE, "CGI response " + std::to_string(status));
+		Logger::getInstance().log(LOG_RESPONSE, HTTPResponse::getHttpStatusMessages(status) + ", CGI response");
 	}
 	return (response);
 }

@@ -31,6 +31,7 @@ class HTTPResponse {
 		std::string generateResponse( const HTTPRequest& request );
 		void		setConfig( std::shared_ptr<Config> config ) ;
 		static void	insertHeader(const std::string& key, const std::string& value, std::string& rspns);
+		static std::string	getHttpStatusMessages(int statusCode);
 
 	private:
 		// Generate Response
@@ -41,7 +42,6 @@ class HTTPResponse {
 		// Load Response
 		void		setBody( void );
 		void		setContentType( void );
-		void		setHttpStatusMessages( void );
 		void		setHeader( void );
 
 		std::vector<char *> 	env_;
