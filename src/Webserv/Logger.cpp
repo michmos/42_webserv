@@ -52,13 +52,13 @@ void	Logger::log(LogLevel level, const std::string& msg) {
 			std::cout << RED << timeStamp << std::left << std::setw(13) << " [FATAL]" << msg  << RESET << std::endl;
 			break;
 		case LOG_INFO:
-			std::cout << BLUE << timeStamp << std::left << std::setw(13) << " [INFO]" << msg  << RESET << std::endl;
+			std::cout << LIGHT_GRAY << timeStamp << std::left << std::setw(13) << " [INFO]" << msg  << RESET << std::endl;
 			break;
 		case LOG_REQUEST:
 			std::cout << BLUE << timeStamp << std::left << std::setw(13) << " [REQUEST]" << msg  << RESET << std::endl;
 			break;
 		case LOG_RESPONSE:
-			std::cout << BLUE << timeStamp << std::left << std::setw(13) << " [RESPONSE]" << msg  << RESET << std::endl;
+			std::cout << LIGHT_BLUE << timeStamp << std::left << std::setw(13) << " [RESPONSE]" << msg  << RESET << std::endl;
 			break;
 		default:
 			break;
