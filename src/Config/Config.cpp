@@ -1,5 +1,7 @@
 #include "../../inc/Config/Config.hpp"
-#include "../../inc/Config/ConfigParser.hpp"
+#include "../../inc/Webserv/Colors.hpp"
+#include "../../inc/Webserv/Webserv.hpp"
+#include <iostream>
 
 std::unordered_map<std::string, std::vector<std::string>> Config::_mimeTypes;
 

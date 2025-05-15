@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Webserv/Webserv.hpp"
 #include "Config.hpp"
+#include <regex>
 
 enum tokenType {
 	INIT,

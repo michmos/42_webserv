@@ -1,12 +1,6 @@
 #pragma once
 
-# include <iostream>
-# include <fstream>
 #include <memory>
-# include <sstream>
-# include <filesystem>
-# include <unordered_map>
-# include <algorithm>
 # include <dirent.h>
 # include <sys/types.h>
 # include <cstring>
@@ -15,7 +9,6 @@
 # include <unistd.h>
 
 # include "../Config/Config.hpp"
-# include "../CGI/CGI.hpp"
 
 # include "HTTPRequest.hpp"
 
@@ -56,4 +49,3 @@ class HTTPResponse {
 		std::shared_ptr<Config>	config_;
 };
 
-# include "HTTPClient.hpp"

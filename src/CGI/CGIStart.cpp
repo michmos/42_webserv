@@ -1,5 +1,6 @@
 #include "../../inc/CGI/CGI.hpp"
 #include "../../inc/Webserv/Logger.hpp"
+#include <iostream>
 
 // ######################     START_CGI     ######################
 // ###############################################################

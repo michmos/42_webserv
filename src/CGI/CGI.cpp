@@ -1,6 +1,5 @@
 #include "../../inc/CGI/CGI.hpp"
 #include "../../inc/Webserv/Logger.hpp"
-#include "../../inc/HTTP/HTTPClient.hpp"
 
 static bool	isNPH(const std::string& path) {
 	size_t		index;

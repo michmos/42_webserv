@@ -1,5 +1,7 @@
 
 #include "../../inc/Webserv/SharedFd.hpp"
+#include <iomanip>
+#include <iostream>
 
 std::unordered_map<int, int> SharedFd::_refCounts;
 

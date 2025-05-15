@@ -1,5 +1,6 @@
 #include "../../inc/HTTP/HTTPClient.hpp"
 #include "../../inc/Webserv/Logger.hpp"
+#include "../../inc/Webserv/Epoll.hpp"
 #include "../../inc/HTTP/HTTPResponse.hpp"
 #include <memory>
 #include <string>

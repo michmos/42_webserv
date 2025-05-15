@@ -1,6 +1,7 @@
 #include "../../inc/CGI/CGI.hpp"
 #include "../../inc/HTTP/HTTPClient.hpp"
 #include "../../inc/Webserv/Logger.hpp"
+#include <regex>
 
 // #################     RESPONSE_FROM_CGI     ###################
 // ###############################################################

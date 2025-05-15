@@ -1,4 +1,7 @@
 #include "../../inc/CGI/CGIPipes.hpp"
+#include <stdexcept>
+#include <string>
+#include <sys/epoll.h>
 
 CGIPipes::CGIPipes( void ) {};
 

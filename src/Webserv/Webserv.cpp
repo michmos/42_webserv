@@ -1,7 +1,10 @@
 
 #include "../../inc/Webserv/Webserv.hpp"
 #include "../../inc/Webserv/Logger.hpp"
+#include "../../inc/Config/ConfigParser.hpp"
 #include <memory>
+#include <atomic>
+#include <unordered_set>
 
 std::atomic<bool> keepalive(true);
 

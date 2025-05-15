@@ -2,17 +2,13 @@
 
 #include <memory>
 #include <unordered_map>
-#include <atomic>
 #include <csignal>
 #include <netdb.h>
-#include <unordered_set>
 
-#include "../Config/ConfigParser.hpp"
 #include "../Config/Config.hpp"
 #include "../HTTP/HTTPClient.hpp"
 #include "Epoll.hpp"
 #include "SharedFd.hpp"
-#include "Colors.hpp"
 
 // C libs
 

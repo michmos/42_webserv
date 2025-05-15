@@ -2,8 +2,9 @@
 # include "../../inc/HTTP/HTTPResponse.hpp"
 # include "../../inc/Webserv/Logger.hpp"
 #include <cstddef>
-#include <functional>
+#include <algorithm>
 #include <string>
+#include <fstream>
 
 // #######################     PUBLIC     ########################
 // ###############################################################

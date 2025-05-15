@@ -1,4 +1,8 @@
 #include "../../inc/Config/ConfigParser.hpp"
+#include "../../inc/Webserv/Colors.hpp"
+#include "../../inc/Webserv/Webserv.hpp"
+#include <iostream>
+#include <fstream>
 
 void debugConfigPrint(std::vector<Config> &configs) {
 	for (auto &config : configs) {

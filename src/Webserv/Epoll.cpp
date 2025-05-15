@@ -1,4 +1,7 @@
 #include "../../inc/Webserv/Epoll.hpp"
+#include <cerrno>
+#include <stdexcept>
+#include <string>
 
 Epoll::Epoll() : 
 	_epFd(epoll_create1(EPOLL_CLOEXEC)),

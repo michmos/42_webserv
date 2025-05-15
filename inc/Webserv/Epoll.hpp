@@ -5,8 +5,6 @@
 
 #include <sys/types.h>
 #include <sys/epoll.h>
-#include <string.h>
-#include <stdexcept>
 #include <unistd.h>
 #include <vector>
 

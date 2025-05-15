@@ -1,14 +1,8 @@
 #pragma once
 
 # include <string>
-# include <unordered_map>
-# include <regex>
 # include <vector>
 # include <string>
-# include <iostream>
-# include <sstream>
-# include <functional>
-# include <filesystem>
 
 # include <sys/stat.h>
 
@@ -72,5 +66,3 @@ public:
 private:
 	std::string	message_;
 };
-
-# include "HTTPClient.hpp"

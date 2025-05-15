@@ -2,36 +2,24 @@
 
 #include <cstdint>
 #include <exception>
-# include <iostream>
-# include <bitset>
 # include <climits>
 # include <cstring>
 # include <cstdio>
-# include <fstream>
-# include <sstream>
 # include <string>
-# include <unordered_map>
-# include <map>
 # include <vector>
 # include <cstdlib>
-# include <regex>
 # include <memory>
-# include <any>
 
-# include <errno.h>
 # include <unistd.h>
 # include <fcntl.h>
 # include <poll.h>
 # include <sys/socket.h>
 # include <netinet/in.h>
 # include <arpa/inet.h>
-# include <string.h>
 # include <sys/epoll.h>
 
 # include "../Config/Config.hpp"
-# include "../Webserv/Epoll.hpp"
 # include "../Webserv/SharedFd.hpp"
-# include "../CGI/CGIPipes.hpp"
 # include "../CGI/CGI.hpp"
 # include "HTTPResponse.hpp"
 # include "HTTPRequest.hpp"

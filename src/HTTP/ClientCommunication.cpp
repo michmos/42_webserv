@@ -1,4 +1,5 @@
 #include "../../inc/HTTP/HTTPClient.hpp"
+#include <sstream>
 
 #define TERMINATOR_CHUNK "0\r\n\r\n"
 

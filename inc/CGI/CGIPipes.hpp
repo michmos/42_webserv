@@ -1,14 +1,13 @@
 #pragma once
 
-#include <cstddef>
-# include <vector>
+# include <cstddef>
 # include <functional>
 # include <cstring>
 
 # include <sys/types.h>
 # include <fcntl.h>
+# include "../Webserv/SharedFd.hpp"
 
-# include "../Webserv/Epoll.hpp"
 
 
 enum ePipe {

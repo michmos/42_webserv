@@ -1,6 +1,12 @@
 # include "../../inc/HTTP/HTTPParser.hpp"
 # include "../../inc/Webserv/Logger.hpp"
+# include "../../inc/Config/Config.hpp"
+# include "../../inc/HTTP/HTTPClient.hpp"
 #include <cstddef>
+#include <algorithm>
+#include <sstream>
+#include <set>
+#include <unistd.h>
 
 HTTPParser::HTTPParser(void) : \
 	content_length_(0), chunked_(false) {
@@ -207,7 +213,7 @@ static void split_and_trim(std::vector<std::string> &encoding_items, const std::
 
 static void	validateTransferEncoding(std::string str) {
 	std::vector<std::string>				encoding_items;
-	static const std::vector<std::string> 	valid_encodings = { \
+	static const std::set<std::string> 	valid_encodings = { \
 		"chunked", "gzip", "compress", "deflate", "identity"};
 
 	split_and_trim(encoding_items, str);
@@ -215,7 +221,7 @@ static void	validateTransferEncoding(std::string str) {
 		throw InvalidRequestException("Tranfer-Encoding value is missing");
 	for (std::string item : encoding_items)
 	{
-		if (std::find(valid_encodings.begin(), valid_encodings.end(), item) == valid_encodings.end())
+		if (valid_encodings.find(item) != valid_encodings.end())
 			throw InvalidRequestException("Invalid Tranfer-Encoding value");
 	}
 }
