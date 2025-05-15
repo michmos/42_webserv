@@ -1,13 +1,6 @@
 #include "../inc/Webserv/Webserv.hpp"
 #include "../inc/Webserv/Logger.hpp"
 
-std::atomic<bool> keep_alive(true);
-
-void	signal_handler(int signum)
-{
-	if (signum == 13 || signum == SIGINT)
-		keep_alive = false;
-}
 
 int	save_main(int argc, char **argv) {
 	if (argc > 2) {
@@ -16,8 +9,6 @@ int	save_main(int argc, char **argv) {
 	}
 
 	std::string path = (argc == 2) ? argv[1] : DEFAULT_CONFIGFILE;
-
-	std::signal(SIGINT, signal_handler);
 
 	Logger::getInstance().log(LOG_INFO, "Webserver starting ... with config: " + path);
 	Webserv	webserver(path);
