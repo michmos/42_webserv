@@ -127,6 +127,8 @@ void	HTTPClient::handleResponding(SharedFd fd, uint32_t events) {
 
 	if (first_response_) {
 		generateResponse();
+		if (auto lb = response_.find("\n"); lb != std::string::npos)
+			Logger::getInstance().log(LOG_RESPONSE, response_.substr(0, lb));
 	}
 	writeToClient(fd);
 }
@@ -148,7 +150,6 @@ std::string	HTTPClient::cgiResponse(void) {
 	}
 	else {	
 		response = cgi_->getResponse();
-		Logger::getInstance().log(LOG_RESPONSE, HTTPResponse::getHttpStatusMessages(status) + ", CGI response");
 	}
 	return (response);
 }

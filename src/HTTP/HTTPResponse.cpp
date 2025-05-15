@@ -79,7 +79,6 @@ std::string	HTTPResponse::generateResponse(const HTTPRequest& request) {
 	procsRequHeader(request);
 	setBody();
 	setHeader();
-	Logger::getInstance().log(LOG_RESPONSE, httpStatusMessages_ + ", " + content_type_);
 	return (header_ + body_);
 }
 

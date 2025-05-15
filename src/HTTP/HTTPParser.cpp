@@ -437,6 +437,7 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 		if (buff.size() > 4 && buff.find("\r\n\r\n", buff.size() - 4) != std::string::npos)
 			PARSE_STATE_ = DONE_PARSING;
 	}
+
 	switch (PARSE_STATE_) {
 		case RCV_HEADER:
 			rawRequest_ += buff;
@@ -444,13 +445,14 @@ void	HTTPParser::processData(std::string &buff, HTTPClient *client) {
 			if (!isHeaderRead())
 				return ;
 
-			splitHeaderBody();
+			if (auto lb = rawRequest_.find("\n"); lb != std::string::npos) {
+				Logger::getInstance().log(LOG_REQUEST, rawRequest_.substr(0, lb));
+			}
 
-			result_.invalidRequest = false;
+			splitHeaderBody();
 			try
 			{
 				parseHeader();
-				Logger::getInstance().log(LOG_REQUEST, result_.method + " " + result_.request_uri);
 				client->setConfig(result_.host);
 				result_.request_target = generatePath(client->getConfig().get()); // TODO: @micha: look into again
 				verifyRequestLine(*client->getConfig());
