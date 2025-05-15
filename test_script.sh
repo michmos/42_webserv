@@ -22,13 +22,13 @@ echo ""
 
 echo "" > test_results.txt
 echo -e "TEST 3: ${YEL} GET localhost:$PORT/http/contact.html: ${RES} "
-curl -s --http1.1 -G localhost:$PORT/http/contact.html -i -o test_results.txt
+curl -s --http1.1 -G localhost:$PORT/html/contact.html -i -o test_results.txt
 head -n 1 test_results.txt | grep -q "200" && echo -e "${GRE} Status is 200 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
 echo ""
 
 echo "" > test_results.txt
 echo -e "TEST 4: ${YEL} GET localhost:$PORT/http/upload.html: ${RES} "
-curl -s --http1.1 -G localhost:$PORT/http/upload.html -i -o test_results.txt
+curl -s --http1.1 -G localhost:$PORT/html/upload.html -i -o test_results.txt
 head -n 1 test_results.txt | grep -q "200" && echo -e "${GRE} Status is 200 OK${RES}" || echo -e "${RED}Status is not ok${RES}"
 echo ""
 
