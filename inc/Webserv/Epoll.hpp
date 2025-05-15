@@ -42,8 +42,6 @@ public:
 	void	setTimeout(int timeout) noexcept;
 	int		getEpFd() const;
 
-	// TODO: maybe add pwait() from epoll_pwait()
-
 private:
 	SharedFd										_epFd;
 	int												_timeout;

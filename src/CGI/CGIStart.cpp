@@ -55,7 +55,7 @@ std::vector<char*> CGI::createEnv() {
 	{
 		envStrings_.push_back("DELETE_FILE=" + request_.request_target);
 	}
-	envStrings_.push_back("REQUEST_TARGET=" + scriptPath_); // TODO: why hardcoded?
+	envStrings_.push_back("REQUEST_TARGET=" + scriptPath_);
 	envStrings_.push_back("REQUEST_METHOD=" + request_.method);
 	envStrings_.push_back("CONTENT_LENGTH=" + std::to_string(request_.body.size()));
 

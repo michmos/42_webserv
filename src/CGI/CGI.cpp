@@ -127,7 +127,7 @@ void	CGI::handleTimeOut() {
 	status_ = 500;
 	finished_ = true;
 	if (!isCGIProcessFinished()) {
-		if (kill(pid_, SIGKILL) == -1) // TODO: maybe use sigterm instead
+		if (kill(pid_, SIGKILL) == -1)
 			throw std::runtime_error("kill() " + std::to_string(pid_) + " : " + strerror(errno));
 	}
 }

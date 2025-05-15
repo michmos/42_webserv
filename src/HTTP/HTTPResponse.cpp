@@ -220,6 +220,6 @@ void	HTTPResponse::setHeader(void) {
 	header_ = "HTTP/1.1 " + httpStatusMessages_ + "\r\n"
 			+ "Content-Type: " + content_type_ + "\r\n";
 	if (!body_.empty())
-		header_ += "Content-Length: " + std::to_string(body_.size()); // TODO: what if chunked?
+		header_ += "Content-Length: " + std::to_string(body_.size());
 	header_ += "\r\n\r\n";
 }

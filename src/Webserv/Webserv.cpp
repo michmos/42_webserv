@@ -39,7 +39,7 @@ static int	createBindListen(struct addrinfo* info) {
 		close(fd);
 		return (-1);
 	}
-	if(listen(fd, 5) == -1) {  // TODO: replace random number 5
+	if(listen(fd, 5) == -1) {
 		close(fd);
 		throw std::runtime_error("listen(): " + std::string(strerror(errno)));
 	}
