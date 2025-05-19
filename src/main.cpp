@@ -1,5 +1,6 @@
 #include "../inc/Webserv/Webserv.hpp"
 #include "../inc/Webserv/Logger.hpp"
+#include <stdexcept>
 
 
 int	save_main(int argc, char **argv) {
