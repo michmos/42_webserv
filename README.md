@@ -28,10 +28,10 @@ This is a HTTP/1.1 compliant webserver built from scratch in C++. It is designed
 ## Usage
 ```bash
 # Clone the repository
-git clone https://github.com/Chr-ss/Webserv.git
+git clone https://github.com/michmos/42_webserv.git
 
 # Navigate to the project directory
-cd Webserv
+cd 42_webserv
 
 # Compile the project
 make
