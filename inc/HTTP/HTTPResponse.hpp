@@ -35,7 +35,7 @@ class HTTPResponse {
 		// Load Response
 		void		setBody( void );
 		void		setContentType( void );
-		void		setHeader( void );
+		void		setHeader( const HTTPRequest& request );
 
 		std::vector<char *> 	env_;
 		std::string				filename_;

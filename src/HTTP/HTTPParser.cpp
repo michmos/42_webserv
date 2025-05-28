@@ -384,9 +384,8 @@ std::string	HTTPParser::generatePath(const Config *config) {
 	if (!redir.empty()) {
 		result_.status_code = std::stoi(redir[0]);
 		result_.redir_ = true;
-		result_.request_target = redir[1];
 		PARSE_STATE_ = DONE_PARSING;
-		return ("");
+		return (redir[1]);
 	}
 	
 	if (result_.request_target == "/") {

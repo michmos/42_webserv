@@ -50,12 +50,6 @@ void	HTTPResponse::procsRequHeader(HTTPRequest request) {
 			filename_ = searchErrorPage(config_->getRoot("/"), errPage);
 		}
 	}
-	else if (request.redir_ && isRedirectStatusCode(request.status_code)) { // Redirect response
-		header_ = "HTTP/1.1 " + std::to_string(request.status_code)
-				+ " Found\r\nLocation: " + request.request_target
-				+ "\r\nContent-Type: text/html\r\n\r\n";
-	}
-
 	status_code_ = request.status_code;
 }
 
@@ -79,7 +73,7 @@ void	HTTPResponse::insertHeader(const std::string& key, const std::string& value
 std::string	HTTPResponse::generateResponse(const HTTPRequest& request) {
 	procsRequHeader(request);
 	setBody();
-	setHeader();
+	setHeader(request);
 	return (header_ + body_);
 }
 
@@ -214,12 +208,15 @@ std::string	HTTPResponse::getHttpStatusMessages(int statusCode) {
 }
 
 /// @brief combines all parts of HTTP header and adds right values
-void	HTTPResponse::setHeader(void) {
+void	HTTPResponse::setHeader(const HTTPRequest& request) {
 	setContentType();
 	httpStatusMessages_ = getHttpStatusMessages(status_code_);
 
 	header_ = "HTTP/1.1 " + httpStatusMessages_ + "\r\n"
 			+ "Content-Type: " + content_type_ + "\r\n";
+	if (request.redir_ && isRedirectStatusCode(request.status_code)) { // Redirect response
+		header_ += "Location: " + request.request_target;
+	}
 	if (!body_.empty())
 		header_ += "Content-Length: " + std::to_string(body_.size());
 	header_ += "\r\n\r\n";
